@@ -109,6 +109,7 @@ namespace YargArchipelagoClient
             btnSendChat.TabIndex = 2;
             btnSendChat.Text = "Send";
             btnSendChat.UseVisualStyleBackColor = true;
+            btnSendChat.Click += btnSendChat_Click;
             // 
             // tlpCheckList
             // 

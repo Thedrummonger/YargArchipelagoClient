@@ -23,6 +23,8 @@ namespace YargArchipelagoClient.Data
         /// </summary>
         public SongLocation GoalSong = new(0);
 
+        public bool BroadcastSongName = false;
+
         public int TotalSongsInPool => ApLocationData.Count + 1; // +1 For Goal Song
 
         public void ParseAPLocations(ArchipelagoSession archipelagoSession)

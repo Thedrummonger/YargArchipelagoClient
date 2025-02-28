@@ -1,9 +1,13 @@
+using Archipelago.MultiClient.Net.MessageLog.Messages;
 using ArchipelagoPowerTools.Data;
+using ArchipelagoPowerTools.Helpers;
 using Newtonsoft.Json;
+using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Windows.Forms;
 using TDMUtils;
 using YargArchipelagoClient.Data;
+using static ArchipelagoPowerTools.Data.ColoredStringHelper;
+using static ArchipelagoPowerTools.Helpers.WinFormHelpers;
 
 namespace YargArchipelagoClient
 {
@@ -18,12 +22,13 @@ namespace YargArchipelagoClient
         private int FamePointsNeeded = 0;
         private Dictionary<string, object?> SlotData;
 
-        private List<ColoredString> Log = [];
+        private readonly ConcurrentQueue<ColoredString> LogQueue = [];
+        private readonly SemaphoreSlim LogSignal = new(0);
+        private readonly CancellationTokenSource LogCancellation = new();
 
         private bool UpdateData = false;
 
         private System.Windows.Forms.Timer SyncTimer = new System.Windows.Forms.Timer();
-        private System.Windows.Forms.Timer LogTimer = new System.Windows.Forms.Timer();
 
         public MainForm() => InitializeComponent();
 
@@ -52,10 +57,6 @@ namespace YargArchipelagoClient
             SyncTimer.Tick += SyncTimerTick;
             SyncTimer.Start();
 
-            LogTimer.Interval = 500;
-            LogTimer.Tick += LogTimerTick;
-            LogTimer.Start();
-
 
             // Subscribe to session events.
             Connection!.GetSession().Items.ItemReceived += Items_ItemReceived;
@@ -71,7 +72,7 @@ namespace YargArchipelagoClient
             if (!Directory.Exists(SeedDir))
                 Directory.CreateDirectory(SeedDir);
 
-            foreach(var file in Directory.GetFiles(SeedDir))
+            foreach (var file in Directory.GetFiles(SeedDir))
             {
                 var fileName = Path.GetFileName(file);
                 Debug.WriteLine($"Checking file {fileName}");
@@ -99,6 +100,8 @@ namespace YargArchipelagoClient
             PrintSongs();
             lvSongList_Resize(sender, e);
 
+            Task.Run(() => ProcessLogQueueAsync());
+
             bool IsConnected() =>
                 CForm.Connection is not null &&
                 CForm.Connection.GetSession() is not null &&
@@ -121,18 +124,6 @@ namespace YargArchipelagoClient
             PrintSongs();
         }
 
-
-        private void LogTimerTick(object? sender, EventArgs e)
-        {
-            if (Log.Count < 1) return;
-            ColoredString[] TempLog = [.. Log];
-            Log.Clear();
-            if (lbConsole.InvokeRequired)
-                lbConsole.Invoke(new Action(() => ColoredStringHelper.AppendColoredString(lbConsole, TempLog)));
-            else
-                ColoredStringHelper.AppendColoredString(lbConsole, TempLog);
-        }
-
         private void textBox2_Enter(object sender, EventArgs e) { }
 
         private void textBox2_Leave(object sender, EventArgs e) { }
@@ -143,41 +134,119 @@ namespace YargArchipelagoClient
         private void lvSongList_DoubleClick(object sender, EventArgs e)
         {
             if (lvSongList.SelectedItems.Count <= 0) return;
+            var selectedItems = lvSongList.SelectedItems.Cast<ListViewItem>().ToArray();
+            var locationIDs = new List<long>();
 
-            ListViewItem[] selectedItems = lvSongList.SelectedItems.Cast<ListViewItem>().ToArray();
-            List<long> locationIDs = new();
-
-            foreach (var i in selectedItems)
+            foreach (var item in selectedItems)
             {
-                if (i.Tag is not SongLocation songLocation)
-                    continue;
-                if (songLocation.APStandardCheckLocation is long sl)
-                    locationIDs.Add(sl);
-                if (songLocation.APExtraCheckLocation is long el)
-                    locationIDs.Add(el);
-                if (songLocation.APFameCheckLocation is long fl)
+                if (item.Tag is not SongLocation songLocation) continue;
+
+                if (songLocation.APFameCheckLocation is long fl && AllChecksComplete(songLocation, []))
+                {
                     locationIDs.Add(fl);
+                    continue;
+                }
+
+                var buttons = new List<CustomMessageResult>();
+                int btnCheckCount = 0;
+                if (songLocation.APStandardCheckLocation is long sl && !CheckedLocations.Contains(sl))
+                {
+                    btnCheckCount++;
+                    buttons.Add(CustomMessageResult.Reward1);
+                }
+                if (songLocation.APExtraCheckLocation is long el && !CheckedLocations.Contains(el))
+                {
+                    btnCheckCount++;
+                    buttons.Add(CustomMessageResult.Reward2);
+                }
+                if (btnCheckCount > 1)
+                    buttons.Add(CustomMessageResult.Both);
+
+                var result = ModifierKeys == Keys.Control ? 
+                    CustomMessageResult.Both : 
+                    APSongMessageBox.Show(
+                    $"Check Song {songLocation.SongNumber} [{songLocation.MappedSong}]",
+                    $"{songLocation.MappedSong}",
+                    [.. buttons]);
+
+                if (result.In(CustomMessageResult.Reward1, CustomMessageResult.Both))
+                    locationIDs.Add((long)songLocation.APStandardCheckLocation!);
+                if (result.In(CustomMessageResult.Reward2, CustomMessageResult.Both))
+                    locationIDs.Add((long)songLocation.APExtraCheckLocation!);
+
+                if (songLocation.APFameCheckLocation is long fl2 && AllChecksComplete(songLocation, locationIDs))
+                    locationIDs.Add(fl2);
             }
-            Connection!.GetSession().Locations.CompleteLocationChecks(locationIDs.ToArray());
+            Connection!.GetSession().Locations.CompleteLocationChecks([.. locationIDs]);
+            UpdateLocationsChecked();
             SyncTimerTick(sender, e);
+        }
+        bool AllChecksComplete(SongLocation s, List<long> toCheck)
+        {
+            bool standardComplete = s.APStandardCheckLocation == null ||
+                toCheck.Contains(s.APStandardCheckLocation.Value) ||
+                CheckedLocations.Contains(s.APStandardCheckLocation.Value);
+            bool extraComplete = s.APExtraCheckLocation == null ||
+                toCheck.Contains(s.APExtraCheckLocation.Value) ||
+                CheckedLocations.Contains(s.APExtraCheckLocation.Value);
+            return standardComplete && extraComplete;
         }
 
         #endregion
 
         #region Connection and Session Event Handlers
 
-        private void Locations_CheckedLocationsUpdated(System.Collections.ObjectModel.ReadOnlyCollection<long> newCheckedLocations) => 
+        private void Locations_CheckedLocationsUpdated(System.Collections.ObjectModel.ReadOnlyCollection<long> newCheckedLocations) =>
             UpdateData = true;
 
         private void Items_ItemReceived(Archipelago.MultiClient.Net.Helpers.ReceivedItemsHelper helper) =>
             UpdateData = true;
 
-        private void MessageLog_OnMessageReceived(Archipelago.MultiClient.Net.MessageLog.Messages.LogMessage message)
+        private void MessageLog_OnMessageReceived(LogMessage message)
         {
             var formattedMessage = new ColoredString();
             foreach (var part in message.Parts)
                 formattedMessage.AddText(part.Text, part.Color, false);
-            Log.Add(formattedMessage);
+
+            if (message is ItemSendLogMessage ItemSend)
+                BroadcastSongNameToServer(ItemSend);
+
+            LogQueue.Enqueue(formattedMessage);
+            LogSignal.Release();
+        }
+
+        private void BroadcastSongNameToServer(ItemSendLogMessage message)
+        {
+            if (!message.IsReceiverTheActivePlayer) return;
+            var data = message.Item.ItemName.Split(" ");
+            if (data.Length != 2) return;
+            if (data[0] != "Song") return;
+            if (!int.TryParse(data[1], out var songNum)) return;
+            if (Config is null) return;
+            if (!Config.ApLocationData.TryGetValue(songNum, out var Song)) return;
+            if (Song.MappedSong is null) return;
+            if (!Config.SongData.TryGetValue(Song.MappedSong, out var SongData)) return;
+
+            string SongMessage = $"[Song {songNum}] {SongData.Name} by {SongData.Artist}";
+            if (Config.BroadcastSongName)
+                Connection.GetSession().Say(SongMessage);
+            else
+                LogQueue.Enqueue(new ColoredString().AddText(SongMessage));
+        }
+
+        private async Task ProcessLogQueueAsync()
+        {
+            while (!LogCancellation.Token.IsCancellationRequested)
+            {
+                await LogSignal.WaitAsync(LogCancellation.Token);
+                //Let a few messages accumulate for cases like releases
+                await Task.Delay(500, LogCancellation.Token);
+                List<ColoredString> messages = [];
+                while (LogQueue.TryDequeue(out var msg))
+                    messages.Add(msg);
+                if (messages.Count > 0)
+                    lbConsole.SafeInvoke(() => ColoredStringHelper.AppendColoredString(lbConsole, [.. messages]));
+            }
         }
         #endregion
 
@@ -250,10 +319,7 @@ namespace YargArchipelagoClient
                 };
                 item.SubItems.Add(i.Value.DisplayName);
 
-                if (lvSongList.InvokeRequired)
-                    lvSongList.Invoke(new Action(() => lvSongList.Items.Add(item)));
-                else
-                    lvSongList.Items.Add(item);
+                lvSongList.SafeInvoke(() => lvSongList.Items.Add(item));
             }
         }
         private bool HasUncheckedLocations(SongLocation s)
@@ -268,5 +334,33 @@ namespace YargArchipelagoClient
         }
 
         #endregion
+
+        private void btnSendChat_Click(object sender, EventArgs e)
+        {
+            string Text = textBox1.Text;
+            if (Text.IsNullOrWhiteSpace()) return;
+            textBox1.Text = string.Empty;
+            if (Text.Length > 1 && Text[0] == '/')
+                ProcessCommand(Text[1..]);
+            else
+                Connection.GetSession().Say(Text);
+
+            LogSignal.Release();
+        }
+
+        private void ProcessCommand(string v)
+        {
+            switch (v.ToLower())
+            {
+                case "broadcast":
+                    if (Config is null) return;
+                    Config.BroadcastSongName = !Config.BroadcastSongName;
+                    LogQueue.Enqueue(new ColoredString().AddText($"Broadcasting Songs: {Config.BroadcastSongName}"));
+                    break;
+                default:
+                    LogQueue.Enqueue(new ColoredString().AddText($"{v} is not a valid command"));
+                    break;
+            }
+        }
     }
 }
