@@ -169,10 +169,10 @@ namespace YargArchipelagoClient
                     $"{songLocation.MappedSong}",
                     [.. buttons]);
 
-                if (result.In(CustomMessageResult.Reward1, CustomMessageResult.Both))
-                    locationIDs.Add((long)songLocation.APStandardCheckLocation!);
-                if (result.In(CustomMessageResult.Reward2, CustomMessageResult.Both))
-                    locationIDs.Add((long)songLocation.APExtraCheckLocation!);
+                if (result.In(CustomMessageResult.Reward1, CustomMessageResult.Both) && songLocation.APStandardCheckLocation is long sl1)
+                    locationIDs.Add(sl1);
+                if (result.In(CustomMessageResult.Reward2, CustomMessageResult.Both) && songLocation.APStandardCheckLocation is long el1)
+                    locationIDs.Add(el1);
 
                 if (songLocation.APFameCheckLocation is long fl2 && AllChecksComplete(songLocation, locationIDs))
                     locationIDs.Add(fl2);
