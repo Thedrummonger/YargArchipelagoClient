@@ -29,25 +29,25 @@ namespace YargArchipelagoClient.Data
                     if (string.IsNullOrEmpty(trimmedLine) || (trimmedLine.StartsWith("[") && trimmedLine.EndsWith("]")))
                         continue;
                     int separatorIndex = trimmedLine.IndexOf('=');
-                    if (separatorIndex > 0)
-                    {
-                        string key = trimmedLine[..separatorIndex].Trim();
-                        string value = trimmedLine[(separatorIndex + 1)..].Trim();
-                        // Remove HTML-like tags from the value (e.g., <color=#B900FF> ... </color>).
-                        value = Regex.Replace(value, "<.*?>", string.Empty);
-                        songData[key] = value;
-                    }
+                    if (separatorIndex == 0) 
+                        continue;
+                    string key = trimmedLine[..separatorIndex].Trim();
+                    string value = trimmedLine[(separatorIndex + 1)..].Trim();
+                    // Remove HTML-like tags from the value (e.g., <color=#B900FF> ... </color>).
+                    value = Regex.Replace(value, "<.*?>", string.Empty);
+                    songData[key] = value;
                 }
-
-                if (songData.TryGetValue("name", out string? songName))
+                if (!songData.TryGetValue("name", out string? songName))
                 {
-                    if (!songs.ContainsKey(songName))
-                        songs.Add(songName, new SongData(songData));
-                    else
-                        Debug.WriteLine($"Warning: Duplicate song name encountered: {songName}");
-                }
-                else
                     Debug.WriteLine($"Warning: File {iniFile} does not contain a 'name' field.");
+                    continue;
+                }
+                if (songs.ContainsKey(songName))
+                {
+                    Debug.WriteLine($"Warning: Duplicate song name encountered: {songName}");
+                    continue;
+                }
+                songs.Add(songName, new SongData(songData));
             }
 
             return songs;

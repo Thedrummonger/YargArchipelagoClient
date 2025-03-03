@@ -49,7 +49,10 @@ namespace YargArchipelagoClient
                 Close();
                 return;
             }
+
             Connection = CForm.Connection!;
+
+            File.WriteAllText(CForm.ConnectionCachePath, Connection.ToFormattedJson());
 
             SlotData = Connection!.GetSession().DataStorage.GetSlotData();
 
@@ -72,15 +75,12 @@ namespace YargArchipelagoClient
             if (!Directory.Exists(SeedDir))
                 Directory.CreateDirectory(SeedDir);
 
-            foreach (var file in Directory.GetFiles(SeedDir))
+            var ConfigFile = Directory.GetFiles(SeedDir).FirstOrDefault(file => Path.GetFileName(file) == getSaveFileName());
+            if (ConfigFile is not null)
             {
-                var fileName = Path.GetFileName(file);
-                Debug.WriteLine($"Checking file {fileName}");
-                if (fileName == getSaveFileName())
-                {
-                    try { Config = JsonConvert.DeserializeObject<ConfigData>(File.ReadAllText(file)); }
-                    catch { Config = null; }
-                }
+                Debug.WriteLine($"Seed Found {ConfigFile}");
+                try { Config = JsonConvert.DeserializeObject<ConfigData>(File.ReadAllText(ConfigFile)); }
+                catch { Config = null; }
             }
 
             if (Config is null)
@@ -135,26 +135,28 @@ namespace YargArchipelagoClient
         {
             if (lvSongList.SelectedItems.Count <= 0) return;
             var selectedItems = lvSongList.SelectedItems.Cast<ListViewItem>().ToArray();
-            var locationIDs = new List<long>();
+            var locationIDs = new HashSet<long>();
+            var CheckStateChanged = new HashSet<SongLocation>();
 
             foreach (var item in selectedItems)
             {
                 if (item.Tag is not SongLocation songLocation) continue;
 
-                if (songLocation.APFameCheckLocation is long fl && AllChecksComplete(songLocation, []))
+                if (songLocation.FameCheckAvailable(CheckedLocations, out var fl))
                 {
                     locationIDs.Add(fl);
                     continue;
                 }
 
+                List<long> ToCheck = [];
                 var buttons = new List<CustomMessageResult>();
                 int btnCheckCount = 0;
-                if (songLocation.APStandardCheckLocation is long sl && !CheckedLocations.Contains(sl))
+                if (songLocation.HasStandardCheck(out long sl) && !CheckedLocations.Contains(sl))
                 {
                     btnCheckCount++;
                     buttons.Add(CustomMessageResult.Reward1);
                 }
-                if (songLocation.APExtraCheckLocation is long el && !CheckedLocations.Contains(el))
+                if (songLocation.HasExtraCheck(out long el) && !CheckedLocations.Contains(el))
                 {
                     btnCheckCount++;
                     buttons.Add(CustomMessageResult.Reward2);
@@ -169,28 +171,38 @@ namespace YargArchipelagoClient
                     $"{songLocation.MappedSong}",
                     [.. buttons]);
 
-                if (result.In(CustomMessageResult.Reward1, CustomMessageResult.Both) && songLocation.APStandardCheckLocation is long sl1)
-                    locationIDs.Add(sl1);
-                if (result.In(CustomMessageResult.Reward2, CustomMessageResult.Both) && songLocation.APStandardCheckLocation is long el1)
-                    locationIDs.Add(el1);
+                if (result.In(CustomMessageResult.Reward1, CustomMessageResult.Both) && 
+                    songLocation.HasStandardCheck(out var sl1) &&
+                    !CheckedLocations.Contains(sl1))
+                    ToCheck.Add(sl1);
+                if (result.In(CustomMessageResult.Reward2, CustomMessageResult.Both) && 
+                    songLocation.HasExtraCheck(out var el1) &&
+                    !CheckedLocations.Contains(el1))
+                    ToCheck.Add(el1);
 
-                if (songLocation.APFameCheckLocation is long fl2 && AllChecksComplete(songLocation, locationIDs))
-                    locationIDs.Add(fl2);
+                if (songLocation.FameCheckAvailable([..CheckedLocations, .. ToCheck], out var fl2) &&
+                    !CheckedLocations.Contains(fl2))
+                    ToCheck.Add(fl2);
+
+                if (ToCheck.Count > 0) CheckStateChanged.Add(songLocation);
+                locationIDs = [..locationIDs, ..ToCheck];
+            }
+
+            if (Config!.BroadcastSongName)
+            {
+                foreach (var i in CheckStateChanged)
+                {
+                    var SongData = i.GetSongData(Config!);
+                    if (SongData is null) continue;
+                    string SongMessage = $"[Song {i.SongNumber}] {SongData.Name} by {SongData.Artist}";
+                    Connection.GetSession().Say(SongMessage);
+                }
             }
             Connection!.GetSession().Locations.CompleteLocationChecks([.. locationIDs]);
             UpdateLocationsChecked();
             SyncTimerTick(sender, e);
         }
-        bool AllChecksComplete(SongLocation s, List<long> toCheck)
-        {
-            bool standardComplete = s.APStandardCheckLocation == null ||
-                toCheck.Contains(s.APStandardCheckLocation.Value) ||
-                CheckedLocations.Contains(s.APStandardCheckLocation.Value);
-            bool extraComplete = s.APExtraCheckLocation == null ||
-                toCheck.Contains(s.APExtraCheckLocation.Value) ||
-                CheckedLocations.Contains(s.APExtraCheckLocation.Value);
-            return standardComplete && extraComplete;
-        }
+        
 
         #endregion
 
@@ -284,24 +296,15 @@ namespace YargArchipelagoClient
 
         private void PrintSongs()
         {
-            if (lvSongList.InvokeRequired)
-                lvSongList.Invoke(new Action(() => lvSongList.Items.Clear()));
-            else
-                lvSongList.Items.Clear();
+            lvSongList.SafeInvoke(lvSongList.Items.Clear);
 
             Dictionary<int, SongLocation> songs = Config.ApLocationData;
 
             if (GetCurrentFame() >= FamePointsNeeded)
             {
-                ListViewItem goalItem = new("0")
-                {
-                    Tag = Config.GoalSong
-                };
+                ListViewItem goalItem = new("0") { Tag = Config.GoalSong };
                 goalItem.SubItems.Add(Config.GoalSong.DisplayName);
-                if (lvSongList.InvokeRequired)
-                    lvSongList.Invoke(new Action(() => lvSongList.Items.Add(goalItem)));
-                else
-                    lvSongList.Items.Add(goalItem);
+                lvSongList.SafeInvoke(() => lvSongList.Items.Add(goalItem));
             }
 
             foreach (var i in songs.OrderBy(x => x.Key))
@@ -313,10 +316,7 @@ namespace YargArchipelagoClient
                 if (!string.IsNullOrWhiteSpace(txtFilter.Text) && !i.Value.DisplayName.Contains(txtFilter.Text))
                     continue;
 
-                ListViewItem item = new(i.Key.ToString())
-                {
-                    Tag = i.Value
-                };
+                ListViewItem item = new(i.Key.ToString()) { Tag = i.Value };
                 item.SubItems.Add(i.Value.DisplayName);
 
                 lvSongList.SafeInvoke(() => lvSongList.Items.Add(item));
@@ -324,11 +324,11 @@ namespace YargArchipelagoClient
         }
         private bool HasUncheckedLocations(SongLocation s)
         {
-            if (s.APStandardCheckLocation is long sl && !CheckedLocations.Contains(sl))
+            if (s.HasStandardCheck(out var sl) && !CheckedLocations.Contains(sl))
                 return true;
-            if (s.APExtraCheckLocation is long el && !CheckedLocations.Contains(el))
+            if (s.HasExtraCheck(out var el) && !CheckedLocations.Contains(el))
                 return true;
-            if (s.APFameCheckLocation is long fl && !CheckedLocations.Contains(fl))
+            if (s.HasFameCheck(out var fl) && !CheckedLocations.Contains(fl))
                 return true;
             return false;
         }
@@ -355,10 +355,10 @@ namespace YargArchipelagoClient
                 case "broadcast":
                     if (Config is null) return;
                     Config.BroadcastSongName = !Config.BroadcastSongName;
-                    LogQueue.Enqueue(new ColoredString().AddText($"Broadcasting Songs: {Config.BroadcastSongName}"));
+                    LogQueue.Enqueue(new ColoredString($"Broadcasting Songs: {Config.BroadcastSongName}"));
                     break;
                 default:
-                    LogQueue.Enqueue(new ColoredString().AddText($"{v} is not a valid command"));
+                    LogQueue.Enqueue(new ColoredString($"{v} is not a valid command"));
                     break;
             }
         }

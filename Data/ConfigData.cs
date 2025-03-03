@@ -11,7 +11,7 @@ namespace YargArchipelagoClient.Data
     public class ConfigData()
     {
         /// <summary>
-        /// A list of songs and their data pulled from the users song folder
+        /// A list of songs and their data pulled from the given song folder
         /// </summary>
         public Dictionary<string, SongData> SongData { get; set; } = [];
         /// <summary>
@@ -67,6 +67,36 @@ namespace YargArchipelagoClient.Data
         public SongProfile? Requirements = null;
         public string DisplayName =>
             $"{MappedSong} [{Requirements?.Name}]";
+        public bool HasStandardCheck(out long ID)
+        {
+            ID = APStandardCheckLocation ?? - 1;
+            return APStandardCheckLocation is not null;
+        }
+        public bool HasExtraCheck(out long ID)
+        {
+            ID = APExtraCheckLocation ??- 1;
+            return APExtraCheckLocation is not null;
+        }
+        public bool HasFameCheck(out long ID)
+        {
+            ID = APFameCheckLocation??-1;
+            return APFameCheckLocation is not null;
+        }
+        public SongData? GetSongData(ConfigData config)
+        {
+            if (config is null) return null;
+            if (MappedSong is null) return null;
+            if (!config.SongData.TryGetValue(MappedSong, out var SongData)) return null;
+            return SongData;
+        }
+        public bool FameCheckAvailable(HashSet<long> CheckedLocations, out long FameCheckID)
+        {
+            FameCheckID = -1;
+            if (!HasFameCheck(out _)) return false;
+            bool standardComplete = !HasStandardCheck(out var sl) || CheckedLocations.Contains(sl);
+            bool extraComplete = !HasExtraCheck(out var el) || CheckedLocations.Contains(el);
+            return standardComplete && extraComplete;
+        }
     }
 
     // Custom object to store song data with helper methods.
@@ -74,42 +104,12 @@ namespace YargArchipelagoClient.Data
     {
         public Dictionary<string, string> Data { get; private set; } = data;
 
-        // Checks if the specified key exists.
-        public bool HasKey(string key)
-        {
-            return Data.ContainsKey(key);
-        }
+        public string GetValueOrDefault(string key, string defaultValue = "") =>
+            Data.TryGetValue(key, out var value) ? value : defaultValue;
 
-        // Attempts to get the value associated with the specified key.
-        public bool TryGetValue(string key, out string? value)
-        {
-            return Data.TryGetValue(key, out value);
-        }
+        public int GetIntValueOrDefault(string key, int defaultValue = 0) =>
+            Data.TryGetValue(key, out var value) && int.TryParse(value, out int result) ? result : defaultValue;
 
-        // Returns the value for the specified key or the provided default if the key is missing.
-        public string GetValueOrDefault(string key, string defaultValue = "")
-        {
-            return Data.TryGetValue(key, out var value) ? value : defaultValue;
-        }
-
-        // Attempts to parse the value associated with the key as an integer.
-        public bool TryGetIntValue(string key, out int intValue)
-        {
-            intValue = 0;
-            if (Data.TryGetValue(key, out var value))
-            {
-                return int.TryParse(value, out intValue);
-            }
-            return false;
-        }
-
-        // Returns the integer value for the specified key or the provided default if missing or unparseable.
-        public int GetIntValueOrDefault(string key, int defaultValue = 0)
-        {
-            return Data.TryGetValue(key, out var value) && int.TryParse(value, out int result) ? result : defaultValue;
-        }
-
-        // Common property helpers based on the example ini file.
         public string Name => GetValueOrDefault("name");
         public string Artist => GetValueOrDefault("artist");
         public string Album => GetValueOrDefault("album");
@@ -120,23 +120,20 @@ namespace YargArchipelagoClient.Data
         public string Icon => GetValueOrDefault("icon");
 
         /// <summary>
-        /// Attempts to get a difficulty level for a given instrument by using a string key.
+        /// Attempts to get a difficulty level for a given instrument.
         /// For example, calling TryGetDifficulty("guitar", out int diff) will attempt to get the value from "diff_guitar".
         /// </summary>
         public bool TryGetDifficulty(string instrument, out int difficulty)
         {
+            difficulty = 0;
             string key = $"diff_{instrument.ToLower()}";
-            return TryGetIntValue(key, out difficulty);
+            return Data.TryGetValue(key, out var value) && int.TryParse(value, out difficulty);
         }
-
         /// <summary>
-        /// Overloaded version that accepts an Instrument enum.
+        /// Attempts to get a difficulty level for a given instrument.
+        /// For example, calling TryGetDifficulty(Instrument.Guitar, out int diff) will attempt to get the value from "diff_guitar".
         /// </summary>
-        public bool TryGetDifficulty(Instrument instrument, out int difficulty)
-        {
-            // Convert the enum to a lowercase string and prefix with "diff_"
-            string key = $"diff_{instrument.ToString().ToLower()}";
-            return TryGetIntValue(key, out difficulty);
-        }
+        public bool TryGetDifficulty(Instrument instrument, out int difficulty) => 
+            TryGetDifficulty(instrument.ToString().ToLower(), out difficulty);
     }
 }

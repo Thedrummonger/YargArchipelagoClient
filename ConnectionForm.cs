@@ -2,15 +2,22 @@
 using ArchipelagoPowerTools.Data;
 using ArchipelagoPowerTools.Helpers;
 using Archipelago.MultiClient.Net.Enums;
+using TDMUtils;
+using Newtonsoft.Json;
 
 namespace YargArchipelagoClient
 {
     public partial class ConnectionForm : Form
     {
+        public string ConnectionCachePath = "";
         #region Constructors and Fields
 
         public ConnectionData? Connection = null;
-        public ConnectionForm() => InitializeComponent();
+        public ConnectionForm() 
+        {
+            InitializeComponent();
+            ConnectionCachePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "connection.json");
+        }
 
         #endregion
 
@@ -19,15 +26,28 @@ namespace YargArchipelagoClient
         bool TestingMode = false;
         private void ConnectionForm_Shown(object sender, EventArgs e)
         {
-            if (!TestingMode) return;
+            if (File.Exists(ConnectionCachePath))
+            {
+                try
+                {
+                    var TempConnection = JsonConvert.DeserializeObject<ConnectionData>(File.ReadAllText(ConnectionCachePath));
+                    txtServerAddress.Text = TempConnection!.Address;
+                    txtPassword.Text = TempConnection!.Password;
+                    txtSlotName.Text = TempConnection!.SlotName;
+                }
+                catch { }
+            }
 
-            // Auto connect to my test instance
-            ArchipelagoSession session = ArchipelagoSessionFactory.CreateSession("localhost");
-            Connection = new("localhost", "Player1", "", session);
+            if (TestingMode)
+            {
+                // Auto connect to my test instance
+                ArchipelagoSession session = ArchipelagoSessionFactory.CreateSession("localhost");
+                Connection = new("localhost", "Player1", "", session);
 
-            var result = session.TryConnectAndLogin("Yarg", "Player1", ItemsHandlingFlags.AllItems, new(0, 5, 1), ["AP", "DeathLink"], null);
-            DialogResult = DialogResult.OK;
-            Close();
+                session.TryConnectAndLogin("Yarg", "Player1", ItemsHandlingFlags.AllItems, new(0, 5, 1), ["AP", "DeathLink"], null);
+                DialogResult = DialogResult.OK;
+                Close();
+            }
         }
 
         private void btnConnect_click(object sender, EventArgs e)

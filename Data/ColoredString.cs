@@ -11,6 +11,12 @@ namespace ArchipelagoPowerTools.Data
             words = [];
         }
 
+        public ColoredString(string text)
+        {
+            words = [];
+            AddText(text);
+        }
+
         public ColoredString(string text, Color defaultColor)
         {
             words = [];
