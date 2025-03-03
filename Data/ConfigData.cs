@@ -1,9 +1,4 @@
 ﻿using Archipelago.MultiClient.Net;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static YargArchipelagoClient.Data.Constants;
 
 namespace YargArchipelagoClient.Data
@@ -29,7 +24,7 @@ namespace YargArchipelagoClient.Data
 
         public void ParseAPLocations(ArchipelagoSession archipelagoSession)
         {
-            foreach(var i in archipelagoSession.Locations.AllLocations)
+            foreach (var i in archipelagoSession.Locations.AllLocations)
             {
                 var Name = archipelagoSession.Locations.GetLocationNameFromId(i);
                 if (Name == "Goal Song")
@@ -69,17 +64,17 @@ namespace YargArchipelagoClient.Data
             $"{MappedSong} [{Requirements?.Name}]";
         public bool HasStandardCheck(out long ID)
         {
-            ID = APStandardCheckLocation ?? - 1;
+            ID = APStandardCheckLocation ?? -1;
             return APStandardCheckLocation is not null;
         }
         public bool HasExtraCheck(out long ID)
         {
-            ID = APExtraCheckLocation ??- 1;
+            ID = APExtraCheckLocation ?? -1;
             return APExtraCheckLocation is not null;
         }
         public bool HasFameCheck(out long ID)
         {
-            ID = APFameCheckLocation??-1;
+            ID = APFameCheckLocation ?? -1;
             return APFameCheckLocation is not null;
         }
         public SongData? GetSongData(ConfigData config)
@@ -133,7 +128,7 @@ namespace YargArchipelagoClient.Data
         /// Attempts to get a difficulty level for a given instrument.
         /// For example, calling TryGetDifficulty(Instrument.Guitar, out int diff) will attempt to get the value from "diff_guitar".
         /// </summary>
-        public bool TryGetDifficulty(Instrument instrument, out int difficulty) => 
+        public bool TryGetDifficulty(Instrument instrument, out int difficulty) =>
             TryGetDifficulty(instrument.ToString().ToLower(), out difficulty);
     }
 }

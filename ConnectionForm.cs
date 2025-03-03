@@ -1,8 +1,7 @@
 ﻿using Archipelago.MultiClient.Net;
+using Archipelago.MultiClient.Net.Enums;
 using ArchipelagoPowerTools.Data;
 using ArchipelagoPowerTools.Helpers;
-using Archipelago.MultiClient.Net.Enums;
-using TDMUtils;
 using Newtonsoft.Json;
 
 namespace YargArchipelagoClient
@@ -13,7 +12,7 @@ namespace YargArchipelagoClient
         #region Constructors and Fields
 
         public ConnectionData? Connection = null;
-        public ConnectionForm() 
+        public ConnectionForm()
         {
             InitializeComponent();
             ConnectionCachePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "connection.json");

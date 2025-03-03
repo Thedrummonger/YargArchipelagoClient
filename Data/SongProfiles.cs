@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace YargArchipelagoClient.Data
+﻿namespace YargArchipelagoClient.Data
 {
     public class SongProfile(string name, Constants.Instrument instrument)
     {

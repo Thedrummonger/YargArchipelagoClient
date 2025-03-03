@@ -164,28 +164,28 @@ namespace YargArchipelagoClient
                 if (btnCheckCount > 1)
                     buttons.Add(CustomMessageResult.Both);
 
-                var result = ModifierKeys == Keys.Control ? 
-                    CustomMessageResult.Both : 
+                var result = ModifierKeys == Keys.Control ?
+                    CustomMessageResult.Both :
                     APSongMessageBox.Show(
                     $"Check Song {songLocation.SongNumber} [{songLocation.MappedSong}]",
                     $"{songLocation.MappedSong}",
                     [.. buttons]);
 
-                if (result.In(CustomMessageResult.Reward1, CustomMessageResult.Both) && 
+                if (result.In(CustomMessageResult.Reward1, CustomMessageResult.Both) &&
                     songLocation.HasStandardCheck(out var sl1) &&
                     !CheckedLocations.Contains(sl1))
                     ToCheck.Add(sl1);
-                if (result.In(CustomMessageResult.Reward2, CustomMessageResult.Both) && 
+                if (result.In(CustomMessageResult.Reward2, CustomMessageResult.Both) &&
                     songLocation.HasExtraCheck(out var el1) &&
                     !CheckedLocations.Contains(el1))
                     ToCheck.Add(el1);
 
-                if (songLocation.FameCheckAvailable([..CheckedLocations, .. ToCheck], out var fl2) &&
+                if (songLocation.FameCheckAvailable([.. CheckedLocations, .. ToCheck], out var fl2) &&
                     !CheckedLocations.Contains(fl2))
                     ToCheck.Add(fl2);
 
                 if (ToCheck.Count > 0) CheckStateChanged.Add(songLocation);
-                locationIDs = [..locationIDs, ..ToCheck];
+                locationIDs = [.. locationIDs, .. ToCheck];
             }
 
             if (Config!.BroadcastSongName)
@@ -202,7 +202,7 @@ namespace YargArchipelagoClient
             UpdateLocationsChecked();
             SyncTimerTick(sender, e);
         }
-        
+
 
         #endregion
 

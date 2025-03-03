@@ -14,9 +14,9 @@ namespace ArchipelagoPowerTools.Helpers
         }
         public static void SafeInvoke(this Control control, Action action)
         {
-            if (control.InvokeRequired) 
+            if (control.InvokeRequired)
                 control.Invoke(action);
-            else 
+            else
                 action();
         }
         public enum CustomMessageResult

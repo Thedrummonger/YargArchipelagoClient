@@ -1,6 +1,4 @@
 ﻿using Archipelago.MultiClient.Net;
-using YargArchipelagoClient.Data;
-using static ArchipelagoPowerTools.Data.ColoredStringHelper;
 
 namespace ArchipelagoPowerTools.Data
 {

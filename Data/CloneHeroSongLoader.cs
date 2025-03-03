@@ -29,7 +29,7 @@ namespace YargArchipelagoClient.Data
                     if (string.IsNullOrEmpty(trimmedLine) || (trimmedLine.StartsWith("[") && trimmedLine.EndsWith("]")))
                         continue;
                     int separatorIndex = trimmedLine.IndexOf('=');
-                    if (separatorIndex == 0) 
+                    if (separatorIndex == 0)
                         continue;
                     string key = trimmedLine[..separatorIndex].Trim();
                     string value = trimmedLine[(separatorIndex + 1)..].Trim();
