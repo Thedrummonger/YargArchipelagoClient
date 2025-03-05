@@ -1,4 +1,6 @@
-﻿namespace YargArchipelagoClient.Data
+﻿using System.ComponentModel;
+
+namespace YargArchipelagoClient.Data
 {
     public static class Constants
     {
@@ -20,6 +22,26 @@
             SixStar,
             SevenStar,
             FullCombo
+        }
+        public enum Difficulty
+        {
+            Easy,
+            Medium,
+            Hard,
+            Expert
+        }
+        public enum StaticItems
+        {
+            [Description("Victory")]
+            Victory,
+            [Description("Fame Point")]
+            FamePoint,
+            [Description("Swap Song (Random)")]
+            SwapRandom,
+            [Description("Swap Song (Pick)")]
+            SwapPick,
+            [Description("Restart Trap")]
+            TrapRestart
         }
     }
 }

@@ -130,6 +130,7 @@ namespace YargArchipelagoClient
             // 
             lvSongList.Columns.AddRange(new ColumnHeader[] { columnID, columnSongName });
             lvSongList.Dock = DockStyle.Fill;
+            lvSongList.FullRowSelect = true;
             lvSongList.Location = new Point(3, 33);
             lvSongList.Name = "lvSongList";
             lvSongList.Size = new Size(388, 408);
@@ -137,6 +138,7 @@ namespace YargArchipelagoClient
             lvSongList.UseCompatibleStateImageBehavior = false;
             lvSongList.View = View.Details;
             lvSongList.DoubleClick += lvSongList_DoubleClick;
+            lvSongList.MouseUp += lvSongList_MouseUp;
             lvSongList.Resize += lvSongList_Resize;
             // 
             // columnID

@@ -4,6 +4,7 @@ namespace ArchipelagoPowerTools.Data
 {
     public class ConnectionData(string? address, string slotname, string password, ArchipelagoSession session)
     {
+        public Random SeededRNG;
         private ArchipelagoSession Session = session;
         public string? Address { get; private set; } = address;
         public string? SlotName { get; private set; } = slotname;

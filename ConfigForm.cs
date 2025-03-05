@@ -29,8 +29,10 @@ namespace YargArchipelagoClient
             gbProfile.Enabled = false;
             gbAdd.Enabled = false;
             cmbAddInstrument.DataSource = Enum.GetValues(typeof(Instrument)).Cast<Instrument>().ToArray();
-            cmbProfileReqs.DataSource = Enum.GetValues(typeof(CompletionReq)).Cast<CompletionReq>().ToArray();
-            cmbProfileExtraReqs.DataSource = Enum.GetValues(typeof(CompletionReq)).Cast<CompletionReq>().ToArray();
+            cmbProfileReward1Diff.DataSource = Enum.GetValues(typeof(Difficulty)).Cast<Difficulty>().ToArray();
+            cmbProfileReward2Diff.DataSource = Enum.GetValues(typeof(Difficulty)).Cast<Difficulty>().ToArray();
+            cmbProfileReward1Score.DataSource = Enum.GetValues(typeof(CompletionReq)).Cast<CompletionReq>().ToArray();
+            cmbProfileReward2Score.DataSource = Enum.GetValues(typeof(CompletionReq)).Cast<CompletionReq>().ToArray();
             UpdateSongReqLabel();
         }
 
@@ -57,8 +59,10 @@ namespace YargArchipelagoClient
             profile.MinDifficulty = (int)nudProfileMinDifficulty.Value;
             profile.MaxDifficulty = (int)nudProfileMaxDifficulty.Value;
             profile.AmountInPool = (int)nudProfileAmount.Value;
-            profile.CompletionRequirement = cmbProfileReqs.SelectedIndex < 0 ? CompletionReq.Clear : (CompletionReq)cmbProfileReqs.SelectedIndex;
-            profile.ExtraRequirement = cmbProfileExtraReqs.SelectedIndex < 0 ? CompletionReq.Clear : (CompletionReq)cmbProfileExtraReqs.SelectedIndex;
+            profile.CompletionRequirement.Reward1Req = cmbProfileReward1Score.SelectedIndex < 0 ? CompletionReq.Clear : (CompletionReq)cmbProfileReward1Score.SelectedIndex;
+            profile.CompletionRequirement.Reward2Req = cmbProfileReward2Score.SelectedIndex < 0 ? CompletionReq.Clear : (CompletionReq)cmbProfileReward2Score.SelectedIndex;
+            profile.CompletionRequirement.Reward1Diff = cmbProfileReward1Diff.SelectedIndex < 0 ? Difficulty.Expert : (Difficulty)cmbProfileReward1Diff.SelectedIndex;
+            profile.CompletionRequirement.Reward2Diff = cmbProfileReward2Diff.SelectedIndex < 0 ? Difficulty.Expert : (Difficulty)cmbProfileReward2Diff.SelectedIndex;
 
             var MaxAmount = GetMaxSongsForProfile(profile);
             if (profile.AmountInPool > MaxAmount)
@@ -91,8 +95,10 @@ namespace YargArchipelagoClient
             nudProfileMinDifficulty.Value = profile.MinDifficulty;
             nudProfileMaxDifficulty.Value = profile.MaxDifficulty;
             nudProfileAmount.Value = profile.AmountInPool;
-            cmbProfileReqs.SelectedItem = profile.CompletionRequirement;
-            cmbProfileExtraReqs.SelectedItem = profile.ExtraRequirement;
+            cmbProfileReward1Diff.SelectedItem = profile.CompletionRequirement.Reward1Diff;
+            cmbProfileReward2Diff.SelectedItem = profile.CompletionRequirement.Reward2Diff;
+            cmbProfileReward1Score.SelectedItem = profile.CompletionRequirement.Reward1Req;
+            cmbProfileReward2Score.SelectedItem = profile.CompletionRequirement.Reward2Req;
             gbProfile.Text = $"{profile.Name}: ({profile.instrument})";
 
             ProfileChanging = false;
@@ -143,9 +149,6 @@ namespace YargArchipelagoClient
                 return;
             }
 
-            string seed = Connection.GetSession()!.RoomState.Seed;
-            int seedValue = seed.GetHashCode();
-            Random rng = new(seedValue);
             List<(string Name, SongData Data, SongProfile profile)> PickedSongs = [];
             foreach (var p in Profiles)
             {
@@ -154,7 +157,7 @@ namespace YargArchipelagoClient
 
                 for (int i = 0; i < p.AmountInPool; i++)
                 {
-                    int randomIndex = rng.Next(availableSongKeys.Count);
+                    int randomIndex = Connection.SeededRNG.Next(availableSongKeys.Count);
                     string chosenKey = availableSongKeys[randomIndex];
                     PickedSongs.Add((chosenKey, ValidSongs[chosenKey], p));
                     availableSongKeys.RemoveAt(randomIndex);
@@ -162,7 +165,7 @@ namespace YargArchipelagoClient
             }
             foreach (var i in data.ApLocationData)
             {
-                int randomIndex = rng.Next(PickedSongs.Count);
+                int randomIndex = Connection.SeededRNG.Next(PickedSongs.Count);
                 var pickedSong = PickedSongs[randomIndex];
                 i.Value.MappedSong = pickedSong.Name;
                 i.Value.Requirements = pickedSong.profile;

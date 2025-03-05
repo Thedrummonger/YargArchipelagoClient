@@ -7,8 +7,7 @@
         public int AmountInPool = 0;
         public int MinDifficulty = 3;
         public int MaxDifficulty = 6;
-        public Constants.CompletionReq CompletionRequirement = Constants.CompletionReq.Clear;
-        public Constants.CompletionReq ExtraRequirement = Constants.CompletionReq.FiveStar;
+        public CompletionRequirement CompletionRequirement = new();
         public override string ToString()
         {
             return Name;
@@ -22,5 +21,13 @@
                 difficulty <= MaxDifficulty);
             return Data.ToDictionary(x => x.Key, x => x.Value);
         }
+    }
+
+    public class CompletionRequirement()
+    {
+        public Constants.CompletionReq Reward1Req = Constants.CompletionReq.Clear;
+        public Constants.CompletionReq Reward2Req = Constants.CompletionReq.ThreeStar;
+        public Constants.Difficulty Reward1Diff = Constants.Difficulty.Expert;
+        public Constants.Difficulty Reward2Diff = Constants.Difficulty.Expert;
     }
 }

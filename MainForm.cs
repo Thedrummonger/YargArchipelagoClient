@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using TDMUtils;
 using YargArchipelagoClient.Data;
+using YargArchipelagoClient.Helpers;
 using static ArchipelagoPowerTools.Data.ColoredStringHelper;
 using static ArchipelagoPowerTools.Helpers.WinFormHelpers;
 
@@ -14,13 +15,13 @@ namespace YargArchipelagoClient
     public partial class MainForm : Form
     {
         // Fields using target-typed new expressions
-        private ConnectionData Connection;
-        private ConfigData? Config;
-        private HashSet<int> ReceivedSongs = [];
-        private Dictionary<string, int> ReceivedFiller = [];
-        private HashSet<long> CheckedLocations = [];
-        private int FamePointsNeeded = 0;
-        private Dictionary<string, object?> SlotData;
+        public ConnectionData Connection;
+        public ConfigData? Config;
+        public HashSet<int> ReceivedSongs = [];
+        public Dictionary<string, int> ReceivedFiller = [];
+        public HashSet<long> CheckedLocations = [];
+        public int FamePointsNeeded = 0;
+        public Dictionary<string, object?> SlotData;
 
         private readonly ConcurrentQueue<ColoredString> LogQueue = [];
         private readonly SemaphoreSlim LogSignal = new(0);
@@ -92,7 +93,7 @@ namespace YargArchipelagoClient
                     return;
                 }
                 Config = configForm.data!;
-                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "seeds", getSaveFileName()), Config.ToFormattedJson());
+                UpdateConfigFile();
             }
 
             UpdateLocationsChecked();
@@ -106,6 +107,12 @@ namespace YargArchipelagoClient
                 CForm.Connection is not null &&
                 CForm.Connection.GetSession() is not null &&
                 CForm.Connection.GetSession()!.Socket.Connected;
+        }
+
+        public void UpdateConfigFile()
+        {
+            if (Config is null) return;
+            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "seeds", getSaveFileName()), Config.ToFormattedJson());
         }
 
         private string getSaveFileName()
@@ -187,10 +194,14 @@ namespace YargArchipelagoClient
                 if (ToCheck.Count > 0) CheckStateChanged.Add(songLocation);
                 locationIDs = [.. locationIDs, .. ToCheck];
             }
+            CheckLocations(locationIDs, CheckStateChanged);
+        }
 
+        public void CheckLocations(IEnumerable<long> Locations, IEnumerable<SongLocation> songLocations)
+        {
             if (Config!.BroadcastSongName)
             {
-                foreach (var i in CheckStateChanged)
+                foreach (var i in songLocations)
                 {
                     var SongData = i.GetSongData(Config!);
                     if (SongData is null) continue;
@@ -198,11 +209,10 @@ namespace YargArchipelagoClient
                     Connection.GetSession().Say(SongMessage);
                 }
             }
-            Connection!.GetSession().Locations.CompleteLocationChecks([.. locationIDs]);
+            Connection!.GetSession().Locations.CompleteLocationChecks([.. Locations]);
             UpdateLocationsChecked();
-            SyncTimerTick(sender, e);
+            SyncTimerTick(null, new());
         }
-
 
         #endregion
 
@@ -280,25 +290,24 @@ namespace YargArchipelagoClient
                     ReceivedSongs.Add(songNum);
                 else
                 {
-                    if (!ReceivedFiller.ContainsKey(i.ItemName))
-                        ReceivedFiller[i.ItemName] = 0;
+                    ReceivedFiller.SetIfEmpty(i.ItemName, 0);
                     ReceivedFiller[i.ItemName]++;
                 }
             }
 
-            if (ReceivedFiller.TryGetValue("Victory", out var v) && v > 0)
+            if (ReceivedFiller.TryGetValue(Constants.StaticItems.Victory.GetDescription(), out var v) && v > 0)
                 session.SetGoalAchieved();
 
             Debug.WriteLine($"FP Goal {GetCurrentFame()}/{FamePointsNeeded}");
         }
         private int GetCurrentFame() =>
-            ReceivedFiller.TryGetValue("Fame Point", out var famePoints) ? famePoints : 0;
+            ReceivedFiller.TryGetValue(Constants.StaticItems.FamePoint.GetDescription(), out var famePoints) ? famePoints : 0;
 
-        private void PrintSongs()
+        public void PrintSongs()
         {
             lvSongList.SafeInvoke(lvSongList.Items.Clear);
 
-            Dictionary<int, SongLocation> songs = Config.ApLocationData;
+            Dictionary<int, SongLocation> songs = Config!.ApLocationData;
 
             if (GetCurrentFame() >= FamePointsNeeded)
             {
@@ -355,6 +364,7 @@ namespace YargArchipelagoClient
                 case "broadcast":
                     if (Config is null) return;
                     Config.BroadcastSongName = !Config.BroadcastSongName;
+                    UpdateConfigFile();
                     LogQueue.Enqueue(new ColoredString($"Broadcasting Songs: {Config.BroadcastSongName}"));
                     break;
                 default:
@@ -362,5 +372,16 @@ namespace YargArchipelagoClient
                     break;
             }
         }
+
+        private void lvSongList_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right) return;
+
+            var hit = lvSongList.HitTest(e.Location);
+            if (hit.Item is ListViewItem item && item.Tag is SongLocation Song)
+                ContextMenuHelper.BuildSongListContextMenu(this, item, Song).Show(lvSongList, e.Location);
+
+        }
+
     }
 }

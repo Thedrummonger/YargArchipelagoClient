@@ -1,4 +1,5 @@
 ﻿using Archipelago.MultiClient.Net;
+using System.Diagnostics;
 using static YargArchipelagoClient.Data.Constants;
 
 namespace YargArchipelagoClient.Data
@@ -17,6 +18,8 @@ namespace YargArchipelagoClient.Data
         /// The goal song info
         /// </summary>
         public SongLocation GoalSong = new(0);
+
+        public Dictionary<string, int> UsedFiller = [];
 
         public bool BroadcastSongName = false;
 
@@ -86,8 +89,7 @@ namespace YargArchipelagoClient.Data
         }
         public bool FameCheckAvailable(HashSet<long> CheckedLocations, out long FameCheckID)
         {
-            FameCheckID = -1;
-            if (!HasFameCheck(out _)) return false;
+            if (!HasFameCheck(out FameCheckID)) return false;
             bool standardComplete = !HasStandardCheck(out var sl) || CheckedLocations.Contains(sl);
             bool extraComplete = !HasExtraCheck(out var el) || CheckedLocations.Contains(el);
             return standardComplete && extraComplete;

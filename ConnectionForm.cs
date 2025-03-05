@@ -75,6 +75,9 @@ namespace YargArchipelagoClient
             }
 
             Connection = data;
+            string seed = Connection.GetSession()!.RoomState.Seed;
+            int seedValue = seed.GetHashCode();
+            Connection.SeededRNG = new(seedValue);
             DialogResult = DialogResult.OK;
             Close();
         }

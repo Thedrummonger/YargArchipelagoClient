@@ -26,7 +26,7 @@ namespace YargArchipelagoClient.Data
                 foreach (string line in lines)
                 {
                     string trimmedLine = line.Trim();
-                    if (string.IsNullOrEmpty(trimmedLine) || (trimmedLine.StartsWith("[") && trimmedLine.EndsWith("]")))
+                    if (string.IsNullOrEmpty(trimmedLine) || (trimmedLine.StartsWith("[") && trimmedLine.EndsWith("]")) || trimmedLine.StartsWith(";"))
                         continue;
                     int separatorIndex = trimmedLine.IndexOf('=');
                     if (separatorIndex == 0)
