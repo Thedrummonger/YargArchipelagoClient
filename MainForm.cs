@@ -1,3 +1,4 @@
+using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
 using ArchipelagoPowerTools.Data;
 using ArchipelagoPowerTools.Helpers;
@@ -22,6 +23,8 @@ namespace YargArchipelagoClient
         public HashSet<long> CheckedLocations = [];
         public int FamePointsNeeded = 0;
         public Dictionary<string, object?> SlotData;
+        public DeathLinkService deathLinkService;
+        public bool deathLinkEnabled = false;
 
         private readonly ConcurrentQueue<ColoredString> LogQueue = [];
         private readonly SemaphoreSlim LogSignal = new(0);
@@ -52,6 +55,7 @@ namespace YargArchipelagoClient
             }
 
             Connection = CForm.Connection!;
+            deathLinkService = Connection!.GetSession().CreateDeathLinkService();
 
             File.WriteAllText(CForm.ConnectionCachePath, Connection.ToFormattedJson());
 
@@ -66,11 +70,18 @@ namespace YargArchipelagoClient
             Connection!.GetSession().Items.ItemReceived += Items_ItemReceived;
             Connection!.GetSession().MessageLog.OnMessageReceived += MessageLog_OnMessageReceived;
             Connection!.GetSession().Locations.CheckedLocationsUpdated += Locations_CheckedLocationsUpdated;
+            deathLinkService.OnDeathLinkReceived += DeathLinkService_OnDeathLinkReceived;
 
             if (SlotData["fame_points_for_goal"] is Int64 FPSlotDataval)
                 FamePointsNeeded = (int)FPSlotDataval;
             else
                 throw new Exception("Could not get Fame Point Goal");
+
+            if (SlotData.TryGetValue("death_link", out var DLO) && DLO is Int64 DLI && DLI > 0)
+            {
+                deathLinkEnabled = true;
+                deathLinkService.EnableDeathLink();
+            }
 
             var SeedDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "seeds");
             if (!Directory.Exists(SeedDir))
@@ -107,6 +118,12 @@ namespace YargArchipelagoClient
                 CForm.Connection is not null &&
                 CForm.Connection.GetSession() is not null &&
                 CForm.Connection.GetSession()!.Socket.Connected;
+        }
+
+        private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink)
+        {
+            if (!deathLinkEnabled) return;
+            MessageBox.Show(deathLink.Cause, $"DeathLink {deathLink.Source}", MessageBoxButtons.OK, MessageBoxIcon.Hand);
         }
 
         public void UpdateConfigFile()
@@ -202,16 +219,18 @@ namespace YargArchipelagoClient
             if (Config!.BroadcastSongName)
             {
                 foreach (var i in songLocations)
-                {
-                    var SongData = i.GetSongData(Config!);
-                    if (SongData is null) continue;
-                    string SongMessage = $"[Song {i.SongNumber}] {SongData.Name} by {SongData.Artist}";
-                    Connection.GetSession().Say(SongMessage);
-                }
+                    Connection.GetSession().Say(GetSongBroadcastDisplayString(i, Config));
             }
             Connection!.GetSession().Locations.CompleteLocationChecks([.. Locations]);
             UpdateLocationsChecked();
             SyncTimerTick(null, new());
+        }
+
+        public static string GetSongBroadcastDisplayString(SongLocation Song, ConfigData config)
+        {
+            var SongData = Song.GetSongData(config);
+            if (SongData is null) return Song.DisplayName!;
+            return $"[Song {Song.SongNumber}] {SongData.Name} by {SongData.Artist}";
         }
 
         #endregion
@@ -247,9 +266,8 @@ namespace YargArchipelagoClient
             if (Config is null) return;
             if (!Config.ApLocationData.TryGetValue(songNum, out var Song)) return;
             if (Song.MappedSong is null) return;
-            if (!Config.SongData.TryGetValue(Song.MappedSong, out var SongData)) return;
 
-            string SongMessage = $"[Song {songNum}] {SongData.Name} by {SongData.Artist}";
+            string SongMessage = GetSongBroadcastDisplayString(Song, Config);
             if (Config.BroadcastSongName)
                 Connection.GetSession().Say(SongMessage);
             else

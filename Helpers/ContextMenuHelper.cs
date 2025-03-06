@@ -38,6 +38,14 @@ namespace YargArchipelagoClient.Helpers
                     menu.Items.AddItem($"{Constants.StaticItems.SwapPick.GetDescription()}: {SwapsAvailable}", () => SwapSong(mainForm, song, false));
             }
 
+            if (mainForm.deathLinkEnabled)
+            {
+                menu.Items.Add(new ToolStripSeparator());
+                menu.Items.AddItem("Send Song Fail Death Link", () => 
+                    mainForm.deathLinkService.SendDeathLink(new(mainForm.Connection.SlotName, 
+                    $"Failed {MainForm.GetSongBroadcastDisplayString(song, mainForm.Config)}")));
+            }
+
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.AddItem($"Completion Requirements:");
             if (song.HasStandardCheck(out _))
