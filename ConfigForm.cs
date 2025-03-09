@@ -1,7 +1,11 @@
 ﻿using ArchipelagoPowerTools.Data;
+using Newtonsoft.Json;
 using System.Data;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using TDMUtils;
 using YargArchipelagoClient.Data;
-using static YargArchipelagoClient.Data.Constants;
+using static YargArchipelagoClient.Data.CommonData;
 
 namespace YargArchipelagoClient
 {
@@ -11,9 +15,11 @@ namespace YargArchipelagoClient
 
         public ConfigData data;
         private ConnectionData Connection;
-        private List<SongProfile> Profiles = [];
+        private List<SongPool> Pools = [];
 
-        bool ProfileChanging = false;
+        bool PoolUpdating = false;
+
+        bool SongError = false;
 
         #endregion
 
@@ -23,143 +29,171 @@ namespace YargArchipelagoClient
         {
             InitializeComponent();
             Connection = connection;
-            cmbSelectedProfile.DataSource = Profiles;
+            cmbSelectedPool.DataSource = Pools;
             data = new ConfigData();
             data.ParseAPLocations(connection.GetSession());
-            gbProfile.Enabled = false;
-            gbAdd.Enabled = false;
-            cmbAddInstrument.DataSource = Enum.GetValues(typeof(Instrument)).Cast<Instrument>().ToArray();
-            cmbProfileReward1Diff.DataSource = Enum.GetValues(typeof(Difficulty)).Cast<Difficulty>().ToArray();
-            cmbProfileReward2Diff.DataSource = Enum.GetValues(typeof(Difficulty)).Cast<Difficulty>().ToArray();
-            cmbProfileReward1Score.DataSource = Enum.GetValues(typeof(CompletionReq)).Cast<CompletionReq>().ToArray();
-            cmbProfileReward2Score.DataSource = Enum.GetValues(typeof(CompletionReq)).Cast<CompletionReq>().ToArray();
+            if (!TryReadSongs(out var SongData))
+            {
+                DialogResult = DialogResult.Abort;
+                SongError = true;
+                return;
+            }
+            data.SongData = SongData;
+            gbCurrentPool.Enabled = false;
+            gbSongPoolSelect.Enabled = Pools.Count > 0;
+            cmbAddInstrument.DataSource = Enum.GetValues(typeof(CommonData.SupportedInstrument)).Cast<CommonData.SupportedInstrument>().ToArray();
+            cmbPoolReward1Diff.DataSource = Enum.GetValues(typeof(CommonData.SupportedDifficulty)).Cast<CommonData.SupportedDifficulty>().ToArray();
+            cmbPoolReward2Diff.DataSource = Enum.GetValues(typeof(CommonData.SupportedDifficulty)).Cast<CommonData.SupportedDifficulty>().ToArray();
+            cmbPoolReward1Score.DataSource = Enum.GetValues(typeof(CommonData.CompletionReq)).Cast<CommonData.CompletionReq>().ToArray();
+            cmbPoolReward2Score.DataSource = Enum.GetValues(typeof(CommonData.CompletionReq)).Cast<CommonData.CompletionReq>().ToArray();
             UpdateSongReqLabel();
+        }
+
+        private bool TryReadSongs(out Dictionary<string, CommonData.SongData> data)
+        {
+            string Error = "Your available song data was missing or corrupt. Please run the AP build of YARG at least once before launching the client.\n\n" +
+                "You may also need to point YARG a valid song path and run a scan for any newly added songs.\nThis can be found in Settings -> Songs in YARG.";
+            data = [];
+            if (!Directory.Exists(CommonData.DataFolder) || !File.Exists(CommonData.SongExportFile))
+            {
+                MessageBox.Show(Error, "Song Cache Missing");
+                return false;
+            }
+            try
+            {
+                CommonData.SongData[]? songData = JsonConvert.DeserializeObject<CommonData.SongData[]>(File.ReadAllText(CommonData.SongExportFile));
+                if (songData is null || songData.Length == 0)
+                {
+                    MessageBox.Show(Error, "Song Cache Corrupt");
+                    return false;
+                }
+                foreach (var d in songData)
+                    data.Add(d.SongChecksum, d);
+            }
+            catch
+            {
+                MessageBox.Show(Error, "Song Cache Corrupt");
+                return false;
+            }
+            return true;
         }
 
         #endregion
 
         #region Event Handlers
 
-        private void btnScanSongs_Click(object sender, EventArgs e) => ApplySongs(Connection);
-
-        private void btnBrowse_Click(object sender, EventArgs e)
+        private void SongPoolValueUpdated(object sender, EventArgs e)
         {
-            FolderBrowserDialog SongPathSelect = new();
-            var R = SongPathSelect.ShowDialog();
-            if (R == DialogResult.OK && !string.IsNullOrWhiteSpace(SongPathSelect.SelectedPath))
-                txtSongPath.Text = SongPathSelect.SelectedPath;
-        }
+            if (PoolUpdating) return;
+            if (cmbSelectedPool.SelectedItem is not SongPool Pool) return;
+            PoolUpdating = true;
 
-        private void ProfileValueUpdated(object sender, EventArgs e)
-        {
-            if (ProfileChanging) return;
-            if (cmbSelectedProfile.SelectedItem is not SongProfile profile) return;
-            ProfileChanging = true;
+            Pool.MinDifficulty = (int)nudPoolMinDifficulty.Value;
+            Pool.MaxDifficulty = (int)nudPoolMaxDifficulty.Value;
+            Pool.AmountInPool = (int)nudPoolAmount.Value;
+            Pool.CompletionRequirement.Reward1Req = cmbPoolReward1Score.SelectedItem is CommonData.CompletionReq r1 ? r1 : CommonData.CompletionReq.Clear;
+            Pool.CompletionRequirement.Reward2Req = cmbPoolReward2Score.SelectedItem is CommonData.CompletionReq r2 ? r2 : CommonData.CompletionReq.Clear;
+            Pool.CompletionRequirement.Reward1Diff = cmbPoolReward1Diff.SelectedItem is CommonData.SupportedDifficulty d1 ? d1 : CommonData.SupportedDifficulty.Expert;
+            Pool.CompletionRequirement.Reward2Diff = cmbPoolReward2Diff.SelectedItem is CommonData.SupportedDifficulty d2 ? d2 : CommonData.SupportedDifficulty.Expert;
 
-            profile.MinDifficulty = (int)nudProfileMinDifficulty.Value;
-            profile.MaxDifficulty = (int)nudProfileMaxDifficulty.Value;
-            profile.AmountInPool = (int)nudProfileAmount.Value;
-            profile.CompletionRequirement.Reward1Req = cmbProfileReward1Score.SelectedIndex < 0 ? CompletionReq.Clear : (CompletionReq)cmbProfileReward1Score.SelectedIndex;
-            profile.CompletionRequirement.Reward2Req = cmbProfileReward2Score.SelectedIndex < 0 ? CompletionReq.Clear : (CompletionReq)cmbProfileReward2Score.SelectedIndex;
-            profile.CompletionRequirement.Reward1Diff = cmbProfileReward1Diff.SelectedIndex < 0 ? Difficulty.Expert : (Difficulty)cmbProfileReward1Diff.SelectedIndex;
-            profile.CompletionRequirement.Reward2Diff = cmbProfileReward2Diff.SelectedIndex < 0 ? Difficulty.Expert : (Difficulty)cmbProfileReward2Diff.SelectedIndex;
-
-            var MaxAmount = GetMaxSongsForProfile(profile);
-            if (profile.AmountInPool > MaxAmount)
+            var MaxAmount = GetMaxSongsForSongPool(Pool);
+            if (Pool.AmountInPool > MaxAmount)
             {
-                profile.AmountInPool = MaxAmount;
-                nudProfileAmount.Value = MaxAmount;
-                nudProfileAmount.Maximum = MaxAmount;
+                Pool.AmountInPool = MaxAmount;
+                nudPoolAmount.Value = MaxAmount;
+                nudPoolAmount.Maximum = MaxAmount;
             }
 
-            ProfileChanging = false;
+            PoolUpdating = false;
 
-            lblDisplay.Text = $"Available songs for Profile [{profile.Name}]: {profile.GetAvailableSongs(data.SongData).Count}";
+            lblDisplay.Text = $"Valid songs for [{Pool.Name}]: {Pool.GetAvailableSongs(data.SongData).Count}";
             UpdateSongReqLabel();
         }
 
-        private void cmbSelectedProfile_SelectedIndexChanged(object sender, EventArgs e)
+        private void cmbSelectedPool_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (cmbSelectedProfile.SelectedItem is not SongProfile profile)
+            if (cmbSelectedPool.SelectedItem is not SongPool SongPool)
             {
-                gbProfile.Enabled = false;
+                gbCurrentPool.Enabled = false;
                 return;
             }
 
-            ProfileChanging = true;
+            PoolUpdating = true;
 
-            var MaxAmount = GetMaxSongsForProfile(profile);
-            nudProfileAmount.Value = 0;
-            nudProfileAmount.Maximum = MaxAmount;
+            var MaxAmount = GetMaxSongsForSongPool(SongPool);
+            nudPoolAmount.Value = 0;
+            nudPoolAmount.Maximum = MaxAmount;
 
-            nudProfileMinDifficulty.Value = profile.MinDifficulty;
-            nudProfileMaxDifficulty.Value = profile.MaxDifficulty;
-            nudProfileAmount.Value = profile.AmountInPool;
-            cmbProfileReward1Diff.SelectedItem = profile.CompletionRequirement.Reward1Diff;
-            cmbProfileReward2Diff.SelectedItem = profile.CompletionRequirement.Reward2Diff;
-            cmbProfileReward1Score.SelectedItem = profile.CompletionRequirement.Reward1Req;
-            cmbProfileReward2Score.SelectedItem = profile.CompletionRequirement.Reward2Req;
-            gbProfile.Text = $"{profile.Name}: ({profile.instrument})";
+            nudPoolMinDifficulty.Value = SongPool.MinDifficulty;
+            nudPoolMaxDifficulty.Value = SongPool.MaxDifficulty;
+            nudPoolAmount.Value = SongPool.AmountInPool;
+            cmbPoolReward1Diff.SelectedItem = SongPool.CompletionRequirement.Reward1Diff;
+            cmbPoolReward2Diff.SelectedItem = SongPool.CompletionRequirement.Reward2Diff;
+            cmbPoolReward1Score.SelectedItem = SongPool.CompletionRequirement.Reward1Req;
+            cmbPoolReward2Score.SelectedItem = SongPool.CompletionRequirement.Reward2Req;
+            gbCurrentPool.Text = $"{SongPool.Name}: ({SongPool.Instrument})";
 
-            ProfileChanging = false;
+            PoolUpdating = false;
 
-            lblDisplay.Text = $"Valid songs for [{profile.Name}]: {profile.GetAvailableSongs(data.SongData).Count}";
-            gbProfile.Enabled = true;
+            lblDisplay.Text = $"Valid songs for [{SongPool.Name}]: {SongPool.GetAvailableSongs(data.SongData).Count}";
+            gbCurrentPool.Enabled = true;
         }
 
-        private void btnAddProfile_Click(object sender, EventArgs e)
+        private void btnAddSongPool_Click(object sender, EventArgs e)
         {
-            if (cmbAddInstrument.SelectedIndex < 0) return;
-            if (string.IsNullOrWhiteSpace(txtAddProfileName.Text))
+            if (cmbAddInstrument.SelectedItem is not SupportedInstrument instrument) return;
+            if (string.IsNullOrWhiteSpace(txtAddSongPoolName.Text))
             {
-                MessageBox.Show("Invalid Profile Name");
+                MessageBox.Show("Invalid Song Pool Name");
                 return;
             }
-            if (Profiles.Any(x => x.Name == txtAddProfileName.Text))
+            if (Pools.Any(x => x.Name == txtAddSongPoolName.Text))
             {
-                MessageBox.Show("Profile Name already in use");
+                MessageBox.Show("Name already in use");
                 return;
             }
-            SongProfile newProfile = new(txtAddProfileName.Text, (Instrument)cmbAddInstrument.SelectedIndex);
-            Profiles.Add(newProfile);
-            txtAddProfileName.Text = string.Empty;
-            cmbSelectedProfile.DataSource = null;
-            cmbSelectedProfile.DataSource = Profiles;
-            cmbSelectedProfile.SelectedItem = newProfile;
+            SongPool newSongPool = new(txtAddSongPoolName.Text, instrument);
+            Pools.Add(newSongPool);
+            txtAddSongPoolName.Text = string.Empty;
+            cmbSelectedPool.DataSource = null;
+            cmbSelectedPool.DataSource = Pools;
+            cmbSelectedPool.SelectedItem = newSongPool;
+            gbSongPoolSelect.Enabled = Pools.Count > 0;
         }
 
-        private void btnRemoveProfile_Click(object sender, EventArgs e)
+        private void btnRemoveSongPool_Click(object sender, EventArgs e)
         {
-            if (cmbSelectedProfile.SelectedIndex < 0) return;
-            Profiles.RemoveAt(cmbSelectedProfile.SelectedIndex);
-            cmbSelectedProfile.DataSource = null;
-            cmbSelectedProfile.DataSource = Profiles;
-            cmbSelectedProfile.SelectedIndex = cmbSelectedProfile.Items.Count > 0 ? 0 : -1;
+            if (cmbSelectedPool.SelectedIndex < 0) return;
+            Pools.RemoveAt(cmbSelectedPool.SelectedIndex);
+            cmbSelectedPool.DataSource = null;
+            cmbSelectedPool.DataSource = Pools;
+            cmbSelectedPool.SelectedIndex = cmbSelectedPool.Items.Count > 0 ? 0 : -1;
+            gbSongPoolSelect.Enabled = Pools.Count > 0;
         }
 
         private void btnStartGame_Click(object sender, EventArgs e)
         {
-            int AddedSongs = Profiles.Select(x => x.AmountInPool).Sum();
+            int AddedSongs = Pools.Select(x => x.AmountInPool).Sum();
             int SongsNeeded = data.TotalSongsInPool;
             if (AddedSongs != SongsNeeded)
             {
-                MessageBox.Show($"You must add a total of at least {SongsNeeded} songs across all profiles.\n" +
-                    $"You have added {AddedSongs} songs across {Profiles.Count} Profiles.",
+                MessageBox.Show($"You must add a total of at least {SongsNeeded} songs across all song pools.\n" +
+                    $"You have added {AddedSongs} songs across {Pools.Count} song pools.",
                     "Invalid song Amount", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            List<(string Name, SongData Data, SongProfile profile)> PickedSongs = [];
-            foreach (var p in Profiles)
+            List<(SongData Data, SongPool Pool)> PickedSongs = [];
+            foreach (var p in Pools)
             {
-                Dictionary<string, SongData> ValidSongs = p.GetAvailableSongs(data.SongData);
+                Dictionary<string, CommonData.SongData> ValidSongs = p.GetAvailableSongs(data.SongData);
                 List<string> availableSongKeys = [.. ValidSongs.Keys];
 
                 for (int i = 0; i < p.AmountInPool; i++)
                 {
                     int randomIndex = Connection.SeededRNG.Next(availableSongKeys.Count);
                     string chosenKey = availableSongKeys[randomIndex];
-                    PickedSongs.Add((chosenKey, ValidSongs[chosenKey], p));
+                    PickedSongs.Add((ValidSongs[chosenKey], p));
                     availableSongKeys.RemoveAt(randomIndex);
                 }
             }
@@ -167,12 +201,12 @@ namespace YargArchipelagoClient
             {
                 int randomIndex = Connection.SeededRNG.Next(PickedSongs.Count);
                 var pickedSong = PickedSongs[randomIndex];
-                i.Value.MappedSong = pickedSong.Name;
-                i.Value.Requirements = pickedSong.profile;
+                i.Value.SongHash = pickedSong.Data.SongChecksum;
+                i.Value.Requirements = pickedSong.Pool;
                 PickedSongs.RemoveAt(randomIndex);
             }
-            data.GoalSong.MappedSong = PickedSongs[0].Name;
-            data.GoalSong.Requirements = PickedSongs[0].profile;
+            data.GoalSong.SongHash = PickedSongs[0].Data.SongChecksum;
+            data.GoalSong.Requirements = PickedSongs[0].Pool;
 
             DialogResult = DialogResult.OK;
             Close();
@@ -182,34 +216,28 @@ namespace YargArchipelagoClient
 
         #region Helper Methods
 
-        private void ApplySongs(ConnectionData connection)
+        // Determines the maximum number of songs allowed for a given Song Pool.
+        private int GetMaxSongsForSongPool(SongPool Pool)
         {
-            string SongFolder = txtSongPath.Text;
-            if (!Directory.Exists(SongFolder))
-            {
-                MessageBox.Show($"Song folder invalid: {SongFolder}");
-                return;
-            }
-            data.SongData = SongLoader.LoadSongs(SongFolder);
-            gbAdd.Enabled = data.SongData.Count > 0;
-        }
-
-        // Determines the maximum number of songs allowed for a given profile.
-        private int GetMaxSongsForProfile(SongProfile profile)
-        {
-            var AvailableSongsPerRestriction = profile.GetAvailableSongs(data.SongData).Count;
-            var AmountOfSongsInOtherProfiles = Profiles.Where(x => x.Name != profile.Name).Select(x => x.AmountInPool).Sum();
-            var SongsLeftForThisProfile = data.TotalSongsInPool - AmountOfSongsInOtherProfiles;
-            return Math.Min(AvailableSongsPerRestriction, SongsLeftForThisProfile);
+            var AvailableSongsPerRestriction = Pool.GetAvailableSongs(data.SongData).Count;
+            var AmountOfSongsInOtherPools = Pools.Where(x => x.Name != Pool.Name).Select(x => x.AmountInPool).Sum();
+            var SongsLeftForThisPool = data.TotalSongsInPool - AmountOfSongsInOtherPools;
+            return Math.Min(AvailableSongsPerRestriction, SongsLeftForThisPool);
         }
 
         private void UpdateSongReqLabel()
         {
-            int SelectedSongs = Profiles.Select(x => x.AmountInPool).Sum();
+            int SelectedSongs = Pools.Select(x => x.AmountInPool).Sum();
             int RequiredSongs = data.TotalSongsInPool;
-            lblRequiredSongCount.Text = $"Selected Songs: {SelectedSongs} | Required Songs: {RequiredSongs} | ({SelectedSongs}\\{RequiredSongs})";
+            lblRequiredSongCount.Text = $"Selected Songs: {SelectedSongs} | Required Songs: {RequiredSongs}";
         }
 
         #endregion
+
+        private void ConfigForm_Shown(object sender, EventArgs e)
+        {
+            if (SongError)
+                Close();
+        }
     }
 }

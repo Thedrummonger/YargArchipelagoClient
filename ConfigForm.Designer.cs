@@ -28,336 +28,70 @@
         /// </summary>
         private void InitializeComponent()
         {
-            label1 = new Label();
-            txtSongPath = new TextBox();
-            gbProfile = new GroupBox();
-            nudProfileAmount = new NumericUpDown();
-            label10 = new Label();
-            nudProfileMaxDifficulty = new NumericUpDown();
-            label3 = new Label();
-            nudProfileMinDifficulty = new NumericUpDown();
-            label2 = new Label();
-            btnScanSongs = new Button();
-            btnBrowse = new Button();
-            lblDisplay = new Label();
-            cmbSelectedProfile = new ComboBox();
-            cmbAddInstrument = new ComboBox();
-            label6 = new Label();
-            label7 = new Label();
-            txtAddProfileName = new TextBox();
-            btnAddProfile = new Button();
-            gbAdd = new GroupBox();
-            label8 = new Label();
-            btnRemoveProfile = new Button();
-            btnStartGame = new Button();
-            BtnSaveProfile = new Button();
-            btnLoadProfile = new Button();
-            lblRequiredSongCount = new Label();
-            groupBox1 = new GroupBox();
-            label13 = new Label();
-            label12 = new Label();
-            cmbProfileReward1Score = new ComboBox();
-            cmbProfileReward1Diff = new ComboBox();
+            gbCurrentPool = new GroupBox();
             groupBox2 = new GroupBox();
             label4 = new Label();
             label5 = new Label();
-            cmbProfileReward2Score = new ComboBox();
-            cmbProfileReward2Diff = new ComboBox();
-            gbProfile.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)nudProfileAmount).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)nudProfileMaxDifficulty).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)nudProfileMinDifficulty).BeginInit();
-            gbAdd.SuspendLayout();
-            groupBox1.SuspendLayout();
+            cmbPoolReward2Score = new ComboBox();
+            cmbPoolReward2Diff = new ComboBox();
+            nudPoolAmount = new NumericUpDown();
+            groupBox1 = new GroupBox();
+            label13 = new Label();
+            label12 = new Label();
+            cmbPoolReward1Score = new ComboBox();
+            cmbPoolReward1Diff = new ComboBox();
+            label10 = new Label();
+            nudPoolMaxDifficulty = new NumericUpDown();
+            label3 = new Label();
+            nudPoolMinDifficulty = new NumericUpDown();
+            label2 = new Label();
+            lblDisplay = new Label();
+            cmbSelectedPool = new ComboBox();
+            cmbAddInstrument = new ComboBox();
+            label6 = new Label();
+            label7 = new Label();
+            txtAddSongPoolName = new TextBox();
+            btnAddSongPool = new Button();
+            gbAdd = new GroupBox();
+            btnRemoveSongPool = new Button();
+            btnStartGame = new Button();
+            BtnSaveSongPoolConfig = new Button();
+            btnLoadSongPoolConfig = new Button();
+            lblRequiredSongCount = new Label();
+            gbSongPoolSelect = new GroupBox();
+            gbCurrentPool.SuspendLayout();
             groupBox2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)nudPoolAmount).BeginInit();
+            groupBox1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)nudPoolMaxDifficulty).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)nudPoolMinDifficulty).BeginInit();
+            gbAdd.SuspendLayout();
+            gbSongPoolSelect.SuspendLayout();
             SuspendLayout();
             // 
-            // label1
+            // gbCurrentPool
             // 
-            label1.AutoSize = true;
-            label1.Location = new Point(12, 9);
-            label1.Name = "label1";
-            label1.Size = new Size(58, 15);
-            label1.TabIndex = 0;
-            label1.Text = "SongPath";
-            // 
-            // txtSongPath
-            // 
-            txtSongPath.Location = new Point(12, 27);
-            txtSongPath.Name = "txtSongPath";
-            txtSongPath.Size = new Size(198, 23);
-            txtSongPath.TabIndex = 1;
-            // 
-            // gbProfile
-            // 
-            gbProfile.Controls.Add(groupBox2);
-            gbProfile.Controls.Add(nudProfileAmount);
-            gbProfile.Controls.Add(groupBox1);
-            gbProfile.Controls.Add(label10);
-            gbProfile.Controls.Add(nudProfileMaxDifficulty);
-            gbProfile.Controls.Add(label3);
-            gbProfile.Controls.Add(nudProfileMinDifficulty);
-            gbProfile.Controls.Add(label2);
-            gbProfile.Location = new Point(223, 27);
-            gbProfile.Name = "gbProfile";
-            gbProfile.Size = new Size(210, 222);
-            gbProfile.TabIndex = 2;
-            gbProfile.TabStop = false;
-            gbProfile.Text = "Lead Guitar";
-            // 
-            // nudProfileAmount
-            // 
-            nudProfileAmount.Location = new Point(160, 17);
-            nudProfileAmount.Name = "nudProfileAmount";
-            nudProfileAmount.Size = new Size(38, 23);
-            nudProfileAmount.TabIndex = 9;
-            nudProfileAmount.ValueChanged += ProfileValueUpdated;
-            // 
-            // label10
-            // 
-            label10.AutoSize = true;
-            label10.Location = new Point(6, 19);
-            label10.Name = "label10";
-            label10.Size = new Size(91, 15);
-            label10.TabIndex = 8;
-            label10.Text = "Amount in Pool";
-            // 
-            // nudProfileMaxDifficulty
-            // 
-            nudProfileMaxDifficulty.Location = new Point(160, 75);
-            nudProfileMaxDifficulty.Name = "nudProfileMaxDifficulty";
-            nudProfileMaxDifficulty.Size = new Size(38, 23);
-            nudProfileMaxDifficulty.TabIndex = 3;
-            nudProfileMaxDifficulty.ValueChanged += ProfileValueUpdated;
-            // 
-            // label3
-            // 
-            label3.AutoSize = true;
-            label3.Location = new Point(6, 77);
-            label3.Name = "label3";
-            label3.Size = new Size(81, 15);
-            label3.TabIndex = 2;
-            label3.Text = "Max Difficulty";
-            // 
-            // nudProfileMinDifficulty
-            // 
-            nudProfileMinDifficulty.Location = new Point(160, 46);
-            nudProfileMinDifficulty.Name = "nudProfileMinDifficulty";
-            nudProfileMinDifficulty.Size = new Size(38, 23);
-            nudProfileMinDifficulty.TabIndex = 1;
-            nudProfileMinDifficulty.ValueChanged += ProfileValueUpdated;
-            // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.Location = new Point(6, 48);
-            label2.Name = "label2";
-            label2.Size = new Size(79, 15);
-            label2.TabIndex = 0;
-            label2.Text = "Min Difficulty";
-            // 
-            // btnScanSongs
-            // 
-            btnScanSongs.Location = new Point(115, 56);
-            btnScanSongs.Name = "btnScanSongs";
-            btnScanSongs.Size = new Size(95, 23);
-            btnScanSongs.TabIndex = 3;
-            btnScanSongs.Text = "Scan Songs";
-            btnScanSongs.UseVisualStyleBackColor = true;
-            btnScanSongs.Click += btnScanSongs_Click;
-            // 
-            // btnBrowse
-            // 
-            btnBrowse.Location = new Point(12, 56);
-            btnBrowse.Name = "btnBrowse";
-            btnBrowse.Size = new Size(89, 23);
-            btnBrowse.TabIndex = 4;
-            btnBrowse.Text = "Browse";
-            btnBrowse.UseVisualStyleBackColor = true;
-            btnBrowse.Click += btnBrowse_Click;
-            // 
-            // lblDisplay
-            // 
-            lblDisplay.AutoSize = true;
-            lblDisplay.Location = new Point(223, 9);
-            lblDisplay.Name = "lblDisplay";
-            lblDisplay.Size = new Size(93, 15);
-            lblDisplay.TabIndex = 6;
-            lblDisplay.Text = "Available Songs:";
-            // 
-            // cmbSelectedProfile
-            // 
-            cmbSelectedProfile.FormattingEnabled = true;
-            cmbSelectedProfile.Location = new Point(13, 113);
-            cmbSelectedProfile.Name = "cmbSelectedProfile";
-            cmbSelectedProfile.Size = new Size(197, 23);
-            cmbSelectedProfile.TabIndex = 7;
-            cmbSelectedProfile.SelectedIndexChanged += cmbSelectedProfile_SelectedIndexChanged;
-            // 
-            // cmbAddInstrument
-            // 
-            cmbAddInstrument.FormattingEnabled = true;
-            cmbAddInstrument.Location = new Point(77, 16);
-            cmbAddInstrument.Name = "cmbAddInstrument";
-            cmbAddInstrument.Size = new Size(117, 23);
-            cmbAddInstrument.TabIndex = 8;
-            // 
-            // label6
-            // 
-            label6.AutoSize = true;
-            label6.Location = new Point(6, 19);
-            label6.Name = "label6";
-            label6.Size = new Size(65, 15);
-            label6.TabIndex = 9;
-            label6.Text = "Instrument";
-            // 
-            // label7
-            // 
-            label7.AutoSize = true;
-            label7.Location = new Point(12, 134);
-            label7.Name = "label7";
-            label7.Size = new Size(0, 15);
-            label7.TabIndex = 10;
-            // 
-            // txtAddProfileName
-            // 
-            txtAddProfileName.Location = new Point(6, 46);
-            txtAddProfileName.Name = "txtAddProfileName";
-            txtAddProfileName.Size = new Size(130, 23);
-            txtAddProfileName.TabIndex = 11;
-            // 
-            // btnAddProfile
-            // 
-            btnAddProfile.Location = new Point(142, 46);
-            btnAddProfile.Name = "btnAddProfile";
-            btnAddProfile.Size = new Size(52, 23);
-            btnAddProfile.TabIndex = 12;
-            btnAddProfile.Text = "Add";
-            btnAddProfile.UseVisualStyleBackColor = true;
-            btnAddProfile.Click += btnAddProfile_Click;
-            // 
-            // gbAdd
-            // 
-            gbAdd.Controls.Add(label6);
-            gbAdd.Controls.Add(btnAddProfile);
-            gbAdd.Controls.Add(cmbAddInstrument);
-            gbAdd.Controls.Add(txtAddProfileName);
-            gbAdd.Location = new Point(12, 152);
-            gbAdd.Name = "gbAdd";
-            gbAdd.Size = new Size(200, 81);
-            gbAdd.TabIndex = 13;
-            gbAdd.TabStop = false;
-            gbAdd.Text = "Add Profile";
-            // 
-            // label8
-            // 
-            label8.AutoSize = true;
-            label8.Location = new Point(13, 88);
-            label8.Name = "label8";
-            label8.Size = new Size(88, 15);
-            label8.TabIndex = 14;
-            label8.Text = "Selected Profile";
-            // 
-            // btnRemoveProfile
-            // 
-            btnRemoveProfile.Location = new Point(135, 84);
-            btnRemoveProfile.Name = "btnRemoveProfile";
-            btnRemoveProfile.Size = new Size(75, 23);
-            btnRemoveProfile.TabIndex = 15;
-            btnRemoveProfile.Text = "Remove";
-            btnRemoveProfile.UseVisualStyleBackColor = true;
-            btnRemoveProfile.Click += btnRemoveProfile_Click;
-            // 
-            // btnStartGame
-            // 
-            btnStartGame.Location = new Point(12, 255);
-            btnStartGame.Name = "btnStartGame";
-            btnStartGame.Size = new Size(197, 23);
-            btnStartGame.TabIndex = 16;
-            btnStartGame.Text = "Start Game!";
-            btnStartGame.UseVisualStyleBackColor = true;
-            btnStartGame.Click += btnStartGame_Click;
-            // 
-            // BtnSaveProfile
-            // 
-            BtnSaveProfile.Location = new Point(223, 255);
-            BtnSaveProfile.Name = "BtnSaveProfile";
-            BtnSaveProfile.Size = new Size(93, 23);
-            BtnSaveProfile.TabIndex = 17;
-            BtnSaveProfile.Text = "Save Profile";
-            BtnSaveProfile.UseVisualStyleBackColor = true;
-            // 
-            // btnLoadProfile
-            // 
-            btnLoadProfile.Location = new Point(342, 255);
-            btnLoadProfile.Name = "btnLoadProfile";
-            btnLoadProfile.Size = new Size(91, 23);
-            btnLoadProfile.TabIndex = 18;
-            btnLoadProfile.Text = "Load Profile";
-            btnLoadProfile.UseVisualStyleBackColor = true;
-            // 
-            // lblRequiredSongCount
-            // 
-            lblRequiredSongCount.AutoSize = true;
-            lblRequiredSongCount.Location = new Point(12, 236);
-            lblRequiredSongCount.Name = "lblRequiredSongCount";
-            lblRequiredSongCount.Size = new Size(57, 15);
-            lblRequiredSongCount.TabIndex = 19;
-            lblRequiredSongCount.Text = "Required:";
-            // 
-            // groupBox1
-            // 
-            groupBox1.Controls.Add(label13);
-            groupBox1.Controls.Add(label12);
-            groupBox1.Controls.Add(cmbProfileReward1Score);
-            groupBox1.Controls.Add(cmbProfileReward1Diff);
-            groupBox1.Location = new Point(6, 105);
-            groupBox1.Name = "groupBox1";
-            groupBox1.Size = new Size(93, 111);
-            groupBox1.TabIndex = 21;
-            groupBox1.TabStop = false;
-            groupBox1.Text = "Reward 1";
-            // 
-            // label13
-            // 
-            label13.AutoSize = true;
-            label13.Location = new Point(6, 63);
-            label13.Name = "label13";
-            label13.Size = new Size(79, 15);
-            label13.TabIndex = 8;
-            label13.Text = "Min Difficulty";
-            // 
-            // label12
-            // 
-            label12.AutoSize = true;
-            label12.Location = new Point(5, 19);
-            label12.Name = "label12";
-            label12.Size = new Size(60, 15);
-            label12.TabIndex = 6;
-            label12.Text = "Min Score";
-            // 
-            // cmbProfileReward1Score
-            // 
-            cmbProfileReward1Score.FormattingEnabled = true;
-            cmbProfileReward1Score.Location = new Point(6, 37);
-            cmbProfileReward1Score.Name = "cmbProfileReward1Score";
-            cmbProfileReward1Score.Size = new Size(79, 23);
-            cmbProfileReward1Score.TabIndex = 5;
-            // 
-            // cmbProfileReward1Diff
-            // 
-            cmbProfileReward1Diff.FormattingEnabled = true;
-            cmbProfileReward1Diff.Location = new Point(6, 82);
-            cmbProfileReward1Diff.Name = "cmbProfileReward1Diff";
-            cmbProfileReward1Diff.Size = new Size(79, 23);
-            cmbProfileReward1Diff.TabIndex = 7;
+            gbCurrentPool.Controls.Add(groupBox2);
+            gbCurrentPool.Controls.Add(nudPoolAmount);
+            gbCurrentPool.Controls.Add(groupBox1);
+            gbCurrentPool.Controls.Add(label10);
+            gbCurrentPool.Controls.Add(nudPoolMaxDifficulty);
+            gbCurrentPool.Controls.Add(label3);
+            gbCurrentPool.Controls.Add(nudPoolMinDifficulty);
+            gbCurrentPool.Controls.Add(label2);
+            gbCurrentPool.Location = new Point(238, 27);
+            gbCurrentPool.Name = "gbCurrentPool";
+            gbCurrentPool.Size = new Size(210, 222);
+            gbCurrentPool.TabIndex = 2;
+            gbCurrentPool.TabStop = false;
+            gbCurrentPool.Text = "Lead Guitar";
             // 
             // groupBox2
             // 
             groupBox2.Controls.Add(label4);
             groupBox2.Controls.Add(label5);
-            groupBox2.Controls.Add(cmbProfileReward2Score);
-            groupBox2.Controls.Add(cmbProfileReward2Diff);
+            groupBox2.Controls.Add(cmbPoolReward2Score);
+            groupBox2.Controls.Add(cmbPoolReward2Diff);
             groupBox2.Location = new Point(105, 105);
             groupBox2.Name = "groupBox2";
             groupBox2.Size = new Size(93, 111);
@@ -383,95 +117,317 @@
             label5.TabIndex = 6;
             label5.Text = "Min Score";
             // 
-            // cmbProfileReward2Score
+            // cmbPoolReward2Score
             // 
-            cmbProfileReward2Score.FormattingEnabled = true;
-            cmbProfileReward2Score.Location = new Point(6, 37);
-            cmbProfileReward2Score.Name = "cmbProfileReward2Score";
-            cmbProfileReward2Score.Size = new Size(79, 23);
-            cmbProfileReward2Score.TabIndex = 5;
+            cmbPoolReward2Score.FormattingEnabled = true;
+            cmbPoolReward2Score.Location = new Point(6, 37);
+            cmbPoolReward2Score.Name = "cmbPoolReward2Score";
+            cmbPoolReward2Score.Size = new Size(79, 23);
+            cmbPoolReward2Score.TabIndex = 5;
             // 
-            // cmbProfileReward2Diff
+            // cmbPoolReward2Diff
             // 
-            cmbProfileReward2Diff.FormattingEnabled = true;
-            cmbProfileReward2Diff.Location = new Point(6, 82);
-            cmbProfileReward2Diff.Name = "cmbProfileReward2Diff";
-            cmbProfileReward2Diff.Size = new Size(79, 23);
-            cmbProfileReward2Diff.TabIndex = 7;
+            cmbPoolReward2Diff.FormattingEnabled = true;
+            cmbPoolReward2Diff.Location = new Point(6, 82);
+            cmbPoolReward2Diff.Name = "cmbPoolReward2Diff";
+            cmbPoolReward2Diff.Size = new Size(79, 23);
+            cmbPoolReward2Diff.TabIndex = 7;
+            // 
+            // nudPoolAmount
+            // 
+            nudPoolAmount.Location = new Point(160, 17);
+            nudPoolAmount.Name = "nudPoolAmount";
+            nudPoolAmount.Size = new Size(38, 23);
+            nudPoolAmount.TabIndex = 9;
+            nudPoolAmount.ValueChanged += SongPoolValueUpdated;
+            // 
+            // groupBox1
+            // 
+            groupBox1.Controls.Add(label13);
+            groupBox1.Controls.Add(label12);
+            groupBox1.Controls.Add(cmbPoolReward1Score);
+            groupBox1.Controls.Add(cmbPoolReward1Diff);
+            groupBox1.Location = new Point(6, 105);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Size = new Size(93, 111);
+            groupBox1.TabIndex = 21;
+            groupBox1.TabStop = false;
+            groupBox1.Text = "Reward 1";
+            // 
+            // label13
+            // 
+            label13.AutoSize = true;
+            label13.Location = new Point(6, 63);
+            label13.Name = "label13";
+            label13.Size = new Size(79, 15);
+            label13.TabIndex = 8;
+            label13.Text = "Min Difficulty";
+            // 
+            // label12
+            // 
+            label12.AutoSize = true;
+            label12.Location = new Point(5, 19);
+            label12.Name = "label12";
+            label12.Size = new Size(60, 15);
+            label12.TabIndex = 6;
+            label12.Text = "Min Score";
+            // 
+            // cmbPoolReward1Score
+            // 
+            cmbPoolReward1Score.FormattingEnabled = true;
+            cmbPoolReward1Score.Location = new Point(6, 37);
+            cmbPoolReward1Score.Name = "cmbPoolReward1Score";
+            cmbPoolReward1Score.Size = new Size(79, 23);
+            cmbPoolReward1Score.TabIndex = 5;
+            // 
+            // cmbPoolReward1Diff
+            // 
+            cmbPoolReward1Diff.FormattingEnabled = true;
+            cmbPoolReward1Diff.Location = new Point(6, 82);
+            cmbPoolReward1Diff.Name = "cmbPoolReward1Diff";
+            cmbPoolReward1Diff.Size = new Size(79, 23);
+            cmbPoolReward1Diff.TabIndex = 7;
+            // 
+            // label10
+            // 
+            label10.AutoSize = true;
+            label10.Location = new Point(6, 19);
+            label10.Name = "label10";
+            label10.Size = new Size(91, 15);
+            label10.TabIndex = 8;
+            label10.Text = "Amount in Pool";
+            // 
+            // nudPoolMaxDifficulty
+            // 
+            nudPoolMaxDifficulty.Location = new Point(160, 75);
+            nudPoolMaxDifficulty.Name = "nudPoolMaxDifficulty";
+            nudPoolMaxDifficulty.Size = new Size(38, 23);
+            nudPoolMaxDifficulty.TabIndex = 3;
+            nudPoolMaxDifficulty.ValueChanged += SongPoolValueUpdated;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(6, 77);
+            label3.Name = "label3";
+            label3.Size = new Size(81, 15);
+            label3.TabIndex = 2;
+            label3.Text = "Max Difficulty";
+            // 
+            // nudPoolMinDifficulty
+            // 
+            nudPoolMinDifficulty.Location = new Point(160, 46);
+            nudPoolMinDifficulty.Name = "nudPoolMinDifficulty";
+            nudPoolMinDifficulty.Size = new Size(38, 23);
+            nudPoolMinDifficulty.TabIndex = 1;
+            nudPoolMinDifficulty.ValueChanged += SongPoolValueUpdated;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(6, 48);
+            label2.Name = "label2";
+            label2.Size = new Size(79, 15);
+            label2.TabIndex = 0;
+            label2.Text = "Min Difficulty";
+            // 
+            // lblDisplay
+            // 
+            lblDisplay.AutoSize = true;
+            lblDisplay.Location = new Point(242, 9);
+            lblDisplay.Name = "lblDisplay";
+            lblDisplay.Size = new Size(93, 15);
+            lblDisplay.TabIndex = 6;
+            lblDisplay.Text = "Available Songs:";
+            // 
+            // cmbSelectedPool
+            // 
+            cmbSelectedPool.FormattingEnabled = true;
+            cmbSelectedPool.Location = new Point(6, 22);
+            cmbSelectedPool.Name = "cmbSelectedPool";
+            cmbSelectedPool.Size = new Size(140, 23);
+            cmbSelectedPool.TabIndex = 7;
+            cmbSelectedPool.SelectedIndexChanged += cmbSelectedPool_SelectedIndexChanged;
+            // 
+            // cmbAddInstrument
+            // 
+            cmbAddInstrument.FormattingEnabled = true;
+            cmbAddInstrument.Location = new Point(77, 16);
+            cmbAddInstrument.Name = "cmbAddInstrument";
+            cmbAddInstrument.Size = new Size(133, 23);
+            cmbAddInstrument.TabIndex = 8;
+            // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Location = new Point(6, 19);
+            label6.Name = "label6";
+            label6.Size = new Size(65, 15);
+            label6.TabIndex = 9;
+            label6.Text = "Instrument";
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Location = new Point(12, 134);
+            label7.Name = "label7";
+            label7.Size = new Size(0, 15);
+            label7.TabIndex = 10;
+            // 
+            // txtAddSongPoolName
+            // 
+            txtAddSongPoolName.Location = new Point(6, 46);
+            txtAddSongPoolName.Name = "txtAddSongPoolName";
+            txtAddSongPoolName.Size = new Size(146, 23);
+            txtAddSongPoolName.TabIndex = 11;
+            // 
+            // btnAddSongPool
+            // 
+            btnAddSongPool.Location = new Point(158, 45);
+            btnAddSongPool.Name = "btnAddSongPool";
+            btnAddSongPool.Size = new Size(52, 23);
+            btnAddSongPool.TabIndex = 12;
+            btnAddSongPool.Text = "Add";
+            btnAddSongPool.UseVisualStyleBackColor = true;
+            btnAddSongPool.Click += btnAddSongPool_Click;
+            // 
+            // gbAdd
+            // 
+            gbAdd.Controls.Add(label6);
+            gbAdd.Controls.Add(btnAddSongPool);
+            gbAdd.Controls.Add(cmbAddInstrument);
+            gbAdd.Controls.Add(txtAddSongPoolName);
+            gbAdd.Location = new Point(12, 76);
+            gbAdd.Name = "gbAdd";
+            gbAdd.Size = new Size(216, 81);
+            gbAdd.TabIndex = 13;
+            gbAdd.TabStop = false;
+            gbAdd.Text = "Add Song Pool";
+            // 
+            // btnRemoveSongPool
+            // 
+            btnRemoveSongPool.Location = new Point(152, 21);
+            btnRemoveSongPool.Name = "btnRemoveSongPool";
+            btnRemoveSongPool.Size = new Size(58, 23);
+            btnRemoveSongPool.TabIndex = 15;
+            btnRemoveSongPool.Text = "Remove";
+            btnRemoveSongPool.UseVisualStyleBackColor = true;
+            btnRemoveSongPool.Click += btnRemoveSongPool_Click;
+            // 
+            // btnStartGame
+            // 
+            btnStartGame.Location = new Point(12, 225);
+            btnStartGame.Name = "btnStartGame";
+            btnStartGame.Size = new Size(197, 23);
+            btnStartGame.TabIndex = 16;
+            btnStartGame.Text = "Start Game!";
+            btnStartGame.UseVisualStyleBackColor = true;
+            btnStartGame.Click += btnStartGame_Click;
+            // 
+            // BtnSaveSongPoolConfig
+            // 
+            BtnSaveSongPoolConfig.Font = new Font("Segoe UI", 8F);
+            BtnSaveSongPoolConfig.Location = new Point(12, 169);
+            BtnSaveSongPoolConfig.Name = "BtnSaveSongPoolConfig";
+            BtnSaveSongPoolConfig.Size = new Size(105, 23);
+            BtnSaveSongPoolConfig.TabIndex = 17;
+            BtnSaveSongPoolConfig.Text = "Save Pool Config";
+            BtnSaveSongPoolConfig.UseVisualStyleBackColor = true;
+            // 
+            // btnLoadSongPoolConfig
+            // 
+            btnLoadSongPoolConfig.Font = new Font("Segoe UI", 8F);
+            btnLoadSongPoolConfig.Location = new Point(123, 169);
+            btnLoadSongPoolConfig.Name = "btnLoadSongPoolConfig";
+            btnLoadSongPoolConfig.Size = new Size(105, 23);
+            btnLoadSongPoolConfig.TabIndex = 18;
+            btnLoadSongPoolConfig.Text = "Load Pool Config";
+            btnLoadSongPoolConfig.UseVisualStyleBackColor = true;
+            // 
+            // lblRequiredSongCount
+            // 
+            lblRequiredSongCount.AutoSize = true;
+            lblRequiredSongCount.Location = new Point(12, 204);
+            lblRequiredSongCount.Name = "lblRequiredSongCount";
+            lblRequiredSongCount.Size = new Size(57, 15);
+            lblRequiredSongCount.TabIndex = 19;
+            lblRequiredSongCount.Text = "Required:";
+            // 
+            // gbSongPoolSelect
+            // 
+            gbSongPoolSelect.Controls.Add(cmbSelectedPool);
+            gbSongPoolSelect.Controls.Add(btnRemoveSongPool);
+            gbSongPoolSelect.Location = new Point(12, 12);
+            gbSongPoolSelect.Name = "gbSongPoolSelect";
+            gbSongPoolSelect.Size = new Size(216, 58);
+            gbSongPoolSelect.TabIndex = 20;
+            gbSongPoolSelect.TabStop = false;
+            gbSongPoolSelect.Text = "Selected Song Pool";
             // 
             // ConfigForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(448, 290);
+            ClientSize = new Size(460, 261);
+            Controls.Add(gbSongPoolSelect);
             Controls.Add(lblRequiredSongCount);
-            Controls.Add(btnLoadProfile);
-            Controls.Add(BtnSaveProfile);
+            Controls.Add(btnLoadSongPoolConfig);
+            Controls.Add(BtnSaveSongPoolConfig);
             Controls.Add(btnStartGame);
-            Controls.Add(btnRemoveProfile);
-            Controls.Add(label8);
             Controls.Add(gbAdd);
             Controls.Add(label7);
-            Controls.Add(cmbSelectedProfile);
             Controls.Add(lblDisplay);
-            Controls.Add(btnBrowse);
-            Controls.Add(btnScanSongs);
-            Controls.Add(gbProfile);
-            Controls.Add(txtSongPath);
-            Controls.Add(label1);
+            Controls.Add(gbCurrentPool);
             Name = "ConfigForm";
             Text = "Configure Game Settings";
-            gbProfile.ResumeLayout(false);
-            gbProfile.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)nudProfileAmount).EndInit();
-            ((System.ComponentModel.ISupportInitialize)nudProfileMaxDifficulty).EndInit();
-            ((System.ComponentModel.ISupportInitialize)nudProfileMinDifficulty).EndInit();
-            gbAdd.ResumeLayout(false);
-            gbAdd.PerformLayout();
-            groupBox1.ResumeLayout(false);
-            groupBox1.PerformLayout();
+            Shown += ConfigForm_Shown;
+            gbCurrentPool.ResumeLayout(false);
+            gbCurrentPool.PerformLayout();
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)nudPoolAmount).EndInit();
+            groupBox1.ResumeLayout(false);
+            groupBox1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)nudPoolMaxDifficulty).EndInit();
+            ((System.ComponentModel.ISupportInitialize)nudPoolMinDifficulty).EndInit();
+            gbAdd.ResumeLayout(false);
+            gbAdd.PerformLayout();
+            gbSongPoolSelect.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
-
-        private Label label1;
-        private TextBox txtSongPath;
-        private GroupBox gbProfile;
-        private NumericUpDown nudProfileMaxDifficulty;
+        private GroupBox gbCurrentPool;
+        private NumericUpDown nudPoolMaxDifficulty;
         private Label label3;
-        private NumericUpDown nudProfileMinDifficulty;
+        private NumericUpDown nudPoolMinDifficulty;
         private Label label2;
-        private Button btnScanSongs;
-        private Button btnBrowse;
-        private NumericUpDown nudProfileAmount;
+        private NumericUpDown nudPoolAmount;
         private Label label10;
         private Label lblDisplay;
-        private ComboBox cmbSelectedProfile;
+        private ComboBox cmbSelectedPool;
         private ComboBox cmbAddInstrument;
         private Label label6;
         private Label label7;
-        private TextBox txtAddProfileName;
-        private Button btnAddProfile;
+        private TextBox txtAddSongPoolName;
+        private Button btnAddSongPool;
         private GroupBox gbAdd;
-        private Label label8;
-        private Button btnRemoveProfile;
+        private Button btnRemoveSongPool;
         private Button btnStartGame;
-        private Button BtnSaveProfile;
-        private Button btnLoadProfile;
+        private Button BtnSaveSongPoolConfig;
+        private Button btnLoadSongPoolConfig;
         private Label lblRequiredSongCount;
         private GroupBox groupBox2;
         private Label label4;
         private Label label5;
-        private ComboBox cmbProfileReward2Score;
-        private ComboBox cmbProfileReward2Diff;
+        private ComboBox cmbPoolReward2Score;
+        private ComboBox cmbPoolReward2Diff;
         private GroupBox groupBox1;
         private Label label13;
         private Label label12;
-        private ComboBox cmbProfileReward1Score;
-        private ComboBox cmbProfileReward1Diff;
+        private ComboBox cmbPoolReward1Score;
+        private ComboBox cmbPoolReward1Diff;
+        private GroupBox gbSongPoolSelect;
     }
 }

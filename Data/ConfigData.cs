@@ -1,6 +1,4 @@
 ﻿using Archipelago.MultiClient.Net;
-using System.Diagnostics;
-using static YargArchipelagoClient.Data.Constants;
 
 namespace YargArchipelagoClient.Data
 {
@@ -9,7 +7,7 @@ namespace YargArchipelagoClient.Data
         /// <summary>
         /// A list of songs and their data pulled from the given song folder
         /// </summary>
-        public Dictionary<string, SongData> SongData { get; set; } = [];
+        public Dictionary<string, CommonData.SongData> SongData { get; set; } = [];
         /// <summary>
         /// A mapping of the song "number" to it's AP data and mapped song
         /// </summary>
@@ -22,6 +20,8 @@ namespace YargArchipelagoClient.Data
         public Dictionary<string, int> UsedFiller = [];
 
         public bool BroadcastSongName = false;
+
+        public bool ManualMode = false;
 
         public int TotalSongsInPool => ApLocationData.Count + 1; // +1 For Goal Song
 
@@ -58,13 +58,11 @@ namespace YargArchipelagoClient.Data
     public class SongLocation(int num)
     {
         public int SongNumber = num;
-        public string? MappedSong = null;
+        public string? SongHash = null;
         public long? APStandardCheckLocation = null;
         public long? APExtraCheckLocation = null;
         public long? APFameCheckLocation = null;
-        public SongProfile? Requirements = null;
-        public string DisplayName =>
-            $"{MappedSong} [{Requirements?.Name}]";
+        public SongPool? Requirements = null;
         public bool HasStandardCheck(out long ID)
         {
             ID = APStandardCheckLocation ?? -1;
@@ -80,57 +78,43 @@ namespace YargArchipelagoClient.Data
             ID = APFameCheckLocation ?? -1;
             return APFameCheckLocation is not null;
         }
-        public SongData? GetSongData(ConfigData config)
+        public string GetSongDisplayName(ConfigData config, bool WithArtist = true, bool WithAlbum = false, bool WithSongNum = false)
+        {
+            var Data = GetSongData(config);
+            if (Data is not CommonData.SongData SongData) return SongNumber.ToString();
+            string Display = SongData.Name;
+            if (WithArtist)
+                Display += $" by {SongData.Artist}";
+            if (WithAlbum)
+                Display += $" from {SongData.Album}";
+            if (WithSongNum)
+                Display = $"[Song {SongNumber}] {Display}";
+            return Display;
+        }
+        public CommonData.SongData? GetSongData(ConfigData config)
         {
             if (config is null) return null;
-            if (MappedSong is null) return null;
-            if (!config.SongData.TryGetValue(MappedSong, out var SongData)) return null;
+            if (SongHash is null) return null;
+            if (!config.SongData.TryGetValue(SongHash, out var SongData)) return null;
             return SongData;
         }
         public bool FameCheckAvailable(HashSet<long> CheckedLocations, out long FameCheckID)
         {
             if (!HasFameCheck(out FameCheckID)) return false;
+            if (CheckedLocations.Contains(FameCheckID)) return false;
             bool standardComplete = !HasStandardCheck(out var sl) || CheckedLocations.Contains(sl);
             bool extraComplete = !HasExtraCheck(out var el) || CheckedLocations.Contains(el);
             return standardComplete && extraComplete;
         }
-    }
-
-    // Custom object to store song data with helper methods.
-    public class SongData(Dictionary<string, string> data)
-    {
-        public Dictionary<string, string> Data { get; private set; } = data;
-
-        public string GetValueOrDefault(string key, string defaultValue = "") =>
-            Data.TryGetValue(key, out var value) ? value : defaultValue;
-
-        public int GetIntValueOrDefault(string key, int defaultValue = 0) =>
-            Data.TryGetValue(key, out var value) && int.TryParse(value, out int result) ? result : defaultValue;
-
-        public string Name => GetValueOrDefault("name");
-        public string Artist => GetValueOrDefault("artist");
-        public string Album => GetValueOrDefault("album");
-        public string Genre => GetValueOrDefault("genre");
-        public int Year => GetIntValueOrDefault("year");
-        public string Charter => GetValueOrDefault("charter");
-        public int SongLength => GetIntValueOrDefault("song_length");
-        public string Icon => GetValueOrDefault("icon");
-
-        /// <summary>
-        /// Attempts to get a difficulty level for a given instrument.
-        /// For example, calling TryGetDifficulty("guitar", out int diff) will attempt to get the value from "diff_guitar".
-        /// </summary>
-        public bool TryGetDifficulty(string instrument, out int difficulty)
+        public bool HasUncheckedLocations(HashSet<long> CheckedLocations)
         {
-            difficulty = 0;
-            string key = $"diff_{instrument.ToLower()}";
-            return Data.TryGetValue(key, out var value) && int.TryParse(value, out difficulty);
+            if (HasStandardCheck(out var sl) && !CheckedLocations.Contains(sl))
+                return true;
+            if (HasExtraCheck(out var el) && !CheckedLocations.Contains(el))
+                return true;
+            if (HasFameCheck(out var fl) && !CheckedLocations.Contains(fl))
+                return true;
+            return false;
         }
-        /// <summary>
-        /// Attempts to get a difficulty level for a given instrument.
-        /// For example, calling TryGetDifficulty(Instrument.Guitar, out int diff) will attempt to get the value from "diff_guitar".
-        /// </summary>
-        public bool TryGetDifficulty(Instrument instrument, out int difficulty) =>
-            TryGetDifficulty(instrument.ToString().ToLower(), out difficulty);
     }
 }

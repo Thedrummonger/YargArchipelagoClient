@@ -34,6 +34,8 @@ namespace YargArchipelagoClient
 
         private System.Windows.Forms.Timer SyncTimer = new System.Windows.Forms.Timer();
 
+        private System.Windows.Forms.Timer CheckSongTimer = new System.Windows.Forms.Timer();
+
         public MainForm() => InitializeComponent();
 
         #region Form Event Handlers
@@ -64,7 +66,6 @@ namespace YargArchipelagoClient
             SyncTimer.Interval = 200;
             SyncTimer.Tick += SyncTimerTick;
             SyncTimer.Start();
-
 
             // Subscribe to session events.
             Connection!.GetSession().Items.ItemReceived += Items_ItemReceived;
@@ -98,7 +99,8 @@ namespace YargArchipelagoClient
             if (Config is null)
             {
                 var configForm = new ConfigForm(Connection!);
-                if (configForm.ShowDialog() != DialogResult.OK)
+                var Result = configForm.ShowDialog();
+                if (Result != DialogResult.OK)
                 {
                     Close();
                     return;
@@ -113,6 +115,10 @@ namespace YargArchipelagoClient
             lvSongList_Resize(sender, e);
 
             Task.Run(() => ProcessLogQueueAsync());
+
+            CheckSongTimer.Interval = 1000;
+            CheckSongTimer.Tick += CheckSongCompletion;
+            CheckSongTimer.Start();
 
             bool IsConnected() =>
                 CForm.Connection is not null &&
@@ -148,6 +154,54 @@ namespace YargArchipelagoClient
             PrintSongs();
         }
 
+        private string LastReadContent = string.Empty;
+        private void CheckSongCompletion(object? sender, EventArgs e)
+        {
+            if (Config!.ManualMode) return;
+            try
+            {
+                if (!Directory.Exists(CommonData.DataFolder) || !File.Exists(CommonData.LastPlayedSong)) return;
+                using var stream = File.Open(CommonData.LastPlayedSong, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var reader = new StreamReader(stream);
+                string newContent = reader.ReadToEnd();
+                if (newContent == LastReadContent) return; // if unchanged, do nothing
+                LastReadContent = newContent;
+
+                var passInfo = JsonConvert.DeserializeObject<CommonData.SongPassInfo>(newContent);
+                if (passInfo is null) return;
+                var TargetSong = Config!.ApLocationData.Values.FirstOrDefault(x => x.SongHash == passInfo!.SongHash);
+                if (TargetSong is null || !TargetSong.HasUncheckedLocations(CheckedLocations)) return;
+
+                if (TargetSong.FameCheckAvailable(CheckedLocations, out var FL1))
+                {
+                    CheckLocations([FL1], [TargetSong]);
+                    return;
+                }
+
+                HashSet<long> ToCheck = [];
+                if (TargetSong.HasStandardCheck(out var SL1) && !CheckedLocations.Contains(SL1)) 
+                {
+                    if (TargetSong.Requirements!.MetStandard(passInfo, out var SL1DL))
+                        ToCheck.Add(SL1);
+                    else if (deathLinkEnabled && SL1DL)
+                        deathLinkService.SendDeathLink(new(Connection.SlotName, $"Failed {TargetSong.GetSongDisplayName(Config!)}"));
+                } 
+                if (TargetSong.HasExtraCheck(out var EL1) && !CheckedLocations.Contains(EL1))
+                {
+                    if (TargetSong.Requirements!.MetExtra(passInfo, out var EL1DL))
+                        ToCheck.Add(EL1);
+                    else if (deathLinkEnabled && EL1DL)
+                        deathLinkService.SendDeathLink(new(Connection.SlotName, $"Failed {TargetSong.GetSongDisplayName(Config!)}"));
+                }
+                if (ToCheck.Count > 0)
+                    CheckLocations(ToCheck, [TargetSong]);
+            }
+            catch (IOException ex)
+            {
+                Debug.WriteLine($"Failed to read Last Played Song {ex}");
+            }
+        }
+
         private void textBox2_Enter(object sender, EventArgs e) { }
 
         private void textBox2_Leave(object sender, EventArgs e) { }
@@ -157,6 +211,7 @@ namespace YargArchipelagoClient
 
         private void lvSongList_DoubleClick(object sender, EventArgs e)
         {
+            if (!Config!.ManualMode) return;
             if (lvSongList.SelectedItems.Count <= 0) return;
             var selectedItems = lvSongList.SelectedItems.Cast<ListViewItem>().ToArray();
             var locationIDs = new HashSet<long>();
@@ -166,6 +221,7 @@ namespace YargArchipelagoClient
             {
                 if (item.Tag is not SongLocation songLocation) continue;
 
+                string SongName = songLocation.GetSongData(Config!)?.Name?? songLocation.SongNumber.ToString();
                 if (songLocation.FameCheckAvailable(CheckedLocations, out var fl))
                 {
                     locationIDs.Add(fl);
@@ -191,8 +247,8 @@ namespace YargArchipelagoClient
                 var result = ModifierKeys == Keys.Control ?
                     CustomMessageResult.Both :
                     APSongMessageBox.Show(
-                    $"Check Song {songLocation.SongNumber} [{songLocation.MappedSong}]",
-                    $"{songLocation.MappedSong}",
+                    $"Check Song {songLocation.GetSongDisplayName(Config!, false, false, true)}",
+                    songLocation.GetSongDisplayName(Config!, true, true, false),
                     [.. buttons]);
 
                 if (result.In(CustomMessageResult.Reward1, CustomMessageResult.Both) &&
@@ -219,18 +275,11 @@ namespace YargArchipelagoClient
             if (Config!.BroadcastSongName)
             {
                 foreach (var i in songLocations)
-                    Connection.GetSession().Say(GetSongBroadcastDisplayString(i, Config));
+                    Connection.GetSession().Say(i.GetSongDisplayName(Config!, true, true, true));
             }
             Connection!.GetSession().Locations.CompleteLocationChecks([.. Locations]);
             UpdateLocationsChecked();
             SyncTimerTick(null, new());
-        }
-
-        public static string GetSongBroadcastDisplayString(SongLocation Song, ConfigData config)
-        {
-            var SongData = Song.GetSongData(config);
-            if (SongData is null) return Song.DisplayName!;
-            return $"[Song {Song.SongNumber}] {SongData.Name} by {SongData.Artist}";
         }
 
         #endregion
@@ -265,9 +314,8 @@ namespace YargArchipelagoClient
             if (!int.TryParse(data[1], out var songNum)) return;
             if (Config is null) return;
             if (!Config.ApLocationData.TryGetValue(songNum, out var Song)) return;
-            if (Song.MappedSong is null) return;
 
-            string SongMessage = GetSongBroadcastDisplayString(Song, Config);
+            string SongMessage = Song.GetSongDisplayName(Config!, true, true, true);
             if (Config.BroadcastSongName)
                 Connection.GetSession().Say(SongMessage);
             else
@@ -313,13 +361,13 @@ namespace YargArchipelagoClient
                 }
             }
 
-            if (ReceivedFiller.TryGetValue(Constants.StaticItems.Victory.GetDescription(), out var v) && v > 0)
+            if (ReceivedFiller.TryGetValue(CommonData.StaticItems.Victory.GetDescription(), out var v) && v > 0)
                 session.SetGoalAchieved();
 
             Debug.WriteLine($"FP Goal {GetCurrentFame()}/{FamePointsNeeded}");
         }
         private int GetCurrentFame() =>
-            ReceivedFiller.TryGetValue(Constants.StaticItems.FamePoint.GetDescription(), out var famePoints) ? famePoints : 0;
+            ReceivedFiller.TryGetValue(CommonData.StaticItems.FamePoint.GetDescription(), out var famePoints) ? famePoints : 0;
 
         public void PrintSongs()
         {
@@ -330,34 +378,24 @@ namespace YargArchipelagoClient
             if (GetCurrentFame() >= FamePointsNeeded)
             {
                 ListViewItem goalItem = new("0") { Tag = Config.GoalSong };
-                goalItem.SubItems.Add(Config.GoalSong.DisplayName);
+                goalItem.SubItems.Add($"{Config.GoalSong.GetSongDisplayName(Config!)} [{Config.GoalSong.Requirements!.Name}]");
                 lvSongList.SafeInvoke(() => lvSongList.Items.Add(goalItem));
             }
 
             foreach (var i in songs.OrderBy(x => x.Key))
             {
-                if (!HasUncheckedLocations(i.Value))
+                if (!i.Value.HasUncheckedLocations(CheckedLocations))
                     continue;
                 if (!ReceivedSongs.Contains(i.Value.SongNumber))
                     continue;
-                if (!string.IsNullOrWhiteSpace(txtFilter.Text) && !i.Value.DisplayName.Contains(txtFilter.Text))
+                if (!string.IsNullOrWhiteSpace(txtFilter.Text) && !i.Value.GetSongDisplayName(Config!).Contains(txtFilter.Text))
                     continue;
 
                 ListViewItem item = new(i.Key.ToString()) { Tag = i.Value };
-                item.SubItems.Add(i.Value.DisplayName);
+                item.SubItems.Add($"{i.Value.GetSongDisplayName(Config!)} [{i.Value.Requirements!.Name}]");
 
                 lvSongList.SafeInvoke(() => lvSongList.Items.Add(item));
             }
-        }
-        private bool HasUncheckedLocations(SongLocation s)
-        {
-            if (s.HasStandardCheck(out var sl) && !CheckedLocations.Contains(sl))
-                return true;
-            if (s.HasExtraCheck(out var el) && !CheckedLocations.Contains(el))
-                return true;
-            if (s.HasFameCheck(out var fl) && !CheckedLocations.Contains(fl))
-                return true;
-            return false;
         }
 
         #endregion
@@ -384,6 +422,12 @@ namespace YargArchipelagoClient
                     Config.BroadcastSongName = !Config.BroadcastSongName;
                     UpdateConfigFile();
                     LogQueue.Enqueue(new ColoredString($"Broadcasting Songs: {Config.BroadcastSongName}"));
+                    break;
+                case "manual":
+                    if (Config is null) return;
+                    Config.ManualMode = !Config.ManualMode;
+                    UpdateConfigFile();
+                    LogQueue.Enqueue(new ColoredString($"Manual Mode: {Config.ManualMode}"));
                     break;
                 default:
                     LogQueue.Enqueue(new ColoredString($"{v} is not a valid command"));

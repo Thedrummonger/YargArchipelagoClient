@@ -9,33 +9,47 @@ namespace YargArchipelagoClient.Helpers
     {
         public static ContextMenuStrip BuildSongListContextMenu(MainForm mainForm, ListViewItem itemTarget, SongLocation song)
         {
-            int RandomSwapsTotal = mainForm.ReceivedFiller.TryGetValue(Constants.StaticItems.SwapRandom.GetDescription(), out int rst) ? rst : 0;
-            int RandomSwapsUsed = mainForm.Config!.UsedFiller.TryGetValue(Constants.StaticItems.SwapRandom.GetDescription(), out int rsu) ? rsu : 0;
+            int RandomSwapsTotal = mainForm.ReceivedFiller.TryGetValue(CommonData.StaticItems.SwapRandom.GetDescription(), out int rst) ? rst : 0;
+            int RandomSwapsUsed = mainForm.Config!.UsedFiller.TryGetValue(CommonData.StaticItems.SwapRandom.GetDescription(), out int rsu) ? rsu : 0;
             int RandomSwapsAvailable = RandomSwapsTotal - RandomSwapsUsed;
 
-            int SwapsTotal = mainForm.ReceivedFiller.TryGetValue(Constants.StaticItems.SwapPick.GetDescription(), out int st) ? st : 0;
-            int SwapsUsed = mainForm.Config!.UsedFiller.TryGetValue(Constants.StaticItems.SwapPick.GetDescription(), out int su) ? su : 0;
+            int SwapsTotal = mainForm.ReceivedFiller.TryGetValue(CommonData.StaticItems.SwapPick.GetDescription(), out int st) ? st : 0;
+            int SwapsUsed = mainForm.Config!.UsedFiller.TryGetValue(CommonData.StaticItems.SwapPick.GetDescription(), out int su) ? su : 0;
             int SwapsAvailable = SwapsTotal - SwapsUsed;
 
             var menu = new ContextMenuStrip();
 
-            if (song.HasStandardCheck(out var sl) && !mainForm.CheckedLocations.Contains(sl))
-                menu.Items.AddItem("Check Reward 1", () => mainForm.CheckLocations([sl], [song]));
+            var SongData = song.GetSongData(mainForm.Config);
 
-            if (song.HasExtraCheck(out var el) && !mainForm.CheckedLocations.Contains(el))
-                menu.Items.AddItem("Check Reward 2", () => mainForm.CheckLocations([el], [song]));
+            if (SongData is not null)
+            {
+                menu.Items.AddItem($"Song: {SongData.Name}");
+                menu.Items.AddItem($"Artist: {SongData.Artist}");
+                menu.Items.AddItem($"Album: {SongData.Album}");
+                menu.Items.AddItem($"Charter: {SongData.Charter}");
+            }
 
-            if (song.FameCheckAvailable([..mainForm.CheckedLocations], out var fl))
-                menu.Items.AddItem("Get Fame Point", () => mainForm.CheckLocations([el], [song]));
+            if (mainForm.Config.ManualMode)
+            {
+                menu.Items.Add(new ToolStripSeparator());
+                if (song.HasStandardCheck(out var sl) && !mainForm.CheckedLocations.Contains(sl))
+                    menu.Items.AddItem("Check Reward 1", () => mainForm.CheckLocations([sl], [song]));
+
+                if (song.HasExtraCheck(out var el) && !mainForm.CheckedLocations.Contains(el))
+                    menu.Items.AddItem("Check Reward 2", () => mainForm.CheckLocations([el], [song]));
+
+                if (song.FameCheckAvailable([.. mainForm.CheckedLocations], out var fl))
+                    menu.Items.AddItem("Get Fame Point", () => mainForm.CheckLocations([el], [song]));
+            }
 
             if ((RandomSwapsAvailable > 0 || SwapsAvailable > 0))
             {
                 menu.Items.Add(new ToolStripSeparator());
                 menu.Items.AddItem($"Use Modifier:");
                 if (RandomSwapsAvailable > 0)
-                    menu.Items.AddItem($"{Constants.StaticItems.SwapRandom.GetDescription()}: {RandomSwapsAvailable}", () => SwapSong(mainForm, song, true));
+                    menu.Items.AddItem($"{CommonData.StaticItems.SwapRandom.GetDescription()}: {RandomSwapsAvailable}", () => SwapSong(mainForm, song, true));
                 if (SwapsAvailable > 0)
-                    menu.Items.AddItem($"{Constants.StaticItems.SwapPick.GetDescription()}: {SwapsAvailable}", () => SwapSong(mainForm, song, false));
+                    menu.Items.AddItem($"{CommonData.StaticItems.SwapPick.GetDescription()}: {SwapsAvailable}", () => SwapSong(mainForm, song, false));
             }
 
             if (mainForm.deathLinkEnabled)
@@ -43,11 +57,12 @@ namespace YargArchipelagoClient.Helpers
                 menu.Items.Add(new ToolStripSeparator());
                 menu.Items.AddItem("Send Song Fail Death Link", () => 
                     mainForm.deathLinkService.SendDeathLink(new(mainForm.Connection.SlotName, 
-                    $"Failed {MainForm.GetSongBroadcastDisplayString(song, mainForm.Config)}")));
+                    $"Failed {song.GetSongDisplayName(mainForm.Config!)}")));
             }
 
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.AddItem($"Completion Requirements:");
+            menu.Items.AddItem($"Instrument [{song.Requirements!.Instrument}]");
             if (song.HasStandardCheck(out _))
             {
                 menu.Items.AddItem($"Reward 1");
@@ -67,7 +82,7 @@ namespace YargArchipelagoClient.Helpers
         public static string[] GetValidSongReplacements(ConfigData configData, SongLocation song)
         {
             var ValidForProfile = song.Requirements!.GetAvailableSongs(configData.SongData).Keys.ToHashSet();
-            return [.. ValidForProfile.Where(x => !configData.ApLocationData.Values.Any(y => y.MappedSong == x))];
+            return [.. ValidForProfile.Where(x => !configData.ApLocationData.Values.Any(y => y.SongHash == x))];
         }
 
         public static void SwapSong(MainForm mainForm, SongLocation song, bool Random)
@@ -81,13 +96,13 @@ namespace YargArchipelagoClient.Helpers
             string? Target = null;
             if (Random)
                 Target = SwapCandidates[mainForm.Connection.SeededRNG.Next(SwapCandidates.Length)];
-            else if (ValueSelectForm.ShowDialog(SwapCandidates.OrderBy(x => x), $"Choose a replacement for ${song.MappedSong}") is string r)
+            else if (ValueSelectForm.ShowDialog(SwapCandidates.OrderBy(x => x), $"Choose a replacement for ${song.SongHash}") is string r)
                 Target = r;
 
             if (Target is null) return;
 
-            song.MappedSong = Target;
-            string ItemUsed = Random ? Constants.StaticItems.SwapRandom.GetDescription() : Constants.StaticItems.SwapPick.GetDescription();
+            song.SongHash = Target;
+            string ItemUsed = Random ? CommonData.StaticItems.SwapRandom.GetDescription() : CommonData.StaticItems.SwapPick.GetDescription();
             mainForm.Config!.UsedFiller.SetIfEmpty(ItemUsed, 0);
             mainForm.Config!.UsedFiller[ItemUsed]++;
 
