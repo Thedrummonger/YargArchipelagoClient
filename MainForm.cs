@@ -346,7 +346,7 @@ namespace YargArchipelagoClient
         private void UpdateReceivedItems()
         {
             var session = Connection!.GetSession();
-            var allItems = session.Items.AllItemsReceived;
+            var allItems = session.Items.AllItemsReceived.Where(x => x.Player == Connection.GetSession().Players.ActivePlayer);
             ReceivedFiller.Clear();
 
             foreach (var i in allItems)
@@ -428,6 +428,9 @@ namespace YargArchipelagoClient
                     Config.ManualMode = !Config.ManualMode;
                     UpdateConfigFile();
                     LogQueue.Enqueue(new ColoredString($"Manual Mode: {Config.ManualMode}"));
+                    break;
+                case "fame":
+                    LogQueue.Enqueue(new ColoredString($"Fame Points: {GetCurrentFame()}/{FamePointsNeeded}"));
                     break;
                 default:
                     LogQueue.Enqueue(new ColoredString($"{v} is not a valid command"));

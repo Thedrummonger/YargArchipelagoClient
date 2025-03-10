@@ -66,7 +66,7 @@ namespace YargArchipelagoClient.Data
             public bool WasGoldStar;
             public bool FC;
             public int Score;
-            public double Percentage;
+            public float Percentage;
         }
 
         public enum SupportedDifficulty
