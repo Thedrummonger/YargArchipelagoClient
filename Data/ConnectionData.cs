@@ -1,6 +1,7 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Newtonsoft.Json;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using TDMUtils;
@@ -60,16 +61,21 @@ namespace ArchipelagoPowerTools.Data
         public void UpdateReceivedItems()
         {
             ReceivedFiller.Clear();
-            foreach (var i in Session.Items.AllItemsReceived.Where(x => x.Player == Session.Players.ActivePlayer))
+            Debug.WriteLine($"Updating Recieved items");
+            foreach (var i in Session.Items.AllItemsReceived)
             {
+                Debug.WriteLine($"Checking recived item {i.ItemName}");
+
                 if (CommonData.APIDs.Items.TryGetValue(i.ItemId, out var item))
                 {
+                    Debug.WriteLine($"Was filler");
                     ReceivedFiller.SetIfEmpty(item, 0);
                     ReceivedFiller[item]++;
                     continue;
                 }
                 if (CommonData.APIDs.SongItemIds.TryGetValue(i.ItemId, out var songItem))
                 {
+                    Debug.WriteLine($"Was song {songItem}");
                     ReceivedSongs.Add(songItem);
                     continue;
                 }

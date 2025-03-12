@@ -4,6 +4,7 @@ using System.Diagnostics;
 using TDMUtils;
 using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Forms;
+using static YargArchipelagoClient.Data.CommonData.Networking;
 
 namespace YargArchipelagoClient.Helpers
 {
@@ -28,17 +29,34 @@ namespace YargArchipelagoClient.Helpers
 
                 var passInfo = JsonConvert.DeserializeObject<CommonData.SongPassInfo>(newContent);
                 if (passInfo is null) return;
+                CheckLocations(Config, Connection, passInfo);
+            }
+            catch (IOException ex)
+            {
+                Debug.WriteLine($"Failed to read Last Played Song {ex}");
+            }
+        }
+
+        public static void CheckLocations(ConfigData Config, ConnectionData Connection, CommonData.SongPassInfo passInfo)
+        {
+            try
+            {
                 var TargetSong = Config!.ApLocationData.Values.FirstOrDefault(x => x.SongHash == passInfo!.SongHash);
                 if (TargetSong is null)
                 {
+                    Debug.WriteLine($"{passInfo.SongHash} was not found in song list");
                     if (Config!.GoalSong.SongHash == passInfo!.SongHash)
                         TargetSong = Config!.GoalSong;
                     else
                         return;
+                    Debug.WriteLine($"{passInfo.SongHash} was goal song {TargetSong.GetSongDisplayName(Config)}");
                 }
+                else
+                    Debug.WriteLine($"{passInfo.SongHash} was {TargetSong.GetSongDisplayName(Config)}");
 
                 bool IsAvailableSong = TargetSong.SongAvailableToPlay(Connection);
                 bool IsAvailableGoal = TargetSong.IsGoalSong(Config) && Connection.HasFamePointGoal(Config);
+                Debug.WriteLine($"Song is Available? {IsAvailableSong || IsAvailableGoal}");
                 if (!IsAvailableSong && !IsAvailableGoal) return;
 
                 HashSet<long> ToCheck = [];
@@ -47,14 +65,14 @@ namespace YargArchipelagoClient.Helpers
                     if (TargetSong.Requirements!.MetStandard(passInfo, out var SL1DL))
                         ToCheck.Add(SL1);
                     else if (Config.deathLinkEnabled && SL1DL)
-                        Connection.DeathLinkService.SendDeathLink(new(Connection.SlotName, $"Failed {TargetSong.GetSongDisplayName(Config!)}"));
+                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"Failed {TargetSong.GetSongDisplayName(Config!)}"));
                 }
                 if (TargetSong.ExtraCheckAvailable(Connection, out var EL1))
                 {
                     if (TargetSong.Requirements!.MetExtra(passInfo, out var EL1DL))
                         ToCheck.Add(EL1);
                     else if (Config.deathLinkEnabled && EL1DL)
-                        Connection.DeathLinkService.SendDeathLink(new(Connection.SlotName, $"Failed {TargetSong.GetSongDisplayName(Config!)}"));
+                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"Failed {TargetSong.GetSongDisplayName(Config!)}"));
                 }
                 if (TargetSong.FameCheckAvailable([.. Connection.CheckedLocations, .. ToCheck], out var FL2))
                     ToCheck.Add(FL2);

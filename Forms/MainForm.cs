@@ -25,6 +25,8 @@ namespace YargArchipelagoClient
         private readonly System.Windows.Forms.Timer SyncTimer = new();
         private readonly System.Windows.Forms.Timer CheckSongTimer = new();
 
+        private APPacketServer PacketServer;
+
         private bool UpdateData = false;
 
         public MainForm()
@@ -65,11 +67,14 @@ namespace YargArchipelagoClient
             SyncTimer.Tick += SyncTimerTick;
             SyncTimer.Start();
 
-            CheckSongTimer.Interval = 1000;
-            CheckSongTimer.Tick += CheckSongCompletion;
-            CheckSongTimer.Start();
+            //CheckSongTimer.Interval = 1000;
+            //CheckSongTimer.Tick += CheckSongCompletion;
+            //CheckSongTimer.Start();
 
             Task.Run(ProcessLogQueueAsync);
+            PacketServer = new APPacketServer(Config, Connection, WriteToLog, UpdateCurrentlyPlaying, UpdateConnected);
+            _ = PacketServer.StartAsync();
+            UpdateClientTitle();
         }
 
         private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink)
@@ -78,7 +83,41 @@ namespace YargArchipelagoClient
             if (Config.ManualMode)
                 MessageBox.Show(deathLink.Cause, $"DeathLink {deathLink.Source}", MessageBoxButtons.OK, MessageBoxIcon.Hand);
             else
-                Debug.WriteLine($"DeathLink {deathLink.Source}"); //TODO, implement this in YARG
+            {
+                _ = PacketServer.SendPacketAsync(new CommonData.Networking.ClientDataPacket { 
+                    deathLinkData = new CommonData.DeatLinkData { Source = deathLink.Source, Cause = deathLink.Cause } 
+                });
+                WriteToLog(deathLink.Source);
+            }
+                
+        }
+
+        public const string Title = "Yarg Archipelago Client";
+        public CommonData.SongData? CurrentlyPlaying = null;
+        public bool IsConnectedToYarg = false;
+
+        public void UpdateClientTitle()
+        {
+            string CurrentTitle = Title;
+            CurrentTitle += $" (Yarg Connected: {IsConnectedToYarg})";
+            if (CurrentlyPlaying is not null)
+                CurrentTitle += $" [Currently Playing: {CurrentlyPlaying.Name} by {CurrentlyPlaying.Artist}]";
+
+            this.Text = CurrentTitle;
+        }
+        public void UpdateCurrentlyPlaying(string SongHash)
+        {
+            if (string.IsNullOrWhiteSpace(SongHash))
+                CurrentlyPlaying = null;
+            if (Config.SongData.TryGetValue(SongHash, out var song))
+                CurrentlyPlaying = null;
+            CurrentlyPlaying = song;
+            UpdateClientTitle();
+        }
+        public void UpdateConnected(bool Connected)
+        {
+            IsConnectedToYarg = Connected;
+            UpdateClientTitle();
         }
 
         public void UpdateConfigFile()
@@ -163,6 +202,11 @@ namespace YargArchipelagoClient
             }
         }
 
+        public void WriteToLog(string message)
+        {
+            LogQueue.Enqueue(new ColoredString(message));
+            LogSignal.Release();
+        }
 
         public void PrintSongs()
         {
@@ -177,6 +221,7 @@ namespace YargArchipelagoClient
 
             foreach (var i in Config!.ApLocationData.OrderBy(x => x.Key))
             {
+
                 if (!i.Value.SongAvailableToPlay(Connection))
                     continue;
                 if (!string.IsNullOrWhiteSpace(txtFilter.Text) && !i.Value.GetSongDisplayName(Config!).Contains(txtFilter.Text))
@@ -213,25 +258,25 @@ namespace YargArchipelagoClient
                     if (Config is null) return;
                     Config.BroadcastSongName = !Config.BroadcastSongName;
                     UpdateConfigFile();
-                    LogQueue.Enqueue(new ColoredString($"Broadcasting Songs: {Config.BroadcastSongName}"));
+                    WriteToLog($"Broadcasting Songs: {Config.BroadcastSongName}");
                     break;
                 case "manual":
                     if (Config is null) return;
                     Config.ManualMode = !Config.ManualMode;
                     UpdateConfigFile();
-                    LogQueue.Enqueue(new ColoredString($"Manual Mode: {Config.ManualMode}"));
+                    WriteToLog($"Manual Mode: {Config.ManualMode}");
                     break;
                 case "deathlink":
                     if (Config is null || !Connection.GetSession().RoomState.ServerTags.Contains("DeathLink")) return;
                     Config.deathLinkEnabled = !Config.deathLinkEnabled;
                     UpdateConfigFile();
-                    LogQueue.Enqueue(new ColoredString($"Deathlink Enabled: {Config.deathLinkEnabled}"));
+                    WriteToLog($"Deathlink Enabled: {Config.deathLinkEnabled}");
                     break;
                 case "fame":
-                    LogQueue.Enqueue(new ColoredString($"Fame Points: {Connection.GetCurrentFame()}/{Config!.FamePointsNeeded}"));
+                    WriteToLog($"Fame Points: {Connection.GetCurrentFame()}/{Config!.FamePointsNeeded}");
                     break;
                 default:
-                    LogQueue.Enqueue(new ColoredString($"{v} is not a valid command"));
+                    WriteToLog($"{v} is not a valid command");
                     break;
             }
         }

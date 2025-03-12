@@ -47,8 +47,9 @@ namespace YargArchipelagoClient.Data
 
         public class SongPassInfo
         {
-            public SongPassInfo(string Hash) { SongHash = Hash; }
+            public SongPassInfo(string Hash, bool Passed = true) { SongHash = Hash; SongPassed = Passed; }
             public string SongHash;
+            public bool SongPassed;
             public SongParticipantInfo[] participants = Array.Empty<SongParticipantInfo>();
         }
 
@@ -135,6 +136,40 @@ namespace YargArchipelagoClient.Data
                     (Key: Locations.Keys.Max() + (songnum - 1) * 3 + 2, Value: (songnum, LocationType.extra)),
                     (Key: Locations.Keys.Max() + (songnum - 1) * 3 + 3, Value: (songnum, LocationType.fame))
                 }).ToDictionary(x => x.Key, x => x.Value);
+        }
+
+        public class DeatLinkData
+        {
+            public string Source;
+
+            public string Cause;
+        }
+        public class TrapData
+        {
+            public TrapData(trapType t) { type = t; }
+            public trapType type;
+        }
+        public enum trapType
+        {
+            Restart
+        }
+
+        public static class Networking
+        {
+            public const int PORT = 59152;
+
+            public class YargDataPacket
+            {
+                public SongPassInfo? passInfo = null;
+                public string? Message = null;
+                public string? CurrentlyPlaying = null;
+            }
+
+            public class ClientDataPacket
+            {
+                public DeatLinkData? deathLinkData = null;
+                public TrapData? trapData = null;
+            }
         }
     }
 }
