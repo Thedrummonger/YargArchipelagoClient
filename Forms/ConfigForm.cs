@@ -1,9 +1,6 @@
 ﻿using ArchipelagoPowerTools.Data;
 using Newtonsoft.Json;
 using System.Data;
-using System.Diagnostics;
-using System.Diagnostics.Metrics;
-using TDMUtils;
 using YargArchipelagoClient.Data;
 using static YargArchipelagoClient.Data.CommonData;
 
@@ -191,7 +188,7 @@ namespace YargArchipelagoClient
 
                 for (int i = 0; i < p.AmountInPool; i++)
                 {
-                    int randomIndex = Connection.SeededRNG.Next(availableSongKeys.Count);
+                    int randomIndex = Connection.GetRNG().Next(availableSongKeys.Count);
                     string chosenKey = availableSongKeys[randomIndex];
                     PickedSongs.Add((ValidSongs[chosenKey], p));
                     availableSongKeys.RemoveAt(randomIndex);
@@ -199,7 +196,7 @@ namespace YargArchipelagoClient
             }
             foreach (var i in data.ApLocationData)
             {
-                int randomIndex = Connection.SeededRNG.Next(PickedSongs.Count);
+                int randomIndex = Connection.GetRNG().Next(PickedSongs.Count);
                 var pickedSong = PickedSongs[randomIndex];
                 i.Value.SongHash = pickedSong.Data.SongChecksum;
                 i.Value.Requirements = pickedSong.Pool;

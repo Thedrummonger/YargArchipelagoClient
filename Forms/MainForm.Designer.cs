@@ -144,6 +144,7 @@ namespace YargArchipelagoClient
             // columnID
             // 
             columnID.Text = "ID";
+            columnID.Width = 30;
             // 
             // columnSongName
             // 
@@ -156,11 +157,11 @@ namespace YargArchipelagoClient
             txtFilter.Name = "txtFilter";
             txtFilter.Size = new Size(388, 23);
             txtFilter.TabIndex = 1;
-            txtFilter.Enter += textBox2_Enter;
-            txtFilter.Leave += textBox2_Leave;
+            txtFilter.TextChanged += txtFilter_TextChanged;
             // 
             // MainForm
             // 
+            AcceptButton = btnSendChat;
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);

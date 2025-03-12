@@ -8,14 +8,13 @@ namespace YargArchipelagoClient
 {
     public partial class ConnectionForm : Form
     {
-        public string ConnectionCachePath = "";
+        public static string ConnectionCachePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "connection.json");
         #region Constructors and Fields
 
         public ConnectionData? Connection = null;
         public ConnectionForm()
         {
             InitializeComponent();
-            ConnectionCachePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "connection.json");
         }
 
         #endregion
@@ -75,9 +74,6 @@ namespace YargArchipelagoClient
             }
 
             Connection = data;
-            string seed = Connection.GetSession()!.RoomState.Seed;
-            int seedValue = seed.GetHashCode();
-            Connection.SeededRNG = new(seedValue);
             DialogResult = DialogResult.OK;
             Close();
         }

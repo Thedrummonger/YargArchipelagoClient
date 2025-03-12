@@ -1,20 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
-namespace YargArchipelagoClient.Helpers
+﻿namespace YargArchipelagoClient.Forms
 {
-    public partial class ValueSelectForm: Form
+    public partial class ValueSelectForm : Form
     {
         public ValueSelectForm()
         {
-            InitializeComponent();
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(800, 450);
         }
         public object? SelectedValue { get; private set; }
 
@@ -53,14 +44,14 @@ namespace YargArchipelagoClient.Helpers
         private void SelectItem(object? sender, EventArgs e)
         {
             if (listBox.SelectedItem is null) return;
-            SelectedValue = listBox.SelectedItem; 
-            DialogResult = DialogResult.OK; 
+            SelectedValue = listBox.SelectedItem;
+            DialogResult = DialogResult.OK;
             Close();
         }
 
         public static object? ShowDialog(IEnumerable<object> values, string title = "Select a Value")
         {
-            using var form = new ValueSelectForm([..values], title);
+            using var form = new ValueSelectForm([.. values], title);
             return form.ShowDialog() == DialogResult.OK ? form.SelectedValue : null;
         }
     }

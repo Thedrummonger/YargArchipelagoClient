@@ -1,7 +1,4 @@
-﻿
-using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
-
-namespace YargArchipelagoClient.Data
+﻿namespace YargArchipelagoClient.Data
 {
     public class SongPool(string name, CommonData.SupportedInstrument instrument)
     {

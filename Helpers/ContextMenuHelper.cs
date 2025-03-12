@@ -1,26 +1,29 @@
-﻿using ArchipelagoPowerTools.Helpers;
+﻿using ArchipelagoPowerTools.Data;
+using ArchipelagoPowerTools.Helpers;
 using System.Text.RegularExpressions;
 using TDMUtils;
 using YargArchipelagoClient.Data;
+using YargArchipelagoClient.Forms;
 
 namespace YargArchipelagoClient.Helpers
 {
     public static class ContextMenuHelper
     {
-        public static ContextMenuStrip BuildSongListContextMenu(MainForm mainForm, ListViewItem itemTarget, SongLocation song)
+        public static ContextMenuStrip BuildSongListContextMenu(MainForm mainForm, SongLocation song)
         {
-            int RandomSwapsTotal = mainForm.ReceivedFiller.TryGetValue(CommonData.StaticItems.SwapRandom.GetDescription(), out int rst) ? rst : 0;
-            int RandomSwapsUsed = mainForm.Config!.UsedFiller.TryGetValue(CommonData.StaticItems.SwapRandom.GetDescription(), out int rsu) ? rsu : 0;
+            ConfigData config = mainForm.Config!;
+            ConnectionData connection = mainForm.Connection;
+            int RandomSwapsTotal = connection.ReceivedFiller.TryGetValue(CommonData.StaticItems.SwapRandom, out int rst) ? rst : 0;
+            int RandomSwapsUsed = config!.UsedFiller.TryGetValue(CommonData.StaticItems.SwapRandom, out int rsu) ? rsu : 0;
             int RandomSwapsAvailable = RandomSwapsTotal - RandomSwapsUsed;
 
-            int SwapsTotal = mainForm.ReceivedFiller.TryGetValue(CommonData.StaticItems.SwapPick.GetDescription(), out int st) ? st : 0;
-            int SwapsUsed = mainForm.Config!.UsedFiller.TryGetValue(CommonData.StaticItems.SwapPick.GetDescription(), out int su) ? su : 0;
+            int SwapsTotal = connection.ReceivedFiller.TryGetValue(CommonData.StaticItems.SwapPick, out int st) ? st : 0;
+            int SwapsUsed = config!.UsedFiller.TryGetValue(CommonData.StaticItems.SwapPick, out int su) ? su : 0;
             int SwapsAvailable = SwapsTotal - SwapsUsed;
 
             var menu = new ContextMenuStrip();
 
-            var SongData = song.GetSongData(mainForm.Config);
-
+            var SongData = song.GetSongData(config);
             if (SongData is not null)
             {
                 menu.Items.AddItem($"Song: {SongData.Name}");
@@ -29,17 +32,17 @@ namespace YargArchipelagoClient.Helpers
                 menu.Items.AddItem($"Charter: {SongData.Charter}");
             }
 
-            if (mainForm.Config.ManualMode)
+            if (config.ManualMode)
             {
                 menu.Items.Add(new ToolStripSeparator());
-                if (song.HasStandardCheck(out var sl) && !mainForm.CheckedLocations.Contains(sl))
-                    menu.Items.AddItem("Check Reward 1", () => mainForm.CheckLocations([sl], [song]));
+                if (song.HasStandardCheck(out var sl) && !connection.CheckedLocations.Contains(sl))
+                    menu.Items.AddItem("Check Reward 1", () => connection.CommitCheckLocations([sl], [song], config));
 
-                if (song.HasExtraCheck(out var el) && !mainForm.CheckedLocations.Contains(el))
-                    menu.Items.AddItem("Check Reward 2", () => mainForm.CheckLocations([el], [song]));
+                if (song.HasExtraCheck(out var el) && !connection.CheckedLocations.Contains(el))
+                    menu.Items.AddItem("Check Reward 2", () => connection.CommitCheckLocations([el], [song], config));
 
-                if (song.FameCheckAvailable([.. mainForm.CheckedLocations], out var fl))
-                    menu.Items.AddItem("Get Fame Point", () => mainForm.CheckLocations([el], [song]));
+                if (song.FameCheckAvailable([.. connection.CheckedLocations], out var fl))
+                    menu.Items.AddItem("Get Fame Point", () => connection.CommitCheckLocations([el], [song], config));
             }
 
             if ((RandomSwapsAvailable > 0 || SwapsAvailable > 0))
@@ -52,12 +55,12 @@ namespace YargArchipelagoClient.Helpers
                     menu.Items.AddItem($"{CommonData.StaticItems.SwapPick.GetDescription()}: {SwapsAvailable}", () => SwapSong(mainForm, song, false));
             }
 
-            if (mainForm.deathLinkEnabled)
+            if (config.deathLinkEnabled)
             {
                 menu.Items.Add(new ToolStripSeparator());
-                menu.Items.AddItem("Send Song Fail Death Link", () => 
-                    mainForm.deathLinkService.SendDeathLink(new(mainForm.Connection.SlotName, 
-                    $"Failed {song.GetSongDisplayName(mainForm.Config!)}")));
+                menu.Items.AddItem("Send Song Fail Death Link", () =>
+                    connection.DeathLinkService.SendDeathLink(new(connection.SlotName,
+                    $"Failed {song.GetSongDisplayName(config!)}")));
             }
 
             menu.Items.Add(new ToolStripSeparator());
@@ -85,9 +88,9 @@ namespace YargArchipelagoClient.Helpers
             return [.. ValidForProfile.Where(x => !configData.ApLocationData.Values.Any(y => y.SongHash == x))];
         }
 
-        public static void SwapSong(MainForm mainForm, SongLocation song, bool Random)
+        public static void SwapSong(MainForm main, SongLocation song, bool Random)
         {
-            var SwapCandidates = GetValidSongReplacements(mainForm.Config!, song);
+            var SwapCandidates = GetValidSongReplacements(main.Config!, song);
             if (SwapCandidates.Length < 1)
             {
                 MessageBox.Show($"No unused songs were available for profile {song.Requirements!.Name}", "No Valid Swap Candidates", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -95,19 +98,19 @@ namespace YargArchipelagoClient.Helpers
             }
             string? Target = null;
             if (Random)
-                Target = SwapCandidates[mainForm.Connection.SeededRNG.Next(SwapCandidates.Length)];
+                Target = SwapCandidates[main.Connection.GetRNG().Next(SwapCandidates.Length)];
             else if (ValueSelectForm.ShowDialog(SwapCandidates.OrderBy(x => x), $"Choose a replacement for ${song.SongHash}") is string r)
                 Target = r;
 
             if (Target is null) return;
 
             song.SongHash = Target;
-            string ItemUsed = Random ? CommonData.StaticItems.SwapRandom.GetDescription() : CommonData.StaticItems.SwapPick.GetDescription();
-            mainForm.Config!.UsedFiller.SetIfEmpty(ItemUsed, 0);
-            mainForm.Config!.UsedFiller[ItemUsed]++;
+            var ItemUsed = Random ? CommonData.StaticItems.SwapRandom : CommonData.StaticItems.SwapPick;
+            main.Config!.UsedFiller.SetIfEmpty(ItemUsed, 0);
+            main.Config!.UsedFiller[ItemUsed]++;
 
-            mainForm.SafeInvoke(mainForm.UpdateConfigFile);
-            mainForm.SafeInvoke(mainForm.PrintSongs);
+            main.SafeInvoke(main.UpdateConfigFile);
+            main.SafeInvoke(main.PrintSongs);
         }
 
         public static string AddSpacesToCamelCase(this string text) => Regex.Replace(text, "([a-z])([A-Z])", "$1 $2");

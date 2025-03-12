@@ -1,4 +1,5 @@
 ﻿using Archipelago.MultiClient.Net;
+using TDMUtils;
 
 namespace YargArchipelagoClient.Data
 {
@@ -17,104 +18,50 @@ namespace YargArchipelagoClient.Data
         /// </summary>
         public SongLocation GoalSong = new(0);
 
-        public Dictionary<string, int> UsedFiller = [];
+        public Dictionary<CommonData.StaticItems, int> UsedFiller = [];
 
         public bool BroadcastSongName = false;
 
         public bool ManualMode = false;
 
+        public int FamePointsNeeded = 0;
+
+        public bool deathLinkEnabled = false;
+
         public int TotalSongsInPool => ApLocationData.Count + 1; // +1 For Goal Song
 
         public void ParseAPLocations(ArchipelagoSession archipelagoSession)
         {
+            var Locations = CommonData.APIDs.Locations;
+            var SongLocations = CommonData.APIDs.SongLocationIDs;
             foreach (var i in archipelagoSession.Locations.AllLocations)
             {
-                var Name = archipelagoSession.Locations.GetLocationNameFromId(i);
-                if (Name == "Goal Song")
+                if (Locations.TryGetValue(i, out var Location))
                 {
-                    GoalSong.APStandardCheckLocation = i;
-                    continue;
+                    if (Location == CommonData.StaticLocations.Goal)
+                    {
+                        GoalSong.APStandardCheckLocation = i;
+                        continue;
+                    }
                 }
-                var data = Name.Split(" ");
-                if (data.Length != 4 || !int.TryParse(data[1], out var songNum)) throw new Exception($"Malformed Song Name! {Name}");
-                if (!ApLocationData.ContainsKey(songNum)) ApLocationData[songNum] = new(songNum);
-                switch (data[3].Trim())
+                if (SongLocations.TryGetValue(i, out var Song))
                 {
-                    case "1":
-                        ApLocationData[songNum].APStandardCheckLocation = i;
-                        break;
-                    case "2":
-                        ApLocationData[songNum].APExtraCheckLocation = i;
-                        break;
-                    case "Point":
-                        ApLocationData[songNum].APFameCheckLocation = i;
-                        break;
-                    default: throw new Exception($"Malformed Song Name! {Name}");
+                    ApLocationData.SetIfEmpty(Song.songnum, new(Song.songnum));
+                    switch (Song.locType)
+                    {
+                        case CommonData.LocationType.standard:
+                            ApLocationData[Song.songnum].APStandardCheckLocation = i;
+                            continue;
+                        case CommonData.LocationType.extra:
+                            ApLocationData[Song.songnum].APExtraCheckLocation = i;
+                            continue;
+                        case CommonData.LocationType.fame:
+                            ApLocationData[Song.songnum].APFameCheckLocation = i;
+                            continue;
+                    }
                 }
+                throw new Exception($"{i} was not a valid AP id [{archipelagoSession.Locations.GetLocationNameFromId(i)}]");
             }
-        }
-    }
-
-    public class SongLocation(int num)
-    {
-        public int SongNumber = num;
-        public string? SongHash = null;
-        public long? APStandardCheckLocation = null;
-        public long? APExtraCheckLocation = null;
-        public long? APFameCheckLocation = null;
-        public SongPool? Requirements = null;
-        public bool HasStandardCheck(out long ID)
-        {
-            ID = APStandardCheckLocation ?? -1;
-            return APStandardCheckLocation is not null;
-        }
-        public bool HasExtraCheck(out long ID)
-        {
-            ID = APExtraCheckLocation ?? -1;
-            return APExtraCheckLocation is not null;
-        }
-        public bool HasFameCheck(out long ID)
-        {
-            ID = APFameCheckLocation ?? -1;
-            return APFameCheckLocation is not null;
-        }
-        public string GetSongDisplayName(ConfigData config, bool WithArtist = true, bool WithAlbum = false, bool WithSongNum = false)
-        {
-            var Data = GetSongData(config);
-            if (Data is not CommonData.SongData SongData) return SongNumber.ToString();
-            string Display = SongData.Name;
-            if (WithArtist)
-                Display += $" by {SongData.Artist}";
-            if (WithAlbum)
-                Display += $" from {SongData.Album}";
-            if (WithSongNum)
-                Display = $"[Song {SongNumber}] {Display}";
-            return Display;
-        }
-        public CommonData.SongData? GetSongData(ConfigData config)
-        {
-            if (config is null) return null;
-            if (SongHash is null) return null;
-            if (!config.SongData.TryGetValue(SongHash, out var SongData)) return null;
-            return SongData;
-        }
-        public bool FameCheckAvailable(HashSet<long> CheckedLocations, out long FameCheckID)
-        {
-            if (!HasFameCheck(out FameCheckID)) return false;
-            if (CheckedLocations.Contains(FameCheckID)) return false;
-            bool standardComplete = !HasStandardCheck(out var sl) || CheckedLocations.Contains(sl);
-            bool extraComplete = !HasExtraCheck(out var el) || CheckedLocations.Contains(el);
-            return standardComplete && extraComplete;
-        }
-        public bool HasUncheckedLocations(HashSet<long> CheckedLocations)
-        {
-            if (HasStandardCheck(out var sl) && !CheckedLocations.Contains(sl))
-                return true;
-            if (HasExtraCheck(out var el) && !CheckedLocations.Contains(el))
-                return true;
-            if (HasFameCheck(out var fl) && !CheckedLocations.Contains(fl))
-                return true;
-            return false;
         }
     }
 }
