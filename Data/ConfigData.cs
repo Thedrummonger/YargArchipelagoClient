@@ -1,4 +1,5 @@
 ﻿using Archipelago.MultiClient.Net;
+using ArchipelagoPowerTools.Data;
 using TDMUtils;
 
 namespace YargArchipelagoClient.Data
@@ -32,6 +33,10 @@ namespace YargArchipelagoClient.Data
 
         public int TotalSongsInPool => ApLocationData.Count + 1; // +1 For Goal Song
 
+        public void SaveConfigFile(ConnectionData Connection)
+        {
+            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "seeds", Connection.getSaveFileName()), this.ToFormattedJson());
+        }
         public void ParseAPLocations(ArchipelagoSession archipelagoSession)
         {
             var Locations = APWorldData.APIDs.Locations;

@@ -51,7 +51,7 @@ namespace YargArchipelagoClient
             }
             Config = configResult!;
             ClientInitializationHelper.ReadSlotData(Connection, Config);
-            UpdateConfigFile();
+            Config.SaveConfigFile(Connection);
 
             // Subscribe to session events.
             Connection!.GetSession().Items.ItemReceived += Items_ItemReceived;
@@ -104,7 +104,7 @@ namespace YargArchipelagoClient
             if (RestartTrapAmountInMemory != RestartTrapAmountFromServer)
             {
                 Config.TrapsRegistered[APWorldData.StaticItems.TrapRestart] = RestartTrapAmountFromServer;
-                UpdateConfigFile();
+                Config.SaveConfigFile(Connection);
             }
 
         }
@@ -137,11 +137,6 @@ namespace YargArchipelagoClient
             UpdateClientTitle();
         }
 
-        public void UpdateConfigFile()
-        {
-            if (Config is null) return;
-            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "seeds", Connection.getSaveFileName()), Config.ToFormattedJson());
-        }
 
         private void SyncTimerTick(object? sender, EventArgs e)
         {
@@ -275,19 +270,19 @@ namespace YargArchipelagoClient
                 case "broadcast":
                     if (Config is null) return;
                     Config.BroadcastSongName = !Config.BroadcastSongName;
-                    UpdateConfigFile();
+                    Config.SaveConfigFile(Connection);
                     WriteToLog($"Broadcasting Songs: {Config.BroadcastSongName}");
                     break;
                 case "manual":
                     if (Config is null) return;
                     Config.ManualMode = !Config.ManualMode;
-                    UpdateConfigFile();
+                    Config.SaveConfigFile(Connection);
                     WriteToLog($"Manual Mode: {Config.ManualMode}");
                     break;
                 case "deathlink":
                     if (Config is null || !Connection.GetSession().RoomState.ServerTags.Contains("DeathLink")) return;
                     Config.deathLinkEnabled = !Config.deathLinkEnabled;
-                    UpdateConfigFile();
+                    Config.SaveConfigFile(Connection);
                     WriteToLog($"Deathlink Enabled: {Config.deathLinkEnabled}");
                     break;
                 case "fame":
@@ -305,7 +300,7 @@ namespace YargArchipelagoClient
 
             var hit = lvSongList.HitTest(e.Location);
             if (hit.Item is ListViewItem item && item.Tag is SongLocation Song)
-                ContextMenuHelper.BuildSongListContextMenu(this, Song).Show(lvSongList, e.Location);
+                new ContextMenuBuilder(this, Song).BuildSongListContextMenu().Show();
 
         }
     }
