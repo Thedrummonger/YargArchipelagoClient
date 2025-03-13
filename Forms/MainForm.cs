@@ -59,9 +59,8 @@ namespace YargArchipelagoClient
             Connection!.GetSession().Locations.CheckedLocationsUpdated += Locations_CheckedLocationsUpdated;
             Connection.DeathLinkService!.OnDeathLinkReceived += DeathLinkService_OnDeathLinkReceived;
 
-            Connection.UpdateCheckedLocations();
-            Connection.UpdateReceivedItems();
-            PrintSongs();
+            UpdateData = true;
+            SyncTimerTick(sender, e);
 
             SyncTimer.Interval = 200;
             SyncTimer.Tick += SyncTimerTick;
@@ -77,6 +76,7 @@ namespace YargArchipelagoClient
             UpdateClientTitle();
         }
 
+
         private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink)
         {
             if (!Config!.deathLinkEnabled) return;
@@ -89,7 +89,24 @@ namespace YargArchipelagoClient
                 });
                 WriteToLog(deathLink.Source);
             }
-                
+
+        }
+        private void CheckForRestartTrap()
+        {
+            if (!Connection.ReceivedFiller.TryGetValue(APWorldData.StaticItems.TrapRestart, out var RestartTrapAmountFromServer))
+                return;
+
+            var RestartTrapAmountInMemory = Config.TrapsRegistered.TryGetValue(APWorldData.StaticItems.TrapRestart, out var R) ? R : 0;
+
+            if (RestartTrapAmountFromServer > RestartTrapAmountInMemory)
+                _ = PacketServer.SendPacketAsync(new CommonData.Networking.ClientDataPacket { trapData = new CommonData.TrapData(CommonData.trapType.Restart) });
+
+            if (RestartTrapAmountInMemory != RestartTrapAmountFromServer)
+            {
+                Config.TrapsRegistered[APWorldData.StaticItems.TrapRestart] = RestartTrapAmountFromServer;
+                UpdateConfigFile();
+            }
+
         }
 
         public const string Title = "Yarg Archipelago Client";
@@ -132,6 +149,7 @@ namespace YargArchipelagoClient
             UpdateData = false;
             Connection.UpdateCheckedLocations();
             Connection.UpdateReceivedItems();
+            CheckForRestartTrap();
             PrintSongs();
         }
 
@@ -176,7 +194,7 @@ namespace YargArchipelagoClient
         private void BroadcastSongNameToServer(ItemSendLogMessage message)
         {
             if (!message.IsReceiverTheActivePlayer) return;
-            if (!CommonData.APIDs.SongItemIds.TryGetValue(message.Item.ItemId, out var SongNum))
+            if (!APWorldData.APIDs.SongItemIds.TryGetValue(message.Item.ItemId, out var SongNum))
                 return;
             if (!Config!.ApLocationData.TryGetValue(SongNum, out var Song))
                 return;

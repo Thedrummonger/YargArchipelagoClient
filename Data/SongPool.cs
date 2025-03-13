@@ -27,7 +27,7 @@
         public bool MetExtra(CommonData.SongPassInfo passInfo, out bool DeathLink) =>
             MetReq(passInfo, out DeathLink, CompletionRequirement.Reward2Req, CompletionRequirement.Reward1Diff, Instrument);
 
-        private static bool MetReq(CommonData.SongPassInfo passInfo, out bool DeathLink, CommonData.CompletionReq req, CommonData.SupportedDifficulty diff, CommonData.SupportedInstrument instrument)
+        private static bool MetReq(CommonData.SongPassInfo passInfo, out bool DeathLink, APWorldData.CompletionReq req, CommonData.SupportedDifficulty diff, CommonData.SupportedInstrument instrument)
         {
             DeathLink = false;
             var ValidParticipants = passInfo.participants.Where(x => x.instrument == instrument);
@@ -37,8 +37,8 @@
             bool RequirementMet = false;
             foreach (var player in HadProperDifficulty)
             {
-                if (req == CommonData.CompletionReq.FullCombo && !player.FC) continue;
-                if (req == CommonData.CompletionReq.GoldStar && !player.WasGoldStar) continue;
+                if (req == APWorldData.CompletionReq.FullCombo && !player.FC) continue;
+                if (req == APWorldData.CompletionReq.GoldStar && !player.WasGoldStar) continue;
                 if (player.Stars < (int)req) continue;
                 RequirementMet = true;
                 break;
@@ -50,8 +50,8 @@
 
     public class CompletionRequirement()
     {
-        public CommonData.CompletionReq Reward1Req = CommonData.CompletionReq.Clear;
-        public CommonData.CompletionReq Reward2Req = CommonData.CompletionReq.ThreeStar;
+        public APWorldData.CompletionReq Reward1Req = APWorldData.CompletionReq.Clear;
+        public APWorldData.CompletionReq Reward2Req = APWorldData.CompletionReq.ThreeStar;
         public CommonData.SupportedDifficulty Reward1Diff = CommonData.SupportedDifficulty.Expert;
         public CommonData.SupportedDifficulty Reward2Diff = CommonData.SupportedDifficulty.Expert;
     }

@@ -73,7 +73,7 @@ namespace YargArchipelagoClient.Data
                     ParsePacket(line);
                 }
             }
-            Logger?.Invoke("YARG ganme client disconnected.");
+            Logger?.Invoke("YARG game client disconnected.");
             currentWriter = null;
         }
 

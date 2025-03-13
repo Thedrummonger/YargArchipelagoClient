@@ -34,7 +34,7 @@ namespace ArchipelagoPowerTools.Data
         [JsonIgnore]
         public HashSet<int> ReceivedSongs { get; } = [];
         [JsonIgnore]
-        public Dictionary<CommonData.StaticItems, int> ReceivedFiller { get; } = [];
+        public Dictionary<APWorldData.StaticItems, int> ReceivedFiller { get; } = [];
         [JsonIgnore]
         public HashSet<long> CheckedLocations { get; } = [];
         [JsonIgnore]
@@ -66,14 +66,14 @@ namespace ArchipelagoPowerTools.Data
             {
                 Debug.WriteLine($"Checking recived item {i.ItemName}");
 
-                if (CommonData.APIDs.Items.TryGetValue(i.ItemId, out var item))
+                if (APWorldData.APIDs.Items.TryGetValue(i.ItemId, out var item))
                 {
                     Debug.WriteLine($"Was filler");
                     ReceivedFiller.SetIfEmpty(item, 0);
                     ReceivedFiller[item]++;
                     continue;
                 }
-                if (CommonData.APIDs.SongItemIds.TryGetValue(i.ItemId, out var songItem))
+                if (APWorldData.APIDs.SongItemIds.TryGetValue(i.ItemId, out var songItem))
                 {
                     Debug.WriteLine($"Was song {songItem}");
                     ReceivedSongs.Add(songItem);
@@ -81,7 +81,7 @@ namespace ArchipelagoPowerTools.Data
                 }
                 throw new Exception($"Error, received unknown item {i.ItemName} [{i.ItemId}]");
             }
-            if (ReceivedFiller.TryGetValue(CommonData.StaticItems.Victory, out var v) && v > 0)
+            if (ReceivedFiller.TryGetValue(APWorldData.StaticItems.Victory, out var v) && v > 0)
                 Session.SetGoalAchieved();
         }
 

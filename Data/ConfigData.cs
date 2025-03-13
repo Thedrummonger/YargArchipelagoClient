@@ -18,7 +18,7 @@ namespace YargArchipelagoClient.Data
         /// </summary>
         public SongLocation GoalSong = new(0);
 
-        public Dictionary<CommonData.StaticItems, int> UsedFiller = [];
+        public Dictionary<APWorldData.StaticItems, int> UsedFiller = [];
 
         public bool BroadcastSongName = false;
 
@@ -28,17 +28,19 @@ namespace YargArchipelagoClient.Data
 
         public bool deathLinkEnabled = false;
 
+        public Dictionary<APWorldData.StaticItems, int> TrapsRegistered = [];
+
         public int TotalSongsInPool => ApLocationData.Count + 1; // +1 For Goal Song
 
         public void ParseAPLocations(ArchipelagoSession archipelagoSession)
         {
-            var Locations = CommonData.APIDs.Locations;
-            var SongLocations = CommonData.APIDs.SongLocationIDs;
+            var Locations = APWorldData.APIDs.Locations;
+            var SongLocations = APWorldData.APIDs.SongLocationIDs;
             foreach (var i in archipelagoSession.Locations.AllLocations)
             {
                 if (Locations.TryGetValue(i, out var Location))
                 {
-                    if (Location == CommonData.StaticLocations.Goal)
+                    if (Location == APWorldData.StaticLocations.Goal)
                     {
                         GoalSong.APStandardCheckLocation = i;
                         continue;
@@ -49,13 +51,13 @@ namespace YargArchipelagoClient.Data
                     ApLocationData.SetIfEmpty(Song.songnum, new(Song.songnum));
                     switch (Song.locType)
                     {
-                        case CommonData.LocationType.standard:
+                        case APWorldData.LocationType.standard:
                             ApLocationData[Song.songnum].APStandardCheckLocation = i;
                             continue;
-                        case CommonData.LocationType.extra:
+                        case APWorldData.LocationType.extra:
                             ApLocationData[Song.songnum].APExtraCheckLocation = i;
                             continue;
-                        case CommonData.LocationType.fame:
+                        case APWorldData.LocationType.fame:
                             ApLocationData[Song.songnum].APFameCheckLocation = i;
                             continue;
                     }

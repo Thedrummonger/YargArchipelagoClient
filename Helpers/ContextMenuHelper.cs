@@ -13,12 +13,12 @@ namespace YargArchipelagoClient.Helpers
         {
             ConfigData config = mainForm.Config!;
             ConnectionData connection = mainForm.Connection;
-            int RandomSwapsTotal = connection.ReceivedFiller.TryGetValue(CommonData.StaticItems.SwapRandom, out int rst) ? rst : 0;
-            int RandomSwapsUsed = config!.UsedFiller.TryGetValue(CommonData.StaticItems.SwapRandom, out int rsu) ? rsu : 0;
+            int RandomSwapsTotal = connection.ReceivedFiller.TryGetValue(APWorldData.StaticItems.SwapRandom, out int rst) ? rst : 0;
+            int RandomSwapsUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.SwapRandom, out int rsu) ? rsu : 0;
             int RandomSwapsAvailable = RandomSwapsTotal - RandomSwapsUsed;
 
-            int SwapsTotal = connection.ReceivedFiller.TryGetValue(CommonData.StaticItems.SwapPick, out int st) ? st : 0;
-            int SwapsUsed = config!.UsedFiller.TryGetValue(CommonData.StaticItems.SwapPick, out int su) ? su : 0;
+            int SwapsTotal = connection.ReceivedFiller.TryGetValue(APWorldData.StaticItems.SwapPick, out int st) ? st : 0;
+            int SwapsUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.SwapPick, out int su) ? su : 0;
             int SwapsAvailable = SwapsTotal - SwapsUsed;
 
             var menu = new ContextMenuStrip();
@@ -50,9 +50,9 @@ namespace YargArchipelagoClient.Helpers
                 menu.Items.Add(new ToolStripSeparator());
                 menu.Items.AddItem($"Use Modifier:");
                 if (RandomSwapsAvailable > 0)
-                    menu.Items.AddItem($"{CommonData.StaticItems.SwapRandom.GetDescription()}: {RandomSwapsAvailable}", () => SwapSong(mainForm, song, true));
+                    menu.Items.AddItem($"{APWorldData.StaticItems.SwapRandom.GetDescription()}: {RandomSwapsAvailable}", () => SwapSong(mainForm, song, true));
                 if (SwapsAvailable > 0)
-                    menu.Items.AddItem($"{CommonData.StaticItems.SwapPick.GetDescription()}: {SwapsAvailable}", () => SwapSong(mainForm, song, false));
+                    menu.Items.AddItem($"{APWorldData.StaticItems.SwapPick.GetDescription()}: {SwapsAvailable}", () => SwapSong(mainForm, song, false));
             }
 
             if (config.deathLinkEnabled)
@@ -105,7 +105,7 @@ namespace YargArchipelagoClient.Helpers
             if (Target is null) return;
 
             song.SongHash = Target;
-            var ItemUsed = Random ? CommonData.StaticItems.SwapRandom : CommonData.StaticItems.SwapPick;
+            var ItemUsed = Random ? APWorldData.StaticItems.SwapRandom : APWorldData.StaticItems.SwapPick;
             main.Config!.UsedFiller.SetIfEmpty(ItemUsed, 0);
             main.Config!.UsedFiller[ItemUsed]++;
 

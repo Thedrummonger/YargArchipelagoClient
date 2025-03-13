@@ -41,8 +41,8 @@ namespace YargArchipelagoClient
             cmbAddInstrument.DataSource = Enum.GetValues(typeof(CommonData.SupportedInstrument)).Cast<CommonData.SupportedInstrument>().ToArray();
             cmbPoolReward1Diff.DataSource = Enum.GetValues(typeof(CommonData.SupportedDifficulty)).Cast<CommonData.SupportedDifficulty>().ToArray();
             cmbPoolReward2Diff.DataSource = Enum.GetValues(typeof(CommonData.SupportedDifficulty)).Cast<CommonData.SupportedDifficulty>().ToArray();
-            cmbPoolReward1Score.DataSource = Enum.GetValues(typeof(CommonData.CompletionReq)).Cast<CommonData.CompletionReq>().ToArray();
-            cmbPoolReward2Score.DataSource = Enum.GetValues(typeof(CommonData.CompletionReq)).Cast<CommonData.CompletionReq>().ToArray();
+            cmbPoolReward1Score.DataSource = Enum.GetValues(typeof(APWorldData.CompletionReq)).Cast<APWorldData.CompletionReq>().ToArray();
+            cmbPoolReward2Score.DataSource = Enum.GetValues(typeof(APWorldData.CompletionReq)).Cast<APWorldData.CompletionReq>().ToArray();
             UpdateSongReqLabel();
         }
 
@@ -88,8 +88,8 @@ namespace YargArchipelagoClient
             Pool.MinDifficulty = (int)nudPoolMinDifficulty.Value;
             Pool.MaxDifficulty = (int)nudPoolMaxDifficulty.Value;
             Pool.AmountInPool = (int)nudPoolAmount.Value;
-            Pool.CompletionRequirement.Reward1Req = cmbPoolReward1Score.SelectedItem is CommonData.CompletionReq r1 ? r1 : CommonData.CompletionReq.Clear;
-            Pool.CompletionRequirement.Reward2Req = cmbPoolReward2Score.SelectedItem is CommonData.CompletionReq r2 ? r2 : CommonData.CompletionReq.Clear;
+            Pool.CompletionRequirement.Reward1Req = cmbPoolReward1Score.SelectedItem is APWorldData.CompletionReq r1 ? r1 : APWorldData.CompletionReq.Clear;
+            Pool.CompletionRequirement.Reward2Req = cmbPoolReward2Score.SelectedItem is APWorldData.CompletionReq r2 ? r2 : APWorldData.CompletionReq.Clear;
             Pool.CompletionRequirement.Reward1Diff = cmbPoolReward1Diff.SelectedItem is CommonData.SupportedDifficulty d1 ? d1 : CommonData.SupportedDifficulty.Expert;
             Pool.CompletionRequirement.Reward2Diff = cmbPoolReward2Diff.SelectedItem is CommonData.SupportedDifficulty d2 ? d2 : CommonData.SupportedDifficulty.Expert;
 

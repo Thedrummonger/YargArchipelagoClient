@@ -13,7 +13,7 @@ namespace YargArchipelagoClient.Helpers
         public static bool HasFamePointGoal(this ConnectionData Connection, ConfigData Config) =>
             GetCurrentFame(Connection) >= Config.FamePointsNeeded;
         public static int GetCurrentFame(this ConnectionData Connection) =>
-            Connection.ReceivedFiller.TryGetValue(CommonData.StaticItems.FamePoint, out var famePoints) ? famePoints : 0;
+            Connection.ReceivedFiller.TryGetValue(APWorldData.StaticItems.FamePoint, out var famePoints) ? famePoints : 0;
 
         private static string LastReadContent = string.Empty;
         public static void CheckLocations(ConfigData Config, ConnectionData Connection)
@@ -145,7 +145,6 @@ namespace YargArchipelagoClient.Helpers
                     Connection.GetSession().Say(i.GetSongDisplayName(Config!, true, true, true));
             }
             Connection!.GetSession().Locations.CompleteLocationChecks([.. Locations]);
-            Connection!.UpdateCheckedLocations();
         }
     }
 }
