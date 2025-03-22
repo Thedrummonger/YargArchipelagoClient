@@ -72,4 +72,17 @@ namespace YargArchipelagoClient.Data
 
         public bool IsGoalSong() => SongNumber == 0;
     }
+
+    public static class SongHelper
+    {
+        public static string GetSongDisplayName(this SongData Data, bool WithArtist = true, bool WithAlbum = false)
+        {
+            string Display = Data.Name;
+            if (WithArtist)
+                Display += $" by {Data.Artist}";
+            if (WithAlbum)
+                Display += $" from {Data.Album}";
+            return Display;
+        }
+    }
 }

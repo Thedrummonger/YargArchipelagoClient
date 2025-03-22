@@ -3,6 +3,7 @@ using TDMUtils;
 using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Forms;
 using YargArchipelagoCommon;
+using static YargArchipelagoClient.Helpers.WinFormHelpers;
 using static YargArchipelagoCommon.CommonData;
 
 namespace YargArchipelagoClient.Helpers
@@ -137,15 +138,16 @@ namespace YargArchipelagoClient.Helpers
             config.SaveConfigFile(connection);
         }
 
-        public string[] GetValidSongReplacements()
+        public SongData[] GetValidSongReplacements()
         {
-            var ValidForProfile = song.Requirements!.GetAvailableSongs(config.SongData).Keys.ToHashSet();
-            return [.. ValidForProfile.Where(x => !config.ApLocationData.Values.Any(y => y.SongHash == x))];
+            var ValidForProfile = song.Requirements!.GetAvailableSongs(config.SongData).Values.ToHashSet();
+            return [.. ValidForProfile.Where(x => !config.ApLocationData.Values.Any(y => y.SongHash == x.SongChecksum))];
         }
 
         public void SwapSong(bool Random)
         {
             var SwapCandidates = GetValidSongReplacements();
+            var SelectList = ContainerItem.ToContainerList(SwapCandidates.OrderBy(x => x.GetSongDisplayName()), x => x.GetSongDisplayName());
             if (SwapCandidates.Length < 1)
             {
                 MessageBox.Show($"No unused songs were available for profile {song.Requirements!.Name}", "No Valid Swap Candidates", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -153,9 +155,9 @@ namespace YargArchipelagoClient.Helpers
             }
             string? Target = null;
             if (Random)
-                Target = SwapCandidates[connection.GetRNG().Next(SwapCandidates.Length)];
-            else if (ValueSelectForm.ShowDialog(SwapCandidates.OrderBy(x => x), $"Choose a replacement for ${song.SongHash}") is string r)
-                Target = r;
+                Target = SwapCandidates[connection.GetRNG().Next(SwapCandidates.Length)].SongChecksum;
+            else if (ValueSelectForm.ShowDialog(SelectList, $"Choose a replacement for ${song.GetSongDisplayName(config, WithSongNum: true)}") is ContainerItem c && c.Value is SongData r)
+                Target = r.SongChecksum;
 
             if (Target is null) return;
 

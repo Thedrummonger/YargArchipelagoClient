@@ -40,5 +40,11 @@ namespace YargArchipelagoClient.Helpers
                 return value;
             return default;
         }
+        public static T? GetSelectedContainerItem<T>(this ListBox comboBox)
+        {
+            if (comboBox.SelectedItem is ContainerItem containerItem && containerItem.Value is T value)
+                return value;
+            return default;
+        }
     }
 }
