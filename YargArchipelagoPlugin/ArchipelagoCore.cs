@@ -1,14 +1,15 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using YARG.Core;
+using YARG.Core.Engine;
+using YARG.Core.Game;
+using YARG.Core.Song;
+using YARG.Core.Utility;
 using YARG.Gameplay;
 using YARG.Scores;
-using YARG.Core.Song;
-using YARG.Core;
-using Newtonsoft.Json;
-using YARG.Core.Utility;
-using YARG.Core.Game;
 using YARG.Song;
 using YargArchipelagoCommon;
 using static YargArchipelagoCommon.CommonData.Networking;
@@ -18,6 +19,8 @@ namespace YargArchipelagoPlugin
     public class Archipelago
     {
         public static YargPacketClient packetClient;
+
+        public static Action<BaseEngine, uint> _gainStarPowerDelegate;
 
         private static GameManager CurrentGame = null;
         public static string[] CurrentlyAvailableSongs = Array.Empty<string>();
@@ -156,6 +159,9 @@ namespace YargArchipelagoPlugin
             {
                 if (BasePacket.trapData.type == CommonData.trapType.Restart)
                     CauseDeathLink();
+                if (BasePacket.trapData.type == CommonData.trapType.StarPower && CurrentGame != null && !CurrentGame.IsPractice)
+                    foreach (var i in CurrentGame.Players)
+                        _gainStarPowerDelegate?.Invoke(i.BaseEngine, i.BaseEngine.TicksPerQuarterSpBar);
             }
             if (BasePacket.AvailableSongs != null)
                 CurrentlyAvailableSongs = BasePacket.AvailableSongs;

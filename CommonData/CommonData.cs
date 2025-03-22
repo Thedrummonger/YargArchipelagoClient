@@ -86,7 +86,8 @@ namespace YargArchipelagoCommon
         }
         public enum trapType
         {
-            Restart
+            Restart,
+            StarPower
         }
 
         public static class Networking

@@ -1,6 +1,7 @@
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using TDMUtils;
 using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Helpers;
@@ -141,6 +142,13 @@ namespace YargArchipelagoClient
             _ = PacketServer?.SendPacketAsync(new CommonData.Networking.ClientDataPacket
             {
                 AvailableSongs = [.. Config.GetAllSongLocations().Where(x => x.SongAvailableToPlay(Connection, Config)).Select(x => x.SongHash)]
+            });
+        }
+        private void SendStarPowerItem()
+        {
+            _ = PacketServer?.SendPacketAsync(new CommonData.Networking.ClientDataPacket
+            {
+                trapData = new(CommonData.trapType.StarPower)
             });
         }
 
@@ -291,6 +299,11 @@ namespace YargArchipelagoClient
                 case "update":
                     WriteToLog($"Updating Available");
                     SendAvailableSongUpdate();
+                    break;
+                case "debug":
+                    if (!Debugger.IsAttached) break;
+                    WriteToLog($"Debug Command Sent");
+                    SendStarPowerItem();
                     break;
                 default:
                     WriteToLog($"{v} is not a valid command");
