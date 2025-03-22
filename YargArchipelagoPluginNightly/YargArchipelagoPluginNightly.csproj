@@ -74,10 +74,12 @@
     <Compile Include="..\CommonData\ArchipelagoCore.cs">
       <Link>ArchipelagoCore.cs</Link>
     </Compile>
+    <Compile Include="..\CommonData\ArchipelagoPlugin.cs">
+      <Link>ArchipelagoPlugin.cs</Link>
+    </Compile>
     <Compile Include="..\CommonData\CommonData.cs">
       <Link>CommonData.cs</Link>
     </Compile>
-    <Compile Include="ArchipelagoPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

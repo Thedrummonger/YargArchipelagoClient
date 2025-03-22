@@ -1,26 +1,26 @@
 ﻿using BepInEx;
+using BepInEx.Logging;
 using HarmonyLib;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using YARG.Core.Engine;
 using YARG.Gameplay;
 using YARG.Menu.MusicLibrary;
 using YARG.Scores;
 using YARG.Song;
-using YargArchipelagoPlugin;
 
-namespace YargArchipelagoPluginMain
+namespace YargArchipelagoPlugin
 {
     [BepInPlugin(pluginGuid, pluginName, pluginVersion)]
     public class ArchipelagoPlugin : BaseUnityPlugin
     {
         public const string pluginGuid = "thedrummonger.yarg.archipelago";
-        public const string pluginName = "Yarg Archipelago Plugin Stable";
-        public const string pluginVersion = "0.0.0.1";
+        public const string pluginVersion = "0.1.0.0";
+#if NIGHTLY
+        public const string pluginName = "YARG Nightly Archipelago Plugin";
+#else
+        public const string pluginName = "YARG Archipelago Plugin";
+#endif
 
         public void Awake()
         {
@@ -48,6 +48,13 @@ namespace YargArchipelagoPluginMain
             MethodInfo OriginalRecommendedSongsGetRecommendedSongs = AccessTools.Method(typeof(RecommendedSongs), "GetRecommendedSongs");
             MethodInfo PatchedRecommendedSongsGetRecommendedSongs = AccessTools.Method(typeof(APPatches), "RecommendedSongs_GetRecommendedSongs");
             harmony.Patch(OriginalRecommendedSongsGetRecommendedSongs, new HarmonyMethod(PatchedRecommendedSongsGetRecommendedSongs));
+
+#if NIGHTLY
+            //GainStarPower is a protected function, make a delegate for it that I can use to call it from the AP code.
+            //TODO figure out how the Stable build adds start power
+            MethodInfo method = AccessTools.Method(typeof(BaseEngine), "GainStarPower");
+            Archipelago._gainStarPowerDelegate = (Action<BaseEngine, uint>)Delegate.CreateDelegate(typeof(Action<BaseEngine, uint>), method);
+#endif
 
             Archipelago.StartAPClient();
         }
