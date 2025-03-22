@@ -1,35 +1,33 @@
 ﻿using BepInEx;
-using BepInEx.Logging;
 using HarmonyLib;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 using YARG.Core.Engine;
 using YARG.Gameplay;
 using YARG.Menu.MusicLibrary;
 using YARG.Scores;
 using YARG.Song;
+using YargArchipelagoPlugin;
 
-namespace YargArchipelagoPlugin
+namespace YargArchipelagoPluginMain
 {
     [BepInPlugin(pluginGuid, pluginName, pluginVersion)]
     public class ArchipelagoPlugin : BaseUnityPlugin
     {
         public const string pluginGuid = "thedrummonger.yarg.archipelago";
-        public const string pluginName = "Yarg Archipelago Plugin";
+        public const string pluginName = "Yarg Archipelago Plugin Stable";
         public const string pluginVersion = "0.0.0.1";
-
-        public static ManualLogSource ManualLogSource;
 
         public void Awake()
         {
-            ManualLogSource = Logger;
+            Archipelago.ManualLogSource = Logger;
             Logger.LogInfo("Starting AP");
 
             Harmony harmony = new Harmony(pluginGuid);
-
-            //MethodInfo OriginalMainMenuStart = AccessTools.Method(typeof(MainMenu), "Start");
-            //MethodInfo PatchedMainMenuStart = AccessTools.Method(typeof(APPatches), "MainMenu_Start");
-            //harmony.Patch(OriginalMainMenuStart, null, new HarmonyMethod(PatchedMainMenuStart));
 
             MethodInfo OriginalGameManagerAwake = AccessTools.Method(typeof(GameManager), "Awake");
             MethodInfo PatchedGameManagerAwake = AccessTools.Method(typeof(APPatches), "GameManager_Awake");
@@ -50,10 +48,6 @@ namespace YargArchipelagoPlugin
             MethodInfo OriginalRecommendedSongsGetRecommendedSongs = AccessTools.Method(typeof(RecommendedSongs), "GetRecommendedSongs");
             MethodInfo PatchedRecommendedSongsGetRecommendedSongs = AccessTools.Method(typeof(APPatches), "RecommendedSongs_GetRecommendedSongs");
             harmony.Patch(OriginalRecommendedSongsGetRecommendedSongs, new HarmonyMethod(PatchedRecommendedSongsGetRecommendedSongs));
-
-            //GainStarPower is a protected function, make a delegate for it that I can use to call it from the AP code.
-            MethodInfo method = AccessTools.Method(typeof(BaseEngine), "GainStarPower");
-            Archipelago._gainStarPowerDelegate = (Action<BaseEngine, uint>)Delegate.CreateDelegate(typeof(Action<BaseEngine, uint>), method);
 
             Archipelago.StartAPClient();
         }

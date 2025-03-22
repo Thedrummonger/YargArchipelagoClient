@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{DB54BC6E-B414-40D4-A3BA-98EB7262EE78}</ProjectGuid>
+    <ProjectGuid>{ECF27AAC-07BE-43BB-8ED9-1C938308F853}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>YargArchipelagoPlugin</RootNamespace>
-    <AssemblyName>YargArchipelagoPlugin</AssemblyName>
+    <RootNamespace>YargArchipelagoPluginMain</RootNamespace>
+    <AssemblyName>YargArchipelagoPluginMain</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -18,7 +18,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;STABLE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -62,12 +62,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\CommonData\APPacketClient.cs">
+      <Link>APPacketClient.cs</Link>
+    </Compile>
+    <Compile Include="..\CommonData\APPatches.cs">
+      <Link>APPatches.cs</Link>
+    </Compile>
+    <Compile Include="..\CommonData\ArchipelagoCore.cs">
+      <Link>ArchipelagoCore.cs</Link>
+    </Compile>
     <Compile Include="..\CommonData\CommonData.cs">
       <Link>CommonData.cs</Link>
     </Compile>
-    <Compile Include="APPacketClient.cs" />
-    <Compile Include="APPatches.cs" />
-    <Compile Include="ArchipelagoCore.cs" />
     <Compile Include="ArchipelagoPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

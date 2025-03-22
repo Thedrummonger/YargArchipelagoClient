@@ -32,15 +32,15 @@ namespace YargArchipelagoPlugin
                 try
                 {
                     client = new TcpClient();
-                    ArchipelagoPlugin.ManualLogSource?.LogInfo("Listening for Yarg Client");
+                    Archipelago.ManualLogSource?.LogInfo("Listening for Yarg Client");
                     await client.ConnectAsync(serverIP, serverPort);
                     stream = client.GetStream();
-                    ArchipelagoPlugin.ManualLogSource?.LogInfo("YARG client connected to AP Packet Server.");
+                    Archipelago.ManualLogSource?.LogInfo("YARG client connected to AP Packet Server.");
                     await ReceiveLoopAsync();
                 }
                 catch (Exception ex)
                 {
-                    ArchipelagoPlugin.ManualLogSource?.LogInfo("YARG client failed to connect: " + ex.Message);
+                    Archipelago.ManualLogSource?.LogInfo("YARG client failed to connect: " + ex.Message);
                     await Task.Delay(1000);
                 }
             }
@@ -59,16 +59,16 @@ namespace YargArchipelagoPlugin
                         string line = await reader.ReadLineAsync();
                         if (line == null)
                         {
-                            ArchipelagoPlugin.ManualLogSource?.LogInfo("AP Packet Server disconnected.");
+                            Archipelago.ManualLogSource?.LogInfo("AP Packet Server disconnected.");
                             break;
                         }
-                        ArchipelagoPlugin.ManualLogSource?.LogInfo("Received from AP Packet Server: ");
+                        Archipelago.ManualLogSource?.LogInfo("Received from AP Packet Server: ");
                         Archipelago.ParseClientPacket(line);
                     }
                 }
                 catch (Exception ex)
                 {
-                    ArchipelagoPlugin.ManualLogSource?.LogInfo("Error in YARG client receive loop: " + ex.Message);
+                    Archipelago.ManualLogSource?.LogInfo("Error in YARG client receive loop: " + ex.Message);
                 }
             }
         }
@@ -85,7 +85,7 @@ namespace YargArchipelagoPlugin
             }
             catch (Exception ex)
             {
-                ArchipelagoPlugin.ManualLogSource?.LogInfo("Error sending packet from YARG client: " + ex.Message);
+                Archipelago.ManualLogSource?.LogInfo("Error sending packet from YARG client: " + ex.Message);
             }
         }
     }

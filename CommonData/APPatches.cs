@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using YARG.Core.Song;
+using YARG.Core.Song.Cache;
 using YARG.Gameplay;
 using YARG.Scores;
 

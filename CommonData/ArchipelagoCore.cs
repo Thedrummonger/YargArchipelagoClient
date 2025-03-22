@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using BepInEx.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +8,7 @@ using YARG.Core;
 using YARG.Core.Engine;
 using YARG.Core.Game;
 using YARG.Core.Song;
+using YARG.Core.Song.Cache;
 using YARG.Core.Utility;
 using YARG.Gameplay;
 using YARG.Scores;
@@ -19,14 +21,14 @@ namespace YargArchipelagoPlugin
     public class Archipelago
     {
         public static YargPacketClient packetClient;
-
         public static Action<BaseEngine, uint> _gainStarPowerDelegate;
-
+        public static ManualLogSource ManualLogSource;
         private static GameManager CurrentGame = null;
+
         public static string[] CurrentlyAvailableSongs = Array.Empty<string>();
         public static void RecordScoreForArchipelago(List<PlayerScoreRecord> playerScoreRecords, GameRecord record)
         {
-            ArchipelagoPlugin.ManualLogSource?.LogInfo($"Recording Score for AP");
+            ManualLogSource?.LogInfo($"Recording Score for AP");
             var songPassInfo = new CommonData.SongPassInfo(Convert.ToBase64String(record.SongChecksum));
             songPassInfo.participants = playerScoreRecords
                 .Where(x => IsSupportedInstrument(x.Instrument, out _))
@@ -35,7 +37,11 @@ namespace YargArchipelagoPlugin
                     Difficulty = GetSupportedDifficulty(x.Difficulty),
                     instrument = IsSupportedInstrument(x.Instrument, out var SupportedInstrument) ? SupportedInstrument : default,
                     FC = x.IsFc,
-                    Percentage = x.Percent.Value,
+#if NIGHTLY
+                    Percentage = x.Percent??0,
+#elif STABLE
+                    Percentage = x.Percent,
+#endif
                     Score = x.Score,
                     Stars = StarAmountHelper.GetStarCount(x.Stars),
                     WasGoldStar = x.Stars == StarAmount.StarGold,
@@ -83,7 +89,7 @@ namespace YargArchipelagoPlugin
                     }
                 }
             }
-            ArchipelagoPlugin.ManualLogSource?.LogInfo($"Dumping Info for {SongData.Values.Count} songs");
+            ManualLogSource?.LogInfo($"Dumping Info for {SongData.Values.Count} songs");
             if (!Directory.Exists(CommonData.DataFolder)) Directory.CreateDirectory(CommonData.DataFolder);
             File.WriteAllText(CommonData.SongExportFile, JsonConvert.SerializeObject(SongData.Values.ToArray(), Formatting.Indented));
         }
@@ -97,7 +103,7 @@ namespace YargArchipelagoPlugin
                 if (Target != null)
                     songEntries.Add(Target);
             }
-            ArchipelagoPlugin.ManualLogSource?.LogInfo($"{songEntries.Count} Songs Available");
+            ManualLogSource?.LogInfo($"{songEntries.Count} Songs Available");
             return songEntries.ToArray();
         }
 
@@ -109,7 +115,11 @@ namespace YargArchipelagoPlugin
                 Artist = RichTextUtils.StripRichTextTags(song.Artist),
                 Charter = RichTextUtils.StripRichTextTags(song.Charter),
                 Name = RichTextUtils.StripRichTextTags(song.Name),
+#if NIGHTLY
                 Path = song.ActualLocation,
+#elif STABLE
+                Path = song.Directory,
+#endif
                 SongChecksum = Convert.ToBase64String(song.Hash.HashBytes),
                 Difficulties = new Dictionary<CommonData.SupportedInstrument, int>()
             };
@@ -149,7 +159,7 @@ namespace YargArchipelagoPlugin
             }
             catch (Exception e)
             {
-                ArchipelagoPlugin.ManualLogSource?.LogInfo($"Failed to parse client packet\n{line}\n{e}");
+                ManualLogSource?.LogInfo($"Failed to parse client packet\n{line}\n{e}");
                 return;
             }
 
@@ -161,7 +171,11 @@ namespace YargArchipelagoPlugin
                     CauseDeathLink();
                 if (BasePacket.trapData.type == CommonData.trapType.StarPower && CurrentGame != null && !CurrentGame.IsPractice)
                     foreach (var i in CurrentGame.Players)
+                    {
+#if NIGHTLY
                         _gainStarPowerDelegate?.Invoke(i.BaseEngine, i.BaseEngine.TicksPerQuarterSpBar);
+#endif
+                    }
             }
             if (BasePacket.AvailableSongs != null)
                 CurrentlyAvailableSongs = BasePacket.AvailableSongs;
@@ -175,7 +189,7 @@ namespace YargArchipelagoPlugin
             }
             catch (Exception e)
             {
-                ArchipelagoPlugin.ManualLogSource?.LogInfo($"Failed to apply deathlink\n{e}");
+                ManualLogSource?.LogInfo($"Failed to apply deathlink\n{e}");
             }
         }
     }
