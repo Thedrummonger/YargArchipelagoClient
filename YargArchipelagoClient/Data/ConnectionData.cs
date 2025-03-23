@@ -31,6 +31,21 @@ namespace YargArchipelagoClient.Data
         private Random? SeededRNG = null;
 
         [JsonIgnore]
+        private APPacketServer PacketServer;
+        public APPacketServer StartPacketServer(ConfigData Config)
+        {
+            if (PacketServer is not null) throw new Exception("Packet server was already started!");
+            PacketServer = new APPacketServer(Config, this);
+            _ = PacketServer.StartAsync();
+            return PacketServer;
+        }
+        public APPacketServer GetPacketServer()
+        {
+            if (PacketServer is null) throw new Exception("Attempted to retrieve packet server before it was started!");
+            return PacketServer;
+        }
+
+        [JsonIgnore]
         public HashSet<int> ReceivedSongs { get; } = [];
         [JsonIgnore]
         public Dictionary<APWorldData.StaticItems, int> ReceivedFiller { get; } = [];

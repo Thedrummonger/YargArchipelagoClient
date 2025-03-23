@@ -23,8 +23,6 @@ namespace YargArchipelagoClient
 
         private readonly System.Windows.Forms.Timer SyncTimer = new();
 
-        private APPacketServer PacketServer;
-
         private bool UpdateData = false;
 
         public MainForm()
@@ -67,11 +65,10 @@ namespace YargArchipelagoClient
             SyncTimer.Start();
 
             Task.Run(ProcessLogQueueAsync);
-            PacketServer = new APPacketServer(Config, Connection);
+            var PacketServer = Connection.StartPacketServer(Config);
             PacketServer.ConnectionChanged += UpdateConnected;
             PacketServer.CurrentSongUpdated += UpdateCurrentlyPlaying;
             PacketServer.LogMessage += WriteToLog;
-            _ = PacketServer.StartAsync();
             UpdateClientTitle();
         }
 
@@ -83,7 +80,7 @@ namespace YargArchipelagoClient
                 MessageBox.Show(deathLink.Cause, $"DeathLink {deathLink.Source}", MessageBoxButtons.OK, MessageBoxIcon.Hand);
             else
             {
-                _ = PacketServer.SendPacketAsync(new CommonData.Networking.ClientDataPacket
+                _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.ClientDataPacket
                 {
                     deathLinkData = new CommonData.DeatLinkData { Source = deathLink.Source, Cause = deathLink.Cause }
                 });
@@ -99,7 +96,7 @@ namespace YargArchipelagoClient
             var RestartTrapAmountInMemory = Config.TrapsRegistered.TryGetValue(APWorldData.StaticItems.TrapRestart, out var R) ? R : 0;
 
             if (RestartTrapAmountFromServer > RestartTrapAmountInMemory)
-                _ = PacketServer.SendPacketAsync(new CommonData.Networking.ClientDataPacket { trapData = new CommonData.TrapData(CommonData.trapType.Restart) });
+                _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.ClientDataPacket { trapData = new CommonData.TrapData(CommonData.trapType.Restart) });
 
             if (RestartTrapAmountInMemory != RestartTrapAmountFromServer)
             {
@@ -136,19 +133,12 @@ namespace YargArchipelagoClient
             IsConnectedToYarg = Connected;
             UpdateClientTitle();
             if (Connected)
-                SendAvailableSongUpdate();
+                CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
         }
 
-        private void SendAvailableSongUpdate()
-        {
-            _ = PacketServer?.SendPacketAsync(new CommonData.Networking.ClientDataPacket
-            {
-                AvailableSongs = [.. Config.GetAllSongLocations().Where(x => x.SongAvailableToPlay(Connection, Config)).Select(x => x.SongHash)]
-            });
-        }
         private void SendStarPowerItem()
         {
-            _ = PacketServer?.SendPacketAsync(new CommonData.Networking.ClientDataPacket
+            _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.ClientDataPacket
             {
                 trapData = new(CommonData.trapType.StarPower)
             });
@@ -162,7 +152,7 @@ namespace YargArchipelagoClient
             Connection.UpdateReceivedItems();
             CheckForRestartTrap();
             PrintSongs();
-            SendAvailableSongUpdate();
+            CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
         }
 
         private void lvSongList_Resize(object sender, EventArgs e) =>
@@ -300,7 +290,7 @@ namespace YargArchipelagoClient
                     break;
                 case "update":
                     WriteToLog($"Updating Available");
-                    SendAvailableSongUpdate();
+                    CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
                     break;
                 case "rescan":
                     WriteToLog($"Rescanning available songs");
