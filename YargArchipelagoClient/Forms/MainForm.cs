@@ -300,10 +300,20 @@ namespace YargArchipelagoClient
                     WriteToLog($"Updating Available");
                     SendAvailableSongUpdate();
                     break;
-                case "debug":
+                case "rescan":
+                    WriteToLog($"Rescanning available songs");
+                    SongImporter.RescanSongs(Config, Connection);
+                    PrintSongs();
+                    break;
+                case "debug_star":
                     if (!Debugger.IsAttached) break;
-                    WriteToLog($"Debug Command Sent");
+                    WriteToLog($"Simulating start power item");
                     SendStarPowerItem();
+                    break;
+                case "debug_dl":
+                    if (!Debugger.IsAttached) break;
+                    WriteToLog($"Simulating Death Link");
+                    DeathLinkService_OnDeathLinkReceived(new DeathLink("command"));
                     break;
                 default:
                     WriteToLog($"{v} is not a valid command");

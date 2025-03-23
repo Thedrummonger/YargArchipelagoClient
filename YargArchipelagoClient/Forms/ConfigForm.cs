@@ -4,6 +4,7 @@ using System.Diagnostics;
 using TDMUtils;
 using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Forms;
+using YargArchipelagoClient.Helpers;
 using YargArchipelagoCommon;
 using static YargArchipelagoClient.Forms.PlandoForm;
 using static YargArchipelagoCommon.CommonData;
@@ -35,7 +36,7 @@ namespace YargArchipelagoClient
             data = new ConfigData();
             data.ParseAPLocations(connection.GetSession());
             PlandoSongData = data.GetSongIndexes().ToDictionary(x => x, x => new PlandoData { SongNum = x });
-            if (!TryReadSongs(out var SongData))
+            if (!SongImporter.TryReadSongs(out var SongData))
             {
                 DialogResult = DialogResult.Abort;
                 SongError = true;
@@ -50,35 +51,6 @@ namespace YargArchipelagoClient
             cmbPoolReward1Score.DataSource = Enum.GetValues(typeof(APWorldData.CompletionReq)).Cast<APWorldData.CompletionReq>().ToArray();
             cmbPoolReward2Score.DataSource = Enum.GetValues(typeof(APWorldData.CompletionReq)).Cast<APWorldData.CompletionReq>().ToArray();
             UpdateSongReqLabel();
-        }
-
-        private bool TryReadSongs(out Dictionary<string, CommonData.SongData> data)
-        {
-            string Error = "Your available song data was missing or corrupt. Please run the AP build of YARG at least once before launching the client.\n\n" +
-                "You may also need to point YARG a valid song path and run a scan for any newly added songs.\nThis can be found in Settings -> Songs in YARG.";
-            data = [];
-            if (!Directory.Exists(CommonData.DataFolder) || !File.Exists(CommonData.SongExportFile))
-            {
-                MessageBox.Show(Error, "Song Cache Missing");
-                return false;
-            }
-            try
-            {
-                CommonData.SongData[]? songData = JsonConvert.DeserializeObject<CommonData.SongData[]>(File.ReadAllText(CommonData.SongExportFile));
-                if (songData is null || songData.Length == 0)
-                {
-                    MessageBox.Show(Error, "Song Cache Corrupt");
-                    return false;
-                }
-                foreach (var d in songData)
-                    data.Add(d.SongChecksum, d);
-            }
-            catch
-            {
-                MessageBox.Show(Error, "Song Cache Corrupt");
-                return false;
-            }
-            return true;
         }
 
         #endregion
