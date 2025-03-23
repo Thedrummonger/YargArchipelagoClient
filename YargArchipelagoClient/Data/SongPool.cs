@@ -24,6 +24,11 @@ namespace YargArchipelagoClient.Data
             return Data.ToDictionary(x => x.Key, x => x.Value);
         }
 
+        public Dictionary<string, CommonData.SongData> GetAvailableSongs(Dictionary<string, CommonData.SongData> songData, Dictionary<string, List<string>> alreadyAssigned) =>
+            GetAvailableSongs(songData).Values
+                .Where(j => !alreadyAssigned.TryGetValue(Name, out var value) || !value.Contains(j.SongChecksum))
+                .ToDictionary(j => j.SongChecksum);
+
         public bool MetStandard(CommonData.SongPassInfo passInfo, out bool DeathLink) =>
             MetReq(passInfo, out DeathLink, CompletionRequirement.Reward1Req, CompletionRequirement.Reward1Diff);
         public bool MetExtra(CommonData.SongPassInfo passInfo, out bool DeathLink) =>

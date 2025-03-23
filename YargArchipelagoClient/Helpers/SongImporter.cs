@@ -12,7 +12,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace YargArchipelagoClient.Helpers
 {
-    class SongImporter
+    public static class SongImporter
     {
         public static bool TryReadSongs(out Dictionary<string, CommonData.SongData> data)
         {
@@ -42,6 +42,7 @@ namespace YargArchipelagoClient.Helpers
             }
             return true;
         }
+
         public static void RescanSongs(ConfigData config, ConnectionData connection)
         {
             if (!TryReadSongs(out var data))
@@ -78,22 +79,23 @@ namespace YargArchipelagoClient.Helpers
                     AssignedPerProfile[i.Requirements.Name].Add(i.SongHash!);
                 }
 
-                foreach (var i in InvalidUnchecked)
+                var AllProfiles = InvalidUnchecked.DistinctBy(i => i.Requirements!.Name).ToDictionary(i => i.Requirements!.Name, i => i.Requirements);
+                foreach (var i in AllProfiles.Values)
                 {
-                    List<CommonData.SongData> ValidSongs = [];
-                    foreach (var j in i.Requirements!.GetAvailableSongs(data).Values)
+                    var ValidSongs = i!.GetAvailableSongs(data, AssignedPerProfile).Values.ToList();
+                    var NeedingThisProfile = InvalidUnchecked.Where(x => x.Requirements!.Name == i.Name);
+                    if (ValidSongs.Count < NeedingThisProfile.Count())
                     {
-                        if (!AssignedPerProfile.TryGetValue(i.Requirements.Name, out var value))
-                            ValidSongs.Add(j);
-                        else if (!value.Contains(j.SongChecksum))
-                            ValidSongs.Add(j);
-                    }
-                    if (ValidSongs.Count == 0)
-                    {
-                        MessageBox.Show($"Not enough valid songs to place at song {i.SongNumber} using pool {i.Requirements.Name}\n" +
-                            $"Please add more valid songs for this pool and rerun the command.", "Rescan Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Not enough valid songs to assign to locations using profile {i.Name}\n\n" +
+                            $"Needed {NeedingThisProfile.Count()} Found {ValidSongs.Count}. Please add more songs\n\n" +
+                            $"{i.ToFormattedJson()}", "Rescan Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
+                }
+
+                foreach (var i in InvalidUnchecked)
+                {
+                    var ValidSongs = i.Requirements!.GetAvailableSongs(data, AssignedPerProfile).Values.ToList();
                     var NewCandidate = ValidSongs[connection.GetRNG().Next(ValidSongs.Count)];
                     Debug.WriteLine($"{NewCandidate.GetSongDisplayName()} Assigned to Song {i.SongNumber} replacing {i.GetSongDisplayName(config)}");
                     AssignedPerProfile.SetIfEmpty(i.Requirements.Name, []);

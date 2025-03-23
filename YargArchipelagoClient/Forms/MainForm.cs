@@ -51,6 +51,8 @@ namespace YargArchipelagoClient
             ClientInitializationHelper.ReadSlotData(Connection, Config);
             Config.SaveConfigFile(Connection);
 
+            Debug.WriteLine($"The Following Songs were not valid for any profile in this config\n\n{Config.GetUnusableSongs().Select(x => x.GetSongDisplayName()).ToFormattedJson()}");
+
             // Subscribe to session events.
             Connection!.GetSession().Items.ItemReceived += Items_ItemReceived;
             Connection!.GetSession().MessageLog.OnMessageReceived += MessageLog_OnMessageReceived;

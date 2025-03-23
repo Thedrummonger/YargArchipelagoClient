@@ -74,5 +74,17 @@ namespace YargArchipelagoClient.Data
         }
 
         public SongLocation[] GetAllSongLocations() => [GoalSong, .. ApLocationData.Values];
+        public CommonData.SongData[] GetUnusableSongs()
+        {
+            HashSet<string> ValidSongs = [];
+            var AllProfiles = ApLocationData.Values.DistinctBy(i => i.Requirements!.Name).Select(i => i.Requirements);
+            foreach (var profile in AllProfiles)
+            {
+                var validForProfile = profile!.GetAvailableSongs(SongData);
+                foreach (var item in validForProfile)
+                    ValidSongs.Add(item.Key);
+            }
+            return [.. SongData.Where(x => !ValidSongs.Contains(x.Key)).Select(x => x.Value)];
+        }
     }
 }
