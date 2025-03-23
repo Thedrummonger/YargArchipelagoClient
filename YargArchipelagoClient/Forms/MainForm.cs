@@ -58,6 +58,12 @@ namespace YargArchipelagoClient
             Connection.DeathLinkService!.OnDeathLinkReceived += DeathLinkService_OnDeathLinkReceived;
 
             UpdateData = true;
+
+            var PacketServer = Connection.StartPacketServer(Config);
+            PacketServer.ConnectionChanged += UpdateConnected;
+            PacketServer.CurrentSongUpdated += UpdateCurrentlyPlaying;
+            PacketServer.LogMessage += WriteToLog;
+
             SyncTimerTick(sender, e);
 
             SyncTimer.Interval = 200;
@@ -65,10 +71,7 @@ namespace YargArchipelagoClient
             SyncTimer.Start();
 
             Task.Run(ProcessLogQueueAsync);
-            var PacketServer = Connection.StartPacketServer(Config);
-            PacketServer.ConnectionChanged += UpdateConnected;
-            PacketServer.CurrentSongUpdated += UpdateCurrentlyPlaying;
-            PacketServer.LogMessage += WriteToLog;
+
             UpdateClientTitle();
         }
 
