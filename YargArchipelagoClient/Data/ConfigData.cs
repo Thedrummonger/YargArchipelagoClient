@@ -31,7 +31,7 @@ namespace YargArchipelagoClient.Data
 
         public Dictionary<APWorldData.StaticItems, int> TrapsRegistered = [];
 
-        public int TotalSongsInPool => ApLocationData.Count + 1; // +1 For Goal Song
+        public int TotalAPSongLocations => GetSongIndexes().Length;
 
         public int[] GetSongIndexes() => [0, .. ApLocationData.Keys];
 

@@ -17,8 +17,9 @@ namespace YargArchipelagoClient
 
         public ConfigData data;
         public ConnectionData Connection;
-        public List<SongPool> Pools = [];
-        public Dictionary<int, PlandoData> PlandoSongData;
+        public readonly List<SongPool> Pools = [];
+        public readonly Dictionary<int, PlandoData> PlandoSongData;
+        public SongPoolManager SongPoolManager;
 
         bool PoolUpdating = false;
 
@@ -36,6 +37,7 @@ namespace YargArchipelagoClient
             data = new ConfigData();
             data.ParseAPLocations(connection.GetSession());
             PlandoSongData = data.GetSongIndexes().ToDictionary(x => x, x => new PlandoData { SongNum = x });
+            SongPoolManager = new(Pools, PlandoSongData);
             if (!SongImporter.TryReadSongs(out var SongData))
             {
                 DialogResult = DialogResult.Abort;
@@ -149,7 +151,7 @@ namespace YargArchipelagoClient
         private void btnStartGame_Click(object sender, EventArgs e)
         {
             int AddedSongs = Pools.Select(x => x.AmountInPool).Sum();
-            int SongsNeeded = data.TotalSongsInPool - PlandoSongData.Where(x => x.Value.HasPlando).Count();
+            int SongsNeeded = data.TotalAPSongLocations - PlandoSongData.Where(x => x.Value.HasPlando).Count();
             if (AddedSongs != SongsNeeded)
             {
                 MessageBox.Show($"You must add a total of at least {SongsNeeded} songs across all song pools.\n" +
@@ -289,14 +291,14 @@ namespace YargArchipelagoClient
             var AmoutnofSongsPlandod = PlandoSongData.Values.Where(x => (x.PoolPlandoEnabled || x.SongPlandoEnabled)).Count();
 
             var AmountOfSongsInOtherPools = Pools.Where(x => x.Name != Pool.Name).Select(x => x.AmountInPool).Sum();
-            var SongsLeftForThisPool = data.TotalSongsInPool - AmountOfSongsInOtherPools - AmoutnofSongsPlandod;
+            var SongsLeftForThisPool = data.TotalAPSongLocations - AmountOfSongsInOtherPools - AmoutnofSongsPlandod;
             return Math.Min(AmountOfPlaceableSongsForThisPool, SongsLeftForThisPool);
         }
 
         private void UpdateSongReqLabel()
         {
             int SelectedSongs = Pools.Select(x => x.AmountInPool).Sum() + PlandoSongData.Values.Where(x => x.PoolPlandoEnabled || x.SongPlandoEnabled).Count();
-            int RequiredSongs = data.TotalSongsInPool;
+            int RequiredSongs = data.TotalAPSongLocations;
             lblRequiredSongCount.Text = $"Selected Songs: {SelectedSongs} | Required Songs: {RequiredSongs}";
         }
 

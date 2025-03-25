@@ -77,7 +77,7 @@ namespace YargArchipelagoClient.Forms
         public bool CanPlandoToThisLocation(SongPool Pool)
         {
             var AmountOfSongsInOtherPools = Parent.Pools.Select(x => x.AmountInPool).Sum();
-            if (AmountOfSongsInOtherPools >= Parent.data.TotalSongsInPool) return false;
+            if (AmountOfSongsInOtherPools >= Parent.data.TotalAPSongLocations) return false;
             if (Pool.AmountInPool >= Parent.GetMaxSongsForSongPool(Pool)) return false;
             return true;
         }
@@ -85,7 +85,7 @@ namespace YargArchipelagoClient.Forms
         public bool CanPlandoToThisLocation()
         {
             var AmountOfSongsInOtherPools = Parent.Pools.Select(x => x.AmountInPool).Sum();
-            if (AmountOfSongsInOtherPools >= Parent.data.TotalSongsInPool) return false;
+            if (AmountOfSongsInOtherPools >= Parent.data.TotalAPSongLocations) return false;
             return true;
         }
 

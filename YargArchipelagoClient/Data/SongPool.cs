@@ -7,6 +7,8 @@ namespace YargArchipelagoClient.Data
         public string Name = name;
         public CommonData.SupportedInstrument Instrument = instrument;
         public int AmountInPool = 0;
+        public bool RandomAmount = false;
+        public int RandomWeight = 1;
         public int MinDifficulty = 3;
         public int MaxDifficulty = 6;
         public CompletionRequirement CompletionRequirement = new();
