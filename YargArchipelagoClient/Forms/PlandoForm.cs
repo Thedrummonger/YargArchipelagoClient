@@ -45,23 +45,22 @@ namespace YargArchipelagoClient.Forms
             LoadSongUIFromSelectedItem();
         }
 
+        private bool CanPlandoAnyPoolToThisLocation(PlandoData selectedLocation, out IEnumerable<SongPool> validPools)
+        {
+            validPools = Parent.Pools.Where(x => Parent.SongPoolManager.CanPlandoPoolToThisLocation(x, selectedLocation));
+            return validPools.Any();
+        }
+
         private void LoadPoolUIFromSelectedItem()
         {
             if (Updating) return;
             Updating = true;
             var selectedSong = GetSelectedSong();
-            if (selectedSong is not null && Parent.Pools.Any())
+            if (selectedSong is not null && Parent.Pools.Count > 0 && CanPlandoAnyPoolToThisLocation(selectedSong, out var ValidPools))
             {
                 groupBox1.Enabled = true;
                 chkEnablePoolPlando.Checked = selectedSong.PoolPlandoEnabled;
                 cmbPlandoPoolSelect.Enabled = selectedSong.PoolPlandoEnabled;
-                var ValidPools = Parent.Pools.Where(x => CanPlandoToThisLocation(x) || (x.Name == selectedSong.SongPool && selectedSong.PoolPlandoEnabled));
-                if (!ValidPools.Any())
-                {
-                    groupBox1.Enabled = false;
-                    Updating = false;
-                    return;
-                }
                 cmbPlandoPoolSelect.DataSource = WinFormHelpers.ContainerItem.ToContainerList(ValidPools, x => x.Name, x => x.Name);
                 var poolItems = (IEnumerable<WinFormHelpers.ContainerItem>)cmbPlandoPoolSelect.DataSource!;
                 var SelectedPoolItem = selectedSong.SongPool is null ? null : poolItems.FirstOrDefault(x => x.Value is string s && s == selectedSong.SongPool);
@@ -74,19 +73,9 @@ namespace YargArchipelagoClient.Forms
             Updating = false;
         }
 
-        public bool CanPlandoToThisLocation(SongPool Pool)
+        public bool CanPlandoSongToThisLocation()
         {
-            var AmountOfSongsInOtherPools = Parent.Pools.Select(x => x.AmountInPool).Sum();
-            if (AmountOfSongsInOtherPools >= Parent.data.TotalAPSongLocations) return false;
-            if (Pool.AmountInPool >= Parent.GetMaxSongsForSongPool(Pool)) return false;
-            return true;
-        }
-
-        public bool CanPlandoToThisLocation()
-        {
-            var AmountOfSongsInOtherPools = Parent.Pools.Select(x => x.AmountInPool).Sum();
-            if (AmountOfSongsInOtherPools >= Parent.data.TotalAPSongLocations) return false;
-            return true;
+            return Parent.SongPoolManager.GetOverallAssignedCount() < Parent.data.TotalAPSongLocations;
         }
 
         private void LoadSongUIFromSelectedItem()
@@ -94,7 +83,7 @@ namespace YargArchipelagoClient.Forms
             if (Updating) return;
             Updating = true;
             var selectedSong = GetSelectedSong();
-            if (selectedSong is not null && GetValidSongsForAllPools().Count > 0 && CanPlandoToThisLocation())
+            if (selectedSong is not null && GetValidSongsForAllPools().Count > 0 && CanPlandoSongToThisLocation())
             {
                 groupBox2.Enabled = true;
                 chkEnableSongPlando.Checked = selectedSong.SongPlandoEnabled;

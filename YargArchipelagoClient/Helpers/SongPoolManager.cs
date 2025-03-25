@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TDMUtils;
 using YargArchipelagoClient.Data;
 using static YargArchipelagoClient.Forms.PlandoForm;
 using static YargArchipelagoCommon.CommonData;
@@ -11,7 +12,7 @@ namespace YargArchipelagoClient.Helpers
 {
     public class SongPoolManager(List<SongPool> allPools, Dictionary<int, PlandoData> plandoSongData, int totalAPSongLocations,Dictionary<string, SongData> allSongData)
     {
-
+        Dictionary<string, HashSet<string>>? SongToPoolMap = null;
         /// <summary>
         /// Gets the total amount of songs assigned to this pool
         /// </summary>
@@ -107,6 +108,63 @@ namespace YargArchipelagoClient.Helpers
             if (data.PoolPlandoEnabled && data.SongPool != null && data.SongPool == pool.Name)
                 return true; //Already plandoed to this pool, so we "can" plando it here
             return GetRemainingAmountAssignableToThisPool(pool) > 0;
+        }
+
+        public void SetNudAmountInPool(NumericUpDown nud, SongPool pool)
+        {
+            nud.Maximum = int.MaxValue;
+            nud.Minimum = 0;
+            var Max = GetTotalAmountAssignableToThisPoolViaConfig(pool);
+            var Current = pool.AmountInPool;
+            if (Current > Max) Current = Max;
+            if (Current < 0) Current = 0;
+            nud.Value = Current;
+            nud.Maximum = Max;
+            nud.Minimum = 0;
+        }
+        public void SetNudCurrentWeight(NumericUpDown nud, SongPool pool)
+        {
+            nud.Maximum = int.MaxValue;
+            nud.Minimum = 0;
+            var Current = pool.AmountInPool;
+            if (Current < 1) Current = 1;
+            nud.Value = Current;
+            nud.Minimum = 1;
+        }
+        public Dictionary<string, HashSet<string>> GetSongToPoolMap()
+        {
+            if (SongToPoolMap is not null) return SongToPoolMap;
+            SongToPoolMap = [];
+            foreach (var p in allPools)
+            {
+                var AvailableSongs = p.GetAvailableSongs(allSongData).Values;
+                foreach (var i in AvailableSongs)
+                {
+                    SongToPoolMap.SetIfEmpty(i.SongChecksum, []);
+                    SongToPoolMap[i.SongChecksum].Add(p.Name);
+                }
+            }
+            return SongToPoolMap;
+        }
+        public SongPool TryGetRandomUnusedPool(string SongHash, Dictionary<string, HashSet<string>> UsedSongs, ConnectionData connection)
+        {
+            int NonPlandoSongsAdded = allPools.Select(x => x.AmountInPool).Sum();
+            var AllValidPools = GetSongToPoolMap()[SongHash].Select(x => allPools.First(y => y.Name == x));
+            var FilteredPools = AllValidPools.Where(x => x.AmountInPool > 0 || NonPlandoSongsAdded == 0); //Try to not use pools that had no entries, unless no pool had entries
+            FilteredPools = FilteredPools.Where(x => !UsedSongs.TryGetValue(x.Name, out var s) || !s.Contains(SongHash));
+            if (!FilteredPools.Any())
+                FilteredPools = [.. AllValidPools];
+
+            var ValidPools = FilteredPools.ToArray();
+            int randomIndex = connection.GetRNG().Next(ValidPools.Length);
+            return ValidPools[randomIndex];
+        }
+
+        public SongData GetRandomUnusedSong(SongPool pool, Dictionary<string, HashSet<string>> UsedSongs, ConnectionData connection)
+        {
+            var availableSongs = pool.GetAvailableSongs(allSongData, UsedSongs).Values.ToArray();
+            int randomIndex = connection.GetRNG().Next(availableSongs.Length);
+            return availableSongs[randomIndex]; ;
         }
     }
 }

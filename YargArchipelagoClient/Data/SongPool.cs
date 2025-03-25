@@ -26,7 +26,7 @@ namespace YargArchipelagoClient.Data
             return Data.ToDictionary(x => x.Key, x => x.Value);
         }
 
-        public Dictionary<string, CommonData.SongData> GetAvailableSongs(Dictionary<string, CommonData.SongData> songData, Dictionary<string, List<string>> alreadyAssigned) =>
+        public Dictionary<string, CommonData.SongData> GetAvailableSongs(Dictionary<string, CommonData.SongData> songData, Dictionary<string, HashSet<string>> alreadyAssigned) =>
             GetAvailableSongs(songData).Values
                 .Where(j => !alreadyAssigned.TryGetValue(Name, out var value) || !value.Contains(j.SongChecksum))
                 .ToDictionary(j => j.SongChecksum);
