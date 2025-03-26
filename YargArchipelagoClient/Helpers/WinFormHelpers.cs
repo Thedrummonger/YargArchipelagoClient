@@ -46,5 +46,16 @@ namespace YargArchipelagoClient.Helpers
                 return value;
             return default;
         }
+
+        public static void SafeSetValue(this NumericUpDown nud, int Current, int Max = int.MaxValue, int Min = int.MinValue)
+        {
+            nud.Maximum = int.MaxValue;
+            nud.Minimum = int.MinValue;
+            if (Current > Max) Current = Max;
+            if (Current < Min) Current = Min;
+            nud.Value = Current;
+            nud.Maximum = Max;
+            nud.Minimum = Min;
+        }
     }
 }

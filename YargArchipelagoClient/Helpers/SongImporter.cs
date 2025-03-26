@@ -72,7 +72,7 @@ namespace YargArchipelagoClient.Helpers
                 if (MUresult != DialogResult.Yes)
                     return;
 
-                Dictionary<string, List<string>> AssignedPerProfile = [];
+                Dictionary<string, HashSet<string>> AssignedPerProfile = [];
                 foreach(var i in ValidUnchecked.Concat(ValidChecked))
                 {
                     AssignedPerProfile.SetIfEmpty(i.Requirements!.Name, []);

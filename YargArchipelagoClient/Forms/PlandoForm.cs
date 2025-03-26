@@ -19,7 +19,9 @@ namespace YargArchipelagoClient.Forms
             public bool SongPlandoEnabled { get; set; }
             public string? SongHash { get; set; }
 
-            public bool HasPlando => (PoolPlandoEnabled && SongPool is not null) || (SongPlandoEnabled && SongHash is not null);
+            public bool HasValidPoolPlando => PoolPlandoEnabled && SongPool is not null;
+            public bool HasValidSongPlando => SongPlandoEnabled && SongHash is not null;
+            public bool HasValidPlando => HasValidPoolPlando || HasValidSongPlando;
         }
 
         public PlandoForm(ConfigForm parent, Dictionary<int, PlandoData> Plando)
@@ -153,9 +155,9 @@ namespace YargArchipelagoClient.Forms
         {
             int[] songNums = [.. PlandoSongData.Keys];
             if (cmbFilterConfigured.CheckState == CheckState.Checked)
-                songNums = [.. songNums.Where(x => PlandoSongData[x].HasPlando)];
+                songNums = [.. songNums.Where(x => PlandoSongData[x].HasValidPlando)];
             else if (cmbFilterConfigured.CheckState == CheckState.Indeterminate)
-                songNums = [.. songNums.Where(x => !PlandoSongData[x].HasPlando)];
+                songNums = [.. songNums.Where(x => !PlandoSongData[x].HasValidPlando)];
             if (txtFilter.Text.Length > 0)
                 songNums = [.. songNums.Where(i => SongDisplay(i).Contains(txtFilter.Text, StringComparison.CurrentCultureIgnoreCase))];
 

@@ -104,12 +104,14 @@ namespace YargArchipelagoClient
             if (SongPool.RandomAmount)
             {
                 lblAmountInPool.Text = "Song Pool Weight";
-                SongPoolManager.SetNudCurrentWeight(nudPoolAmount, SongPool);
+                nudPoolAmount.SafeSetValue(SongPool.RandomWeight, Min: 1);
+                if (SongPool.RandomWeight != (int)nudPoolAmount.Value) SongPool.RandomWeight = (int)nudPoolAmount.Value;
             }
             else
             {
                 lblAmountInPool.Text = "Amount in Pool";
-                SongPoolManager.SetNudAmountInPool(nudPoolAmount, SongPool);
+                nudPoolAmount.SafeSetValue(SongPool.AmountInPool, SongPoolManager.GetTotalAmountAssignableToThisPoolViaConfig(SongPool), 0);
+                if (SongPool.AmountInPool != (int)nudPoolAmount.Value) SongPool.AmountInPool = (int)nudPoolAmount.Value;
             }
 
             nudPoolMinDifficulty.Value = SongPool.MinDifficulty;
@@ -124,7 +126,7 @@ namespace YargArchipelagoClient
 
             PoolUpdating = false;
 
-            lblDisplay.Text = $"Valid songs for [{SongPool.Name}]: {SongPoolManager.GetTotalAmountAssignableToThisPoolViaConfig(SongPool)}";
+            lblDisplay.Text = $"Valid songs for [{SongPool.Name}]: {SongPool.GetAvailableSongs(data.SongData).Count}";
             UpdateSongReqLabel();
             gbCurrentPool.Enabled = true;
         }
@@ -163,16 +165,17 @@ namespace YargArchipelagoClient
 
         private void btnStartGame_Click(object sender, EventArgs e)
         {
-            int AddedSongs = SongPoolManager.GetOverallAssignedCountForLabel();
+            int AddedSongs = SongPoolManager.GetTotalPotentialSongAmount();
             int SongsNeeded = data.TotalAPSongLocations;
-            if (SongPoolManager.GetOverallAssignedCountForLabel() != data.TotalAPSongLocations)
+            if (SongPoolManager.GetTotalPotentialSongAmount() != data.TotalAPSongLocations)
             {
                 MessageBox.Show($"You must add a total of at least {SongsNeeded} songs across all song pools.\n" +
                     $"You have added {AddedSongs} songs across {Pools.Count} song pools.",
                     "Invalid song Amount", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            ClientInitializationHelper.AssignSongs(data, Connection, Pools, PlandoSongData, SongPoolManager);
+            var Success = ClientInitializationHelper.AssignSongs(data, Connection, Pools, PlandoSongData, SongPoolManager);
+            if (!Success) return;
             DialogResult = DialogResult.OK;
             Close();
         }
@@ -183,7 +186,7 @@ namespace YargArchipelagoClient
         {
             int SelectedSongs = Pools.Select(x => x.AmountInPool).Sum() + PlandoSongData.Values.Where(x => x.PoolPlandoEnabled || x.SongPlandoEnabled).Count();
             int RequiredSongs = data.TotalAPSongLocations;
-            lblRequiredSongCount.Text = $"Selected Songs: {SongPoolManager.GetOverallAssignedCountForLabel()} | Required Songs: {RequiredSongs}";
+            lblRequiredSongCount.Text = $"Selected Songs: {SongPoolManager.GetTotalPotentialSongAmount()} | Required Songs: {RequiredSongs}";
         }
 
 

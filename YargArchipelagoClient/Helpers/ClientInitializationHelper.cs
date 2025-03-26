@@ -2,9 +2,8 @@
 using System.Diagnostics;
 using TDMUtils;
 using YargArchipelagoClient.Data;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using static YargArchipelagoClient.Forms.PlandoForm;
-using static YargArchipelagoCommon.CommonData;
+using static YargArchipelagoClient.Helpers.MiscHelpers;
 
 namespace YargArchipelagoClient.Helpers
 {
@@ -66,15 +65,39 @@ namespace YargArchipelagoClient.Helpers
             }
         }
 
-        public static void AssignSongs(ConfigData data, ConnectionData Connection, List<SongPool> Pools, Dictionary<int, PlandoData> PlandoSongData, SongPoolManager songPoolManager)
+        public static bool AssignSongs(ConfigData data, ConnectionData Connection, List<SongPool> Pools, Dictionary<int, PlandoData> PlandoSongData, SongPoolManager songPoolManager)
         {
             Dictionary<string, HashSet<string>> UsedSongs = [];
 
-            foreach (var song in PlandoSongData.Values.Where(x => x.PoolPlandoEnabled))
+            Random RNG = Connection.GetRNG();
+
+            List<WeightedLimitedItem<SongPool>> RandomCandidates = [.. Pools.Where(x => x.RandomAmount)
+                .Select(p => new WeightedLimitedItem<SongPool>(p, songPoolManager.GetPotentialSongsForRandomPool(p), p.RandomWeight))];
+
+            SongLocation[] SongLocations = [data.GoalSong, .. data.ApLocationData.Values];
+            SongLocation[] NonPlandoSongLocations = [.. SongLocations.Where(x => !PlandoSongData[x.SongNumber].HasValidPlando)];
+
+            List<SongPool> selectedSongPools = [];
+            // Add each manually configured pool to the list "p.AmountInPool" times
+            foreach (var p in Pools.Where(x => !x.RandomAmount))
+                for (int i = 0; i < p.AmountInPool; i++)
+                    selectedSongPools.Add(p);
+
+            //If there are not enough manually configured pools in the list, add random pools until we hit the needed amount
+            while (selectedSongPools.Count < NonPlandoSongLocations.Length)
+                selectedSongPools.Add(RandomCandidates.GetWeightedLimitedItem(RNG));
+
+            foreach (var i in Pools.DistinctBy(x => x.Name))
+                Debug.WriteLine($"{i.Name} amount: {selectedSongPools.Where(x => x.Name == i.Name).Count()}");
+
+            selectedSongPools.Shuffle(RNG);
+
+            //Assign Song Pool Plandos (including Pool + Song)
+            foreach (var song in PlandoSongData.Values.Where(x => x.HasValidPoolPlando))
             {
                 var SelectedLocation = song.SongNum == 0 ? data.GoalSong : data.ApLocationData[song.SongNum];
                 var TargetPool = Pools.First(x => x.Name == song.SongPool);
-                var TargetSong = song.SongPlandoEnabled ? 
+                var TargetSong = song.HasValidSongPlando ? 
                     song.SongHash : 
                     songPoolManager.GetRandomUnusedSong(TargetPool, UsedSongs, Connection).SongChecksum;
                 SelectedLocation.Requirements = TargetPool;
@@ -83,33 +106,19 @@ namespace YargArchipelagoClient.Helpers
                 UsedSongs[TargetPool.Name].Add(TargetSong!);
             }
 
-            List<(SongData Data, SongPool Pool)> PickedSongs = [];
-            foreach (var p in Pools)
+            //Assign songs to standard configured Pool
+            var pairedItems = selectedSongPools.Zip(NonPlandoSongLocations, (pool, location) => new { pool, location });
+            foreach (var p in pairedItems)
             {
-                for (int i = 0; i < p.AmountInPool; i++)
-                {
-                    var TargetSong = songPoolManager.GetRandomUnusedSong(p, UsedSongs, Connection);
-                    PickedSongs.Add((TargetSong, p));
-                    UsedSongs.SetIfEmpty(p.Name, []);
-                    UsedSongs[p.Name].Add(TargetSong.SongChecksum);
-                }
-            }
-            SongLocation[] SongLocations = [data.GoalSong, .. data.ApLocationData.Values];
-            SongLocations = [.. SongLocations.Where(x => !PlandoSongData[x.SongNumber].HasPlando)];
-
-            if (PickedSongs.Count != SongLocations.Length)
-                throw new Exception($"Mismatched song pool from Picked Songs {PickedSongs.Count}|{SongLocations.Length}");
-
-            foreach (var i in SongLocations)
-            {
-                int randomIndex = Connection.GetRNG().Next(PickedSongs.Count);
-                var pickedSong = PickedSongs[randomIndex];
-                i.SongHash = pickedSong.Data.SongChecksum;
-                i.Requirements = pickedSong.Pool;
-                PickedSongs.RemoveAt(randomIndex);
+                var TargetSong = songPoolManager.GetRandomUnusedSong(p.pool, UsedSongs, Connection);
+                p.location.Requirements = p.pool;
+                p.location.SongHash = TargetSong.SongChecksum;
+                UsedSongs.SetIfEmpty(p.pool.Name, []);
+                UsedSongs[p.pool.Name].Add(TargetSong.SongChecksum);
             }
 
-            foreach (var song in PlandoSongData.Values.Where(x => !x.PoolPlandoEnabled && x.SongPlandoEnabled))
+            //Assign Song only Plandos
+            foreach (var song in PlandoSongData.Values.Where(x => !x.HasValidPoolPlando && x.HasValidSongPlando))
             {
                 var SelectedLocation = song.SongNum == 0 ? data.GoalSong : data.ApLocationData[song.SongNum];
                 var ChosenPool = songPoolManager.TryGetRandomUnusedPool(song.SongHash!, UsedSongs, Connection);
@@ -118,6 +127,12 @@ namespace YargArchipelagoClient.Helpers
                 UsedSongs.SetIfEmpty(ChosenPool.Name, []);
                 UsedSongs[ChosenPool.Name].Add(song.SongHash!);
             }
+
+            foreach (var song in SongLocations)
+                if (song.SongHash is null || song.Requirements is null)
+                    throw new Exception($"Not all songs received assigned data\n\n{song.ToFormattedJson()}");
+
+            return true;
 
         }
     }

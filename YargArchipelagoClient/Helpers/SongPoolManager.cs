@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TDMUtils;
+﻿using TDMUtils;
 using YargArchipelagoClient.Data;
 using static YargArchipelagoClient.Forms.PlandoForm;
+using static YargArchipelagoClient.Helpers.MiscHelpers;
 using static YargArchipelagoCommon.CommonData;
 
 namespace YargArchipelagoClient.Helpers
@@ -32,18 +28,21 @@ namespace YargArchipelagoClient.Helpers
         /// Returns the overall number of songs assigned (config + plando) across all pools.
         /// </summary>
         public int GetOverallAssignedCount() =>
-            allPools.Sum(GetTotalAssignedToThisPool);
+            allPools.Sum(GetTotalConfigAssignedToThisPool) + GetTotalLocationsHandledByPlando();
         /// <summary>
         /// Return the total amount of songs that could be assigned to all random pools
         /// </summary>
         public int GetOverallRandomAssignedCount() =>
             allPools.Sum(GetPotentialSongsForRandomPool);
 
+        public int GetTotalLocationsHandledByPlando() =>
+            plandoSongData.Values.Where(x => x.HasValidPlando).Count();
+
         /// <summary>
         /// Gets the amount of songs that could be applied to this pool when selecting it's random amount
         /// </summary>
         public int GetPotentialSongsForRandomPool(SongPool pool) =>
-            pool.RandomAmount ? GetRemainingAmountAssignableToThisPool(pool) : 0;
+            pool.RandomAmount ? pool.GetAvailableSongs(allSongData).Count - GetTotalAssignedToThisPool(pool) : 0;
 
         /// <summary>
         /// Gets the Total number of songs That could be applied to this pool
@@ -82,22 +81,26 @@ namespace YargArchipelagoClient.Helpers
         }
 
         /// <summary>
-        /// Gets the amount of 
+        /// Gets the amount of songs assigned manually and handled by plando. 
+        /// If this number falls short of the target and there are songs from random pools, 
+        /// add those songs until we meet the target or run out.
         /// </summary>
-        public int GetOverallAssignedCountForLabel()
+        public int GetTotalPotentialSongAmount()
         {
             var AmmountAssigned = GetOverallAssignedCount();
             var AmountRandomAssignable = GetOverallRandomAssignedCount();
-            //if we have assigned enough that we don't need to use random pools, or if there are no random pools, show the amount assigned
-            if (AmmountAssigned >= totalAPSongLocations || AmountRandomAssignable < 1)
+
+            // If we have manually assigned more location that are needed, return the amount we assigned (invalid)
+            if (AmmountAssigned > totalAPSongLocations)
                 return AmmountAssigned;
-            //if our total potential count is less that what is needed, show the total potential count
-            if (AmmountAssigned + AmountRandomAssignable < totalAPSongLocations)
-                return AmmountAssigned + AmountRandomAssignable;
-            //This should only happen if statically assigned amount is qual to our needed amount
-            //or statically assigned amount is less than the needed amount but we have enough random assignable to cover it
-            //We are good to go, so just return the needed amount
-            return totalAPSongLocations;
+
+            // At this point we know that AmmountAssigned <= totalAPSongLocations
+            // If AmmountAssigned == totalAPSongLocations or can meet or exceed by adding AmountRandomAssignable, return the requirement amount (valid)
+            if (AmmountAssigned + AmountRandomAssignable >= totalAPSongLocations)
+                return totalAPSongLocations;
+
+            //At this point we know we can not reach the required amount, return the max amount we can reach (invalid)
+            return AmmountAssigned + AmountRandomAssignable;
         }
 
         /// <summary>
@@ -110,27 +113,6 @@ namespace YargArchipelagoClient.Helpers
             return GetRemainingAmountAssignableToThisPool(pool) > 0;
         }
 
-        public void SetNudAmountInPool(NumericUpDown nud, SongPool pool)
-        {
-            nud.Maximum = int.MaxValue;
-            nud.Minimum = 0;
-            var Max = GetTotalAmountAssignableToThisPoolViaConfig(pool);
-            var Current = pool.AmountInPool;
-            if (Current > Max) Current = Max;
-            if (Current < 0) Current = 0;
-            nud.Value = Current;
-            nud.Maximum = Max;
-            nud.Minimum = 0;
-        }
-        public void SetNudCurrentWeight(NumericUpDown nud, SongPool pool)
-        {
-            nud.Maximum = int.MaxValue;
-            nud.Minimum = 0;
-            var Current = pool.AmountInPool;
-            if (Current < 1) Current = 1;
-            nud.Value = Current;
-            nud.Minimum = 1;
-        }
         public Dictionary<string, HashSet<string>> GetSongToPoolMap()
         {
             if (SongToPoolMap is not null) return SongToPoolMap;
