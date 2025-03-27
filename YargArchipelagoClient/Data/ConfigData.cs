@@ -35,6 +35,15 @@ namespace YargArchipelagoClient.Data
 
         public int[] GetSongIndexes() => [0, .. ApLocationData.Keys];
 
+        public SongLocation GetSongLocation(int SongNumber)
+        {
+            if (SongNumber == GoalSong.SongNumber)
+                return GoalSong;
+            else if (ApLocationData.TryGetValue(SongNumber, out var songLocation))
+                return songLocation;
+            throw new Exception($"{SongNumber} was not a valid song location");
+        }
+
         public void SaveConfigFile(ConnectionData Connection)
         {
             File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "seeds", Connection.getSaveFileName()), this.ToFormattedJson());
