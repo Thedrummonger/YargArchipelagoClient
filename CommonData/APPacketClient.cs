@@ -73,11 +73,11 @@ namespace YargArchipelagoPlugin
             }
         }
 
-        public async Task SendPacketAsync(Networking.YargDataPacket packet)
+        public async Task SendPacketAsync(Networking.YargAPPacket packet)
         {
             if (!IsConnected || stream == null)
                 return;
-            string json = JsonConvert.SerializeObject(packet) + "\n";
+            string json = JsonConvert.SerializeObject(packet, Networking.PacketSerializeSettings) + "\n";
             byte[] bytes = Encoding.UTF8.GetBytes(json);
             try
             {

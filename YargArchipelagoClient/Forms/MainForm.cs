@@ -83,7 +83,7 @@ namespace YargArchipelagoClient
                 MessageBox.Show(deathLink.Cause, $"DeathLink {deathLink.Source}", MessageBoxButtons.OK, MessageBoxIcon.Hand);
             else
             {
-                _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.ClientDataPacket
+                _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket
                 {
                     deathLinkData = new CommonData.DeatLinkData { Source = deathLink.Source, Cause = deathLink.Cause }
                 });
@@ -99,7 +99,7 @@ namespace YargArchipelagoClient
             var RestartTrapAmountInMemory = Config.TrapsRegistered.TryGetValue(APWorldData.StaticItems.TrapRestart, out var R) ? R : 0;
 
             if (RestartTrapAmountFromServer > RestartTrapAmountInMemory)
-                _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.ClientDataPacket { trapData = new CommonData.TrapData(CommonData.trapType.Restart) });
+                _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { trapData = new CommonData.TrapData(CommonData.trapType.Restart) });
 
             if (RestartTrapAmountInMemory != RestartTrapAmountFromServer)
             {
@@ -118,17 +118,16 @@ namespace YargArchipelagoClient
             string CurrentTitle = Title;
             CurrentTitle += $" (Yarg Connected: {IsConnectedToYarg})";
             if (CurrentlyPlaying is not null)
-                CurrentTitle += $" [Currently Playing: {CurrentlyPlaying.Name} by {CurrentlyPlaying.Artist}]";
+                CurrentTitle += $" [Currently Playing: {CurrentlyPlaying.GetSongDisplayName()}]";
 
             this.Text = CurrentTitle;
         }
-        public void UpdateCurrentlyPlaying(string SongHash)
+        public void UpdateCurrentlyPlaying(CommonData.SongData SongHash)
         {
-            if (string.IsNullOrWhiteSpace(SongHash))
+            if (string.IsNullOrWhiteSpace(SongHash.SongChecksum))
                 CurrentlyPlaying = null;
-            if (Config.SongData.TryGetValue(SongHash, out var song))
-                CurrentlyPlaying = null;
-            CurrentlyPlaying = song;
+            else
+                CurrentlyPlaying = SongHash;
             UpdateClientTitle();
         }
         public void UpdateConnected(bool Connected)
@@ -141,7 +140,7 @@ namespace YargArchipelagoClient
 
         private void SendStarPowerItem()
         {
-            _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.ClientDataPacket
+            _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket
             {
                 trapData = new(CommonData.trapType.StarPower)
             });

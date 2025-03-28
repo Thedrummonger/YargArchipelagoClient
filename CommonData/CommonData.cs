@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -92,21 +93,27 @@ namespace YargArchipelagoCommon
 
         public static class Networking
         {
-            public const int PORT = 59152;
+            public const int PORT = 60987;
 
-            public class YargDataPacket
+            public class YargAPPacket
             {
                 public SongPassInfo passInfo = null;
                 public string Message = null;
-                public string CurrentlyPlaying = null;
-            }
-
-            public class ClientDataPacket
-            {
+                public SongData CurrentlyPlaying = null;
                 public DeatLinkData deathLinkData = null;
                 public TrapData trapData = null;
                 public string[] AvailableSongs = null;
             }
+
+            public readonly static JsonSerializerSettings PacketSerializeSettings = new JsonSerializerSettings()
+            {
+                Formatting = Formatting.None,
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.None,
+                DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+            };
         }
     }
 }

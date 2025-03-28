@@ -18,7 +18,7 @@ namespace YargArchipelagoClient.Data
         private ConnectionData Connection;
 
         public event Action<string> LogMessage;
-        public event Action<string> CurrentSongUpdated;
+        public event Action<CommonData.SongData> CurrentSongUpdated;
         public event Action<bool> ConnectionChanged;
 
         public APPacketServer(ConfigData config, ConnectionData connection)
@@ -75,7 +75,7 @@ namespace YargArchipelagoClient.Data
         {
             try
             {
-                var Packet = JsonConvert.DeserializeObject<CommonData.Networking.YargDataPacket>(line);
+                var Packet = JsonConvert.DeserializeObject<CommonData.Networking.YargAPPacket>(line, CommonData.Networking.PacketSerializeSettings);
                 if (Packet is null) return;
                 if (Packet.passInfo is not null)
                     CheckLocationHelpers.CheckLocations(Config, Connection, Packet.passInfo);
@@ -91,10 +91,10 @@ namespace YargArchipelagoClient.Data
             }
         }
 
-        public async Task SendPacketAsync(CommonData.Networking.ClientDataPacket packet)
+        public async Task SendPacketAsync(CommonData.Networking.YargAPPacket packet)
         {
             if (currentWriter is null) return;
-            string json = JsonConvert.SerializeObject(packet) + "\n";
+            string json = JsonConvert.SerializeObject(packet, CommonData.Networking.PacketSerializeSettings) + "\n";
             await currentWriter.WriteAsync(json);
         }
     }

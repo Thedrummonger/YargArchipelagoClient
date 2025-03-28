@@ -75,21 +75,16 @@ namespace YargArchipelagoClient.Data
         public void UpdateReceivedItems()
         {
             ReceivedFiller.Clear();
-            Debug.WriteLine($"Updating Recieved items");
             foreach (var i in Session.Items.AllItemsReceived)
             {
-                Debug.WriteLine($"Checking recived item {i.ItemName}");
-
                 if (APWorldData.APIDs.Items.TryGetValue(i.ItemId, out var item))
                 {
-                    Debug.WriteLine($"Was filler");
                     ReceivedFiller.SetIfEmpty(item, 0);
                     ReceivedFiller[item]++;
                     continue;
                 }
                 if (APWorldData.APIDs.SongItemIds.TryGetValue(i.ItemId, out var songItem))
                 {
-                    Debug.WriteLine($"Was song {songItem}");
                     ReceivedSongs.Add(songItem);
                     continue;
                 }

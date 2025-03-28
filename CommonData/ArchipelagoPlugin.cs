@@ -49,13 +49,6 @@ namespace YargArchipelagoPlugin
             MethodInfo PatchedRecommendedSongsGetRecommendedSongs = AccessTools.Method(typeof(APPatches), "RecommendedSongs_GetRecommendedSongs");
             harmony.Patch(OriginalRecommendedSongsGetRecommendedSongs, new HarmonyMethod(PatchedRecommendedSongsGetRecommendedSongs));
 
-#if NIGHTLY
-            //GainStarPower is a protected function, make a delegate for it that I can use to call it from the AP code.
-            //TODO figure out how the Stable build adds start power
-            MethodInfo method = AccessTools.Method(typeof(BaseEngine), "GainStarPower");
-            Archipelago._gainStarPowerDelegate = (Action<BaseEngine, uint>)Delegate.CreateDelegate(typeof(Action<BaseEngine, uint>), method);
-#endif
-
             Archipelago.StartAPClient();
         }
     }

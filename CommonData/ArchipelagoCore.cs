@@ -11,6 +11,7 @@ using YARG.Core.Song;
 using YARG.Core.Song.Cache;
 using YARG.Core.Utility;
 using YARG.Gameplay;
+using YARG.Gameplay.Player;
 using YARG.Scores;
 using YARG.Song;
 using YargArchipelagoCommon;
@@ -21,7 +22,7 @@ namespace YargArchipelagoPlugin
     public class Archipelago
     {
         public static YargPacketClient packetClient;
-        public static Action<BaseEngine, uint> _gainStarPowerDelegate;
+        public static Action<BasePlayer> _gainStarPowerDelegate;
         public static ManualLogSource ManualLogSource;
         private static GameManager CurrentGame = null;
 
@@ -48,23 +49,23 @@ namespace YargArchipelagoPlugin
                 }).ToArray();
             songPassInfo.SongPassed = true; //Always true for now, will be handled when yarg implements fail mode
 
-            _ = packetClient?.SendPacketAsync(new YargDataPacket { passInfo = songPassInfo });
+            _ = packetClient?.SendPacketAsync(new YargAPPacket { passInfo = songPassInfo });
         }
 
         public static void SongStarted(GameManager gameManager)
         {
             CurrentGame = gameManager;
-            _ = packetClient?.SendPacketAsync(new YargDataPacket
+            _ = packetClient?.SendPacketAsync(new YargAPPacket
             {
-                CurrentlyPlaying = Convert.ToBase64String(gameManager.Song.Hash.HashBytes)
+                CurrentlyPlaying = ToSongData(gameManager.Song)
             });
         }
         public static void SongEnded()
         {
             CurrentGame = null;
-            _ = packetClient?.SendPacketAsync(new YargDataPacket
+            _ = packetClient?.SendPacketAsync(new YargAPPacket
             {
-                CurrentlyPlaying = string.Empty
+                CurrentlyPlaying = new CommonData.SongData { SongChecksum = string.Empty }
             });
         }
 
@@ -152,10 +153,10 @@ namespace YargArchipelagoPlugin
 
         internal static void ParseClientPacket(string line)
         {
-            ClientDataPacket BasePacket;
+            YargAPPacket BasePacket;
             try
             {
-                BasePacket = JsonConvert.DeserializeObject<ClientDataPacket>(line);
+                BasePacket = JsonConvert.DeserializeObject<YargAPPacket>(line, PacketSerializeSettings);
             }
             catch (Exception e)
             {
@@ -171,11 +172,7 @@ namespace YargArchipelagoPlugin
                     CauseDeathLink();
                 if (BasePacket.trapData.type == CommonData.trapType.StarPower && CurrentGame != null && !CurrentGame.IsPractice)
                     foreach (var i in CurrentGame.Players)
-                    {
-#if NIGHTLY
-                        _gainStarPowerDelegate?.Invoke(i.BaseEngine, i.BaseEngine.TicksPerQuarterSpBar);
-#endif
-                    }
+                        APPatches.ApplyStarPowerItem(i);
             }
             if (BasePacket.AvailableSongs != null)
                 CurrentlyAvailableSongs = BasePacket.AvailableSongs;
