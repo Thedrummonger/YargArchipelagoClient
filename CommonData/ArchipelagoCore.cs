@@ -36,7 +36,7 @@ namespace YargArchipelagoPlugin
                 .Select(x => new CommonData.SongParticipantInfo()
                 {
                     Difficulty = GetSupportedDifficulty(x.Difficulty),
-                    instrument = IsSupportedInstrument(x.Instrument, out var SupportedInstrument) ? SupportedInstrument : default,
+                    instrument = IsSupportedInstrument(x.Instrument, out var SupportedInstrument) ? SupportedInstrument : null,
                     FC = x.IsFc,
 #if NIGHTLY
                     Percentage = x.Percent??0,
@@ -86,7 +86,7 @@ namespace YargArchipelagoPlugin
                         var data = ToSongData(song);
                         if (!SongData.ContainsKey(data.SongChecksum))
                             SongData[data.SongChecksum] = data;
-                        SongData[data.SongChecksum].Difficulties[supportedInstrument] = Difficulty.Key;
+                        SongData[data.SongChecksum].Difficulties[supportedInstrument.Value] = Difficulty.Key;
                     }
                 }
             }
@@ -125,7 +125,7 @@ namespace YargArchipelagoPlugin
                 Difficulties = new Dictionary<CommonData.SupportedInstrument, int>()
             };
         }
-        private static bool IsSupportedInstrument(Instrument source, out CommonData.SupportedInstrument target)
+        private static bool IsSupportedInstrument(Instrument source, out CommonData.SupportedInstrument? target)
         {
             int value = (int)source;
             if (Enum.IsDefined(typeof(CommonData.SupportedInstrument), value))

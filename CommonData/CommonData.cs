@@ -58,7 +58,7 @@ namespace YargArchipelagoCommon
 
         public class SongParticipantInfo
         {
-            public SupportedInstrument instrument;
+            public SupportedInstrument? instrument;
             public SupportedDifficulty Difficulty;
             public int Stars;
             public bool WasGoldStar;
@@ -109,10 +109,6 @@ namespace YargArchipelagoCommon
             {
                 Formatting = Formatting.None,
                 NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore,
-                TypeNameHandling = TypeNameHandling.None,
-                DateFormatHandling = DateFormatHandling.IsoDateFormat,
-                DateTimeZoneHandling = DateTimeZoneHandling.Utc,
             };
         }
     }
