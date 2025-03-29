@@ -57,7 +57,7 @@ namespace YargArchipelagoPlugin
             CurrentGame = gameManager;
             _ = packetClient?.SendPacketAsync(new YargAPPacket
             {
-                CurrentlyPlaying = ToSongData(gameManager.Song)
+                CurrentlyPlaying = CommonData.CurrentlyPlayingData.CurrentlyPlayingSong(ToSongData(gameManager.Song))
             });
         }
         public static void SongEnded()
@@ -65,7 +65,7 @@ namespace YargArchipelagoPlugin
             CurrentGame = null;
             _ = packetClient?.SendPacketAsync(new YargAPPacket
             {
-                CurrentlyPlaying = new CommonData.SongData { SongChecksum = string.Empty }
+                CurrentlyPlaying = CommonData.CurrentlyPlayingData.CurrentlyPlayingNone()
             });
         }
 

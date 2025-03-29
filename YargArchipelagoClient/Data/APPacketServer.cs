@@ -82,7 +82,7 @@ namespace YargArchipelagoClient.Data
                 if (Packet.Message is not null)
                     LogMessage?.Invoke(Packet.Message);
                 if (Packet.CurrentlyPlaying is not null)
-                    CurrentSongUpdated?.Invoke(Packet.CurrentlyPlaying);
+                    CurrentSongUpdated?.Invoke(Packet.CurrentlyPlaying.song);
             }
             catch
             {

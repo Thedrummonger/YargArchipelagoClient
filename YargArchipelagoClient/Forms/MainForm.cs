@@ -105,12 +105,9 @@ namespace YargArchipelagoClient
 
             this.Text = CurrentTitle;
         }
-        public void UpdateCurrentlyPlaying(CommonData.SongData SongHash)
+        public void UpdateCurrentlyPlaying(CommonData.SongData? Song)
         {
-            if (string.IsNullOrWhiteSpace(SongHash.SongChecksum))
-                CurrentlyPlaying = null;
-            else
-                CurrentlyPlaying = SongHash;
+            CurrentlyPlaying = Song;
             UpdateClientTitle();
         }
         public void UpdateConnected(bool Connected)

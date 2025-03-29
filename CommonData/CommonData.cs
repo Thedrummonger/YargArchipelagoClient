@@ -85,6 +85,13 @@ namespace YargArchipelagoCommon
             public TrapData(trapType t) { type = t; }
             public trapType type;
         }
+        public class CurrentlyPlayingData
+        {
+            private CurrentlyPlayingData(SongData t) { song = t; }
+            public SongData song;
+            public static CurrentlyPlayingData CurrentlyPlayingSong(SongData t) => new CurrentlyPlayingData(t);
+            public static CurrentlyPlayingData CurrentlyPlayingNone() => new CurrentlyPlayingData(null);
+        }
         public enum trapType
         {
             Restart,
@@ -99,7 +106,7 @@ namespace YargArchipelagoCommon
             {
                 public SongPassInfo passInfo = null;
                 public string Message = null;
-                public SongData CurrentlyPlaying = null;
+                public CurrentlyPlayingData CurrentlyPlaying = null;
                 public DeatLinkData deathLinkData = null;
                 public TrapData trapData = null;
                 public string[] AvailableSongs = null;
