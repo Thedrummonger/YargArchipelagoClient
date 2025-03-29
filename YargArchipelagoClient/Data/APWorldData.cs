@@ -21,6 +21,8 @@ namespace YargArchipelagoClient.Data
             Victory,
             [Description("Fame Point")]
             FamePoint,
+            [Description("Star Power")]
+            StarPower,
             [Description("Swap Song (Random)")]
             SwapRandom,
             [Description("Swap Song (Pick)")]

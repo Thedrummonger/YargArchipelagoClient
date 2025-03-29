@@ -91,23 +91,6 @@ namespace YargArchipelagoClient
             }
 
         }
-        private void CheckForRestartTrap()
-        {
-            if (!Connection.ReceivedFiller.TryGetValue(APWorldData.StaticItems.TrapRestart, out var RestartTrapAmountFromServer))
-                return;
-
-            var RestartTrapAmountInMemory = Config.TrapsRegistered.TryGetValue(APWorldData.StaticItems.TrapRestart, out var R) ? R : 0;
-
-            if (RestartTrapAmountFromServer > RestartTrapAmountInMemory)
-                _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { trapData = new CommonData.TrapData(CommonData.trapType.Restart) });
-
-            if (RestartTrapAmountInMemory != RestartTrapAmountFromServer)
-            {
-                Config.TrapsRegistered[APWorldData.StaticItems.TrapRestart] = RestartTrapAmountFromServer;
-                Config.SaveConfigFile(Connection);
-            }
-
-        }
 
         public const string Title = "Yarg Archipelago Client";
         public CommonData.SongData? CurrentlyPlaying = null;
@@ -152,7 +135,7 @@ namespace YargArchipelagoClient
             UpdateData = false;
             Connection.UpdateCheckedLocations();
             Connection.UpdateReceivedItems();
-            CheckForRestartTrap();
+            TrapFillerHelper.SendPendingTrapOrFiller(Connection, Config);
             PrintSongs();
             CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
         }

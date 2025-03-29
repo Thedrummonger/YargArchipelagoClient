@@ -94,11 +94,7 @@ namespace YargArchipelagoClient.Data
                 Session.SetGoalAchieved();
         }
 
-        public string getSaveFileName()
-        {
-            var c = this!;
-            var s = c.GetSession();
-            return $"{s.RoomState.Seed}_{c.SlotName}_{s.Players.ActivePlayer.Slot}_{s.Players.ActivePlayer.GetHashCode()}";
-        }
+        public string getSaveFileName() =>
+            $"{Session.RoomState.Seed}_{SlotName}_{Session.Players.ActivePlayer.Slot}_{Session.Players.ActivePlayer.GetHashCode()}";
     }
 }
