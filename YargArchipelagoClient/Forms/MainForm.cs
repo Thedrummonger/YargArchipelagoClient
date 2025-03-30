@@ -59,10 +59,12 @@ namespace YargArchipelagoClient
 
             UpdateData = true;
 
-            var PacketServer = Connection.StartPacketServer(Config);
+            var PacketServer = Connection.GetPacketServer(Config);
+            PacketServer.PacketServerClosed += PackerServerClosed;
             PacketServer.ConnectionChanged += UpdateConnected;
             PacketServer.CurrentSongUpdated += UpdateCurrentlyPlaying;
             PacketServer.LogMessage += WriteToLog;
+            _ = PacketServer.StartAsync();
 
             SyncTimerTick(sender, e);
 
@@ -75,6 +77,16 @@ namespace YargArchipelagoClient
             UpdateClientTitle();
         }
 
+        private void PackerServerClosed(string obj)
+        {
+            MessageBox.Show($"The YARG connection service was stopped unexpectedly, the application will close\n\n{obj}");
+            this.Close();
+        }
+        private void APServerClosed(string obj)
+        {
+            MessageBox.Show($"The Archipelago connection service was stopped unexpectedly, the application will close\n\n{obj}");
+            this.Close();
+        }
 
         private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink)
         {
@@ -128,6 +140,8 @@ namespace YargArchipelagoClient
 
         private void SyncTimerTick(object? sender, EventArgs e)
         {
+            if (!Connection.GetSession().Socket.Connected)
+                APServerClosed("AP server connection lost");
             if (!UpdateData) return;
             UpdateData = false;
             Connection.UpdateCheckedLocations();

@@ -20,6 +20,7 @@ namespace YargArchipelagoClient.Data
         public event Action<string> LogMessage;
         public event Action<CommonData.SongData> CurrentSongUpdated;
         public event Action<bool> ConnectionChanged;
+        public event Action<string> PacketServerClosed;
 
         public APPacketServer(ConfigData config, ConnectionData connection)
         {
@@ -31,8 +32,16 @@ namespace YargArchipelagoClient.Data
 
         public async Task StartAsync()
         {
-            listener.Start();
-            Debug.WriteLine("AP Packet Server started, waiting for YARG client connection...");
+            try
+            {
+                listener.Start();
+                Debug.WriteLine("AP Packet Server started, waiting for YARG client connection...");
+            }
+            catch 
+            {
+                PacketServerClosed.Invoke("Failed To Start Listener");
+                return; 
+            }
 
             // Only one client is accepted at a time.
             while (!cts.Token.IsCancellationRequested)
@@ -43,6 +52,7 @@ namespace YargArchipelagoClient.Data
             }
 
             listener.Stop();
+            PacketServerClosed.Invoke("Connection was canceled");
             Debug.WriteLine("AP Packet Server stopped.");
         }
 
