@@ -87,7 +87,7 @@ namespace YargArchipelagoCommon
         }
         public class CurrentlyPlayingData
         {
-            private CurrentlyPlayingData(SongData t) { song = t; }
+            public CurrentlyPlayingData(SongData t) { song = t; }
             public SongData song;
             public static CurrentlyPlayingData CurrentlyPlayingSong(SongData t) => new CurrentlyPlayingData(t);
             public static CurrentlyPlayingData CurrentlyPlayingNone() => new CurrentlyPlayingData(null);

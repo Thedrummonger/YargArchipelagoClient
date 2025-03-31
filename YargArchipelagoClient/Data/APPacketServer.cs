@@ -94,9 +94,9 @@ namespace YargArchipelagoClient.Data
                 if (Packet.CurrentlyPlaying is not null)
                     CurrentSongUpdated?.Invoke(Packet.CurrentlyPlaying.song);
             }
-            catch
+            catch (Exception e)
             {
-                Debug.WriteLine($"Failed to Parse Packet\n{line.ToFormattedJson()}");
+                Debug.WriteLine($"Failed to Parse Packet\n{line.ToFormattedJson()}\n{e}");
                 return;
             }
         }
