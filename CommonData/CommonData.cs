@@ -100,7 +100,7 @@ namespace YargArchipelagoCommon
 
         public static class Networking
         {
-            public const int PORT = 60987;
+            public const int PORT = 26569;
 
             public class YargAPPacket
             {
