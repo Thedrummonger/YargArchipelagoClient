@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using YargArchipelagoClient.Data;
 
 namespace YargArchipelagoClient.Helpers
 {
@@ -56,6 +57,43 @@ namespace YargArchipelagoClient.Helpers
             nud.Value = Current;
             nud.Maximum = Max;
             nud.Minimum = Min;
+        }
+
+        public static void AppendString(this RichTextBox rtb, params ColoredString[] coloredStrings)
+        {
+            rtb.AppendString(() =>
+            {
+                string rtf = ArchipelagoColorHelper.BuildColoredStringsRtf(rtb, coloredStrings);
+                rtb.SelectedRtf = rtf;
+            });
+        }
+        public static void AppendString(this RichTextBox rtb, string text, Color? color = null)
+        {
+            rtb.AppendString(() =>
+            {
+                if (color is not null)
+                    rtb.SelectionColor = color.Value;
+                rtb.AppendText(text + Environment.NewLine);
+                rtb.SelectionColor = rtb.ForeColor;
+            });
+        }
+        public static void AppendString(this RichTextBox rtb, Action appendAction)
+        {
+            bool wasReadOnly = rtb.ReadOnly;
+            if (wasReadOnly) rtb.ReadOnly = false;
+
+            bool autoScroll = rtb.SelectionStart == rtb.TextLength;
+
+            rtb.SelectionStart = rtb.TextLength;
+            appendAction();
+
+            if (autoScroll)
+            {
+                rtb.SelectionStart = rtb.TextLength;
+                rtb.ScrollToCaret();
+            }
+
+            if (wasReadOnly) rtb.ReadOnly = true;
         }
     }
 }

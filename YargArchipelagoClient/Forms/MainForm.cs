@@ -6,7 +6,7 @@ using TDMUtils;
 using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Helpers;
 using YargArchipelagoCommon;
-using static YargArchipelagoClient.Data.ColoredStringHelper;
+using static YargArchipelagoClient.Data.ArchipelagoColorHelper;
 using static YargArchipelagoClient.Helpers.WinFormHelpers;
 
 namespace YargArchipelagoClient
@@ -174,7 +174,7 @@ namespace YargArchipelagoClient
         {
             var formattedMessage = new ColoredString();
             foreach (var part in message.Parts)
-                formattedMessage.AddText(part.Text, part.Color, false);
+                formattedMessage.AddText(part.Text, part.Color.ConvertToSystemColor(), false);
 
             if (message is ItemSendLogMessage ItemSend)
                 BroadcastSongNameToServer(ItemSend);
@@ -208,7 +208,7 @@ namespace YargArchipelagoClient
                 while (LogQueue.TryDequeue(out var msg))
                     messages.Add(msg);
                 if (messages.Count > 0)
-                    lbConsole.SafeInvoke(() => ColoredStringHelper.AppendColoredString(lbConsole, [.. messages]));
+                    lbConsole.SafeInvoke(() => lbConsole.AppendString([.. messages]));
             }
         }
 
@@ -267,44 +267,44 @@ namespace YargArchipelagoClient
                     if (Config is null) return;
                     Config.BroadcastSongName = !Config.BroadcastSongName;
                     Config.SaveConfigFile(Connection);
-                    WriteToLog($"Broadcasting Songs: {Config.BroadcastSongName}");
+                    lbConsole.AppendString($"Broadcasting Songs: {Config.BroadcastSongName}");
                     break;
                 case "manual":
                     if (Config is null) return;
                     Config.ManualMode = !Config.ManualMode;
                     Config.SaveConfigFile(Connection);
-                    WriteToLog($"Manual Mode: {Config.ManualMode}");
+                    lbConsole.AppendString($"Manual Mode: {Config.ManualMode}");
                     break;
                 case "deathlink":
                     if (Config is null || !Connection.GetSession().RoomState.ServerTags.Contains("DeathLink")) return;
                     Config.deathLinkEnabled = !Config.deathLinkEnabled;
                     Config.SaveConfigFile(Connection);
-                    WriteToLog($"Deathlink Enabled: {Config.deathLinkEnabled}");
+                    lbConsole.AppendString($"Deathlink Enabled: {Config.deathLinkEnabled}");
                     break;
                 case "fame":
-                    WriteToLog($"Fame Points: {Connection.GetCurrentFame()}/{Config!.FamePointsNeeded}");
+                    lbConsole.AppendString($"Fame Points: {Connection.GetCurrentFame()}/{Config!.FamePointsNeeded}");
                     break;
                 case "update":
-                    WriteToLog($"Updating Available");
+                    lbConsole.AppendString($"Updating Available");
                     CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
                     break;
                 case "rescan":
-                    WriteToLog($"Rescanning available songs");
+                    lbConsole.AppendString($"Rescanning available songs");
                     SongImporter.RescanSongs(Config, Connection);
                     PrintSongs();
                     break;
                 case "debug_star":
                     if (!Debugger.IsAttached) break;
-                    WriteToLog($"Simulating start power item");
+                    lbConsole.AppendString($"Simulating start power item");
                     SendStarPowerItem();
                     break;
                 case "debug_dl":
                     if (!Debugger.IsAttached) break;
-                    WriteToLog($"Simulating Death Link");
+                    lbConsole.AppendString($"Simulating Death Link");
                     DeathLinkService_OnDeathLinkReceived(new DeathLink("command"));
                     break;
                 default:
-                    WriteToLog($"{v} is not a valid command");
+                    lbConsole.AppendString($"{v} is not a valid command");
                     break;
             }
         }

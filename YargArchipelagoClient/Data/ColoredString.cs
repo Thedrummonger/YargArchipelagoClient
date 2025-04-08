@@ -51,12 +51,8 @@ namespace YargArchipelagoClient.Data
         // Exposes the words for rendering
         public List<(string Text, Color? Color)> Words => words;
     }
-    public static class ColoredStringHelper
+    public static class ArchipelagoColorHelper
     {
-        public static ColoredString AddText(this ColoredString coloredString, string text, Archipelago.MultiClient.Net.Models.Color archipelagoColor, bool addSpace = true)
-        {
-            return coloredString.AddText(text, archipelagoColor.ConvertToSystemColor(), addSpace);
-        }
         public static Color ConvertToSystemColor(this Archipelago.MultiClient.Net.Models.Color archipelagoColor)
         {
             return Color.FromArgb(archipelagoColor.R, archipelagoColor.G, archipelagoColor.B);
@@ -93,25 +89,6 @@ namespace YargArchipelagoClient.Data
         {
             public static readonly Archipelago.MultiClient.Net.Models.Color Entrance = Archipelago.MultiClient.Net.Models.Color.Blue;
             public static readonly Archipelago.MultiClient.Net.Models.Color Location = Archipelago.MultiClient.Net.Models.Color.Green;
-        }
-
-        public static void AppendColoredString(RichTextBox rtb, ColoredString coloredString) => AppendColoredString(rtb, [coloredString]);
-        public static void AppendColoredString(RichTextBox rtb, params ColoredString[] coloredStrings)
-        {
-            // Check if auto-scrolling is enabled.
-            bool autoScroll = rtb.SelectionStart == rtb.TextLength;
-
-            string rtf = BuildColoredStringsRtf(rtb, coloredStrings);
-
-            // Append the RTF text at the end.
-            rtb.SelectionStart = rtb.TextLength;
-            rtb.SelectedRtf = rtf;
-
-            if (autoScroll)
-            {
-                rtb.SelectionStart = rtb.TextLength;
-                rtb.ScrollToCaret();
-            }
         }
 
         /// <summary>
