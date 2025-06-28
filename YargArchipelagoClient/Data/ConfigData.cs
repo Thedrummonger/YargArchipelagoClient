@@ -29,7 +29,7 @@ namespace YargArchipelagoClient.Data
 
         public bool deathLinkEnabled = false;
 
-        public Dictionary<APWorldData.StaticItems, int> TrapsRegistered = [];
+        public Dictionary<APWorldData.StaticItems, int> ProcessedTrapsFiller = [];
 
         public int TotalAPSongLocations => GetSongIndexes().Length;
 

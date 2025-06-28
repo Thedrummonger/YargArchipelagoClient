@@ -92,34 +92,33 @@ namespace YargArchipelagoClient
         {
             if (!Config!.deathLinkEnabled) return;
             if (Config.ManualMode)
-                MessageBox.Show(deathLink.Cause, $"DeathLink {deathLink.Source}", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                MessageBox.Show($"Deathlink {deathLink.Source}", deathLink.Cause, MessageBoxButtons.OK, MessageBoxIcon.Hand);
             else
             {
                 _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket
                 {
                     deathLinkData = new CommonData.DeatLinkData { Source = deathLink.Source, Cause = deathLink.Cause }
                 });
-                WriteToLog(deathLink.Source);
+                WriteToLog($"Deathlink {deathLink.Source}: {deathLink.Cause}");
             }
 
         }
 
         public const string Title = "Yarg Archipelago Client";
-        public CommonData.SongData? CurrentlyPlaying = null;
         public bool IsConnectedToYarg = false;
 
         public void UpdateClientTitle()
         {
             string CurrentTitle = Title;
-            CurrentTitle += $" (Yarg Connected: {IsConnectedToYarg})";
-            if (CurrentlyPlaying is not null)
-                CurrentTitle += $" [Currently Playing: {CurrentlyPlaying.GetSongDisplayName()}]";
+            CurrentTitle += IsConnectedToYarg ? " [Game Connected]" : " [Game Disconnected]";
+            if (Connection.CurrentlyPlaying is not null)
+                CurrentTitle += $" [Currently Playing: {Connection.CurrentlyPlaying.GetSongDisplayName()}]";
 
             this.Text = CurrentTitle;
         }
         public void UpdateCurrentlyPlaying(CommonData.SongData? Song)
         {
-            CurrentlyPlaying = Song;
+            Connection.CurrentlyPlaying = Song;
             UpdateClientTitle();
         }
         public void UpdateConnected(bool Connected)
@@ -134,7 +133,7 @@ namespace YargArchipelagoClient
         {
             _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket
             {
-                trapData = new(CommonData.trapType.StarPower)
+                trapData = new(CommonData.FillerTrapType.StarPower)
             });
         }
 

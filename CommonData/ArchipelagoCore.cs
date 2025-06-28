@@ -168,9 +168,9 @@ namespace YargArchipelagoPlugin
                 CauseDeathLink();
             if (BasePacket.trapData != null)
             {
-                if (BasePacket.trapData.type == CommonData.trapType.Restart)
+                if (BasePacket.trapData.type == CommonData.FillerTrapType.Restart)
                     CauseDeathLink();
-                if (BasePacket.trapData.type == CommonData.trapType.StarPower && CurrentGame != null && !CurrentGame.IsPractice)
+                if (BasePacket.trapData.type == CommonData.FillerTrapType.StarPower && CurrentGame != null && !CurrentGame.IsPractice)
                     foreach (var i in CurrentGame.Players)
                         APPatches.ApplyStarPowerItem(i);
             }

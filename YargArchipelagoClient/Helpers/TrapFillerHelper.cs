@@ -1,42 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Reflection;
+using TDMUtils;
 using YargArchipelagoClient.Data;
 using YargArchipelagoCommon;
+using static YargArchipelagoClient.Data.APWorldData;
 
 namespace YargArchipelagoClient.Helpers
 {
-    class TrapFillerHelper()
+    public static class TrapFillerHelper
     {
         public static void SendPendingTrapOrFiller(ConnectionData Connection, ConfigData Config)
         {
-            foreach(var Item in Connection.ReceivedFiller)
+            if (Connection.CurrentlyPlaying is null) return;
+            foreach(var Item in Connection.ReceivedStaticItems)
             {
-                CommonData.trapType PacketType;
-                switch (Item.Key)
-                {
-                    case APWorldData.StaticItems.StarPower:
-                        PacketType = CommonData.trapType.StarPower;
-                        break;
-                    case APWorldData.StaticItems.TrapRestart:
-                        PacketType = CommonData.trapType.Restart;
-                        break;
-                    default:
-                        return;
-                }
-                if (Item.Value < 1) continue;
-                var AmountAlreadySent = Config.TrapsRegistered.TryGetValue(Item.Key, out var R) ? R : 0;
+                if (!Item.Key.IsTrapOrFiller() || Item.Value < 1) continue;
+                var AmountAlreadySent = Config.ProcessedTrapsFiller.TryGetValue(Item.Key, out var R) ? R : 0;
                 if (Item.Value > AmountAlreadySent)
-                    _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { trapData = new CommonData.TrapData(PacketType) });
-
-                if (AmountAlreadySent != Item.Value)
-                {
-                    Config.TrapsRegistered[Item.Key] = Item.Value;
-                    Config.SaveConfigFile(Connection);
-                }
+                    SendOneTrapFiller(Connection, Config, Item.Key);
             }
         }
+
+        public static void SendOneTrapFiller(ConnectionData Connection, ConfigData Config, APWorldData.StaticItems item)
+        {
+            var Type = GetFillerTrapType(item);
+            _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { trapData = new CommonData.TrapData(Type) });
+            Config.ProcessedTrapsFiller.SetIfEmpty(item, 0);
+            Config.ProcessedTrapsFiller[item]++;
+            Config.SaveConfigFile(Connection);
+        }
+
+        public static CommonData.FillerTrapType GetFillerTrapType(this StaticItems item)
+            => typeof(StaticItems)
+            .GetMember(item.ToString())
+            .FirstOrDefault()?
+            .GetCustomAttribute<FillerTrapTypeAttribute>(false)?.Type ?? 
+            CommonData.FillerTrapType.NonFiller;
+
+        public static bool IsTrapOrFiller(this StaticItems item) => item.GetFillerTrapType() != CommonData.FillerTrapType.NonFiller;
     }
+
+
 }

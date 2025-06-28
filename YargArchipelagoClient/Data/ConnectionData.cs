@@ -43,15 +43,17 @@ namespace YargArchipelagoClient.Data
             if (PacketServer is null) throw new Exception("Attempted to retrieve packet server before it was started!");
             return PacketServer;
         }
-
+        
         [JsonIgnore]
         public HashSet<int> ReceivedSongs { get; } = [];
         [JsonIgnore]
-        public Dictionary<APWorldData.StaticItems, int> ReceivedFiller { get; } = [];
+        public Dictionary<APWorldData.StaticItems, int> ReceivedStaticItems { get; } = [];
         [JsonIgnore]
         public HashSet<long> CheckedLocations { get; } = [];
         [JsonIgnore]
         public DeathLinkService? DeathLinkService { get; }
+        [JsonIgnore]
+        public YargArchipelagoCommon.CommonData.SongData? CurrentlyPlaying = null;
 
         public void UpdateCheckedLocations()
         {
@@ -73,13 +75,13 @@ namespace YargArchipelagoClient.Data
 
         public void UpdateReceivedItems()
         {
-            ReceivedFiller.Clear();
+            ReceivedStaticItems.Clear();
             foreach (var i in Session.Items.AllItemsReceived)
             {
-                if (APWorldData.APIDs.Items.TryGetValue(i.ItemId, out var item))
+                if (APWorldData.APIDs.StaticItemIDs.TryGetValue(i.ItemId, out var item))
                 {
-                    ReceivedFiller.SetIfEmpty(item, 0);
-                    ReceivedFiller[item]++;
+                    ReceivedStaticItems.SetIfEmpty(item, 0);
+                    ReceivedStaticItems[item]++;
                     continue;
                 }
                 if (APWorldData.APIDs.SongItemIds.TryGetValue(i.ItemId, out var songItem))
@@ -89,7 +91,7 @@ namespace YargArchipelagoClient.Data
                 }
                 throw new Exception($"Error, received unknown item {i.ItemName} [{i.ItemId}]");
             }
-            if (ReceivedFiller.TryGetValue(APWorldData.StaticItems.Victory, out var v) && v > 0)
+            if (ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.Victory, out var v) && v > 0)
                 Session.SetGoalAchieved();
         }
 

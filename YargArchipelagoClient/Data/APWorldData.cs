@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using YargArchipelagoCommon;
 
 namespace YargArchipelagoClient.Data
 {
@@ -15,13 +16,18 @@ namespace YargArchipelagoClient.Data
             GoldStar,
             FullCombo
         }
+        [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
+        public sealed class FillerTrapTypeAttribute(CommonData.FillerTrapType type) : Attribute
+        {
+            public CommonData.FillerTrapType Type { get; } = type;
+        }
         public enum StaticItems
         {
             [Description("Victory")]
             Victory,
             [Description("Fame Point")]
             FamePoint,
-            [Description("Star Power")]
+            [Description("Star Power"), FillerTrapType(CommonData.FillerTrapType.StarPower)]
             StarPower,
             [Description("Swap Song (Random)")]
             SwapRandom,
@@ -29,7 +35,7 @@ namespace YargArchipelagoClient.Data
             SwapPick,
             [Description("Lower Difficulty")]
             LowerDifficulty,
-            [Description("Restart Trap")]
+            [Description("Restart Trap"), FillerTrapType(CommonData.FillerTrapType.Restart)]
             TrapRestart
         }
         public enum StaticLocations
@@ -50,7 +56,7 @@ namespace YargArchipelagoClient.Data
             public const int MaxSongs = 500;
             public const long rootID = 5874530000;
 
-            public static Dictionary<long, StaticItems> Items { get; } =
+            public static Dictionary<long, StaticItems> StaticItemIDs { get; } =
                 Enum.GetValues(typeof(StaticItems))
                     .Cast<StaticItems>()
                     .Select((item, index) => new { Key = rootID + index, Value = item })
@@ -58,7 +64,7 @@ namespace YargArchipelagoClient.Data
 
             public static Dictionary<long, int> SongItemIds =>
                 Enumerable.Range(1, MaxSongs)
-                          .ToDictionary(x => Items.Keys.Max() + x, x => x);
+                          .ToDictionary(x => StaticItemIDs.Keys.Max() + x, x => x);
 
             public static Dictionary<long, StaticLocations> StaticLocationIDs { get; } =
                 Enum.GetValues(typeof(StaticLocations))
