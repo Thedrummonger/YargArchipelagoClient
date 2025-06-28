@@ -8,6 +8,11 @@ using static YargArchipelagoCommon.CommonData;
 
 namespace YargArchipelagoClient.Helpers
 {
+    static class DeathLinkTimeout
+    {
+        public static DateTime lastManualDeathLink = DateTime.MinValue;
+        public static int ManualDeathLinkTimeout = 5;
+    }
     public class ContextMenuBuilder(MainForm mainForm, SongLocation song)
     {
         ConfigData config = mainForm.Config!;
@@ -78,8 +83,15 @@ namespace YargArchipelagoClient.Helpers
             {
                 menu.Items.Add(new ToolStripSeparator());
                 menu.Items.AddItem("Send Song Fail Death Link", () =>
-                    connection.DeathLinkService!.SendDeathLink(new(connection.SlotName,
-                    $"Failed {song.GetSongDisplayName(config!)}")));
+                {
+                    if((DateTime.UtcNow - DeathLinkTimeout.lastManualDeathLink) < TimeSpan.FromMinutes(DeathLinkTimeout.ManualDeathLinkTimeout))
+                    {
+                        MessageBox.Show($"Manual Deathlinks can only be sent every {DeathLinkTimeout.ManualDeathLinkTimeout} minutes");
+                        return;
+                    }
+                    connection.DeathLinkService!.SendDeathLink(new(connection.SlotName, $"{connection.SlotName} failed song {song.GetSongDisplayName(config!)}"));
+                    DeathLinkTimeout.lastManualDeathLink = DateTime.UtcNow;
+                });
             }
 
             menu.Items.Add(new ToolStripSeparator());

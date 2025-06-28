@@ -32,7 +32,7 @@ namespace YargArchipelagoClient.Helpers
                         AlteredLocations.Add(Target);
                     }
                     else if (Config.deathLinkEnabled && SL1DL)
-                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"Failed {Target.GetSongDisplayName(Config!)}"));
+                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {Target.GetSongDisplayName(Config!)}"));
                 }
                 if (Target.ExtraCheckAvailable(Connection, out var EL1))
                 {
@@ -42,7 +42,7 @@ namespace YargArchipelagoClient.Helpers
                         AlteredLocations.Add(Target);
                     }
                     else if (Config.deathLinkEnabled && EL1DL)
-                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"Failed {Target.GetSongDisplayName(Config!)}"));
+                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {Target.GetSongDisplayName(Config!)}"));
                 }
                 if (Target.FameCheckAvailable([.. Connection.CheckedLocations, .. ToCheck], out var FL2))
                 {
