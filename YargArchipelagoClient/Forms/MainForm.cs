@@ -175,8 +175,8 @@ namespace YargArchipelagoClient
             foreach (var part in message.Parts)
                 formattedMessage.AddText(part.Text, part.Color.ConvertToSystemColor(), false);
 
-            if (message is ItemSendLogMessage ItemSend)
-                BroadcastSongNameToServer(ItemSend);
+            //if (message is ItemSendLogMessage ItemSend)
+            //    BroadcastSongNameToServer(ItemSend);
 
             LogQueue.Enqueue(formattedMessage);
             LogSignal.Release();
