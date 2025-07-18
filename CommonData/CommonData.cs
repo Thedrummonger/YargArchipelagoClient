@@ -112,7 +112,7 @@ namespace YargArchipelagoCommon
                 public CurrentlyPlayingData CurrentlyPlaying = null;
                 public DeathLinkData deathLinkData = null;
                 public ActionItemData ActionItem = null;
-                public string[] AvailableSongs = null;
+                public (string SongHash, string Profile)[] AvailableSongs = null;
             }
 
             public readonly static JsonSerializerSettings PacketSerializeSettings = new JsonSerializerSettings()

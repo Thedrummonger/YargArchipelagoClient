@@ -21,7 +21,7 @@ namespace YargArchipelagoPlugin
         private Harmony harmony;
         public Harmony GetPatcher() => harmony;
         private GameManager CurrentGame = null;
-        public string[] CurrentlyAvailableSongs { get; private set; } = Array.Empty<string>();
+        public (string SongHash, string Profile)[] CurrentlyAvailableSongs { get; private set; } = Array.Empty<(string SongHash, string Profile)>();
 
         public bool HasAvailableSongUpdate { get; set; } = false;
         public YargPacketClient packetClient { get; private set; }
@@ -44,20 +44,20 @@ namespace YargArchipelagoPlugin
             packetClient.ActionItemReceived += item => { YargEngineActions.ApplyActionItem(this, item); };
         }
 
-        public void UpdateCurrentlyAvailable(IEnumerable<string> availableSongs)
+        public void UpdateCurrentlyAvailable(IEnumerable<(string SongHash, string Profile)> availableSongs)
         {
             CurrentlyAvailableSongs = availableSongs.ToArray();
             HasAvailableSongUpdate = true;
         }
 
-        public SongEntry[] GetAvailableSongs()
+        public (SongEntry song, string ProfileName)[] GetAvailableSongs()
         {
-            List<SongEntry> songEntries = new List<SongEntry>();
+            List<(SongEntry song, string ProfileName)> songEntries = new List<(SongEntry song, string ProfileName)>();
             foreach (var i in CurrentlyAvailableSongs)
             {
-                var Target = SongContainer.Songs.FirstOrDefault(x => Convert.ToBase64String(x.Hash.HashBytes) == i);
+                var Target = SongContainer.Songs.FirstOrDefault(x => Convert.ToBase64String(x.Hash.HashBytes) == i.SongHash);
                 if (Target != null)
-                    songEntries.Add(Target);
+                    songEntries.Add((Target, i.Profile));
             }
             Log($"{songEntries.Count} Songs Available");
             return songEntries.ToArray();

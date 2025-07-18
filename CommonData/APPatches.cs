@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using YARG.Core.Engine;
@@ -18,7 +19,7 @@ namespace YargArchipelagoPlugin
     public static class APPatches
     {
         public static ArchipelagoEventManager EventManager;
-        #region GameManager
+
 
         [HarmonyPatch(typeof(GameManager), "Awake")]
         [HarmonyPostfix]
@@ -28,80 +29,59 @@ namespace YargArchipelagoPlugin
         [HarmonyPrefix]
         public static void GameManager_OnDestroy() => EventManager.SongEnded();
 
-        #endregion
-
-        #region ScoreContainer
 
         [HarmonyPatch(typeof(ScoreContainer), "RecordScore")]
         [HarmonyPostfix]
         public static void ScoreContainer_RecordScore(GameRecord gameRecord, List<PlayerScoreRecord> playerEntries)
             => EventManager.SendSongCompletionResults(playerEntries, gameRecord);
 
-        #endregion
-
-        #region SongContainer
 
         [HarmonyPatch(typeof(SongContainer), "FillContainers")]
         [HarmonyPostfix]
         public static void SongContainer_FillContainers(SongCache ____songCache)
             => YargEngineActions.DumpAvailableSongs(____songCache, EventManager.APHandler);
 
-        #endregion
-
-        #region RecommendedSongs
-
-        [HarmonyPatch(typeof(RecommendedSongs), "GetRecommendedSongs")]
-        [HarmonyPrefix]
-        public static bool RecommendedSongs_GetRecommendedSongs(ref SongEntry[] __result)
-        {
-            __result = EventManager.APHandler.GetAvailableSongs();
-            return false;
-        }
-
-        #endregion
-
-        #region MusicLibraryMenu
 
         [HarmonyPatch(typeof(MusicLibraryMenu), "OnEnable")]
         [HarmonyPostfix]
         public static void MusicLibraryMenu_OnEnable(MusicLibraryMenu __instance)
         {
             if (EventManager.APHandler.HasAvailableSongUpdate)
-            {
                 YargEngineActions.UpdateRecommendedSongsMenu();
-            }
         }
-
-        [HarmonyPatch(typeof(MusicLibraryMenu), "SetRecommendedSongs")]
-        [HarmonyPostfix]
-        public static void MusicLibraryMenu_SetRecommendedSongs()
-            => EventManager.APHandler.HasAvailableSongUpdate = false;
-
-        #endregion
 
         [HarmonyPatch(typeof(MusicLibraryMenu), "CreateNormalViewList")]
         [HarmonyPostfix]
-        public static List<ViewType> MusicLibraryMenu_CreateNormalViewList_Postfix(List<ViewType> __result)
+        public static void MusicLibraryMenu_CreateNormalViewList_Postfix(MusicLibraryMenu __instance, List<ViewType> __result)
         {
-            var singularKey = Localize.Key("Menu.MusicLibrary.RecommendedSongs", "Singular");
-            var pluralKey = Localize.Key("Menu.MusicLibrary.RecommendedSongs", "Plural");
-            const string newHeader = "Available Archipelago Songs";
-
+            string allSongsKey = Localize.Key("Menu.MusicLibrary.AllSongs");
             var primaryField = AccessTools.Field(typeof(CategoryViewType), "_primary");
-
-            foreach (var vt in __result)
+            int insertIndex = -1;
+            for (int i = 0; i < __result.Count; i++)
             {
-                if (vt is CategoryViewType cat)
+                if (__result[i] is CategoryViewType cat && (string)primaryField.GetValue(cat) == allSongsKey)
                 {
-                    string current = (string)primaryField.GetValue(cat);
-                    if (current == singularKey || current == pluralKey)
-                    {
-                        primaryField.SetValue(cat, newHeader);
-                    }
+                    insertIndex = i;
+                    break;
                 }
             }
+            if (insertIndex < 0)
+                return;
 
-            return __result;
+            var entries = EventManager.APHandler.GetAvailableSongs();
+            var groups = entries.GroupBy(t => t.ProfileName, StringComparer.OrdinalIgnoreCase).OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var grp in groups)
+            {
+                var songs = grp.Select(t => t.song).OrderBy<SongEntry, string>(s => s.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+
+                string header = $"Archipelago Setlist ({grp.Key})".ToUpper();
+                __result.Insert(insertIndex++, new CategoryViewType(header, songs.Length, songs, __instance.RefreshAndReselect));
+
+                foreach (var song in songs)
+                    __result.Insert(insertIndex++, new SongViewType(__instance, song));
+            }
         }
+
     }
 }

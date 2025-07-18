@@ -22,7 +22,7 @@ namespace YargArchipelagoPlugin
 
         public event Action<DeathLinkData> DeathLinkReceived;
         public event Action<ActionItemData> ActionItemReceived;
-        public event Action<string[]> AvailableSongsReceived;
+        public event Action<(string SongHash, string Profile)[]> AvailableSongsReceived;
 
         public bool IsConnected => client != null && client.Connected;
 

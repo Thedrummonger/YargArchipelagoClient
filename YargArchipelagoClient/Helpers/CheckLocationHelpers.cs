@@ -121,7 +121,10 @@ namespace YargArchipelagoClient.Helpers
         {
             _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket
             {
-                AvailableSongs = [.. Config.GetAllSongLocations().Where(x => x.SongAvailableToPlay(Connection, Config)).Select(x => x.SongHash)]
+                AvailableSongs = [.. Config.GetAllSongLocations().Where(x => 
+                    x.SongHash is not null && 
+                    x.Requirements is not null && 
+                    x.SongAvailableToPlay(Connection, Config)).Select(x => (x.SongHash!, x.Requirements!.Name))]
             });
         }
 
