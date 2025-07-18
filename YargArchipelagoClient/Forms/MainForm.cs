@@ -133,7 +133,7 @@ namespace YargArchipelagoClient
         {
             _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket
             {
-                ActionItem = new(CommonData.FillerTrapType.StarPower)
+                ActionItem = new(CommonData.APActionItem.StarPower)
             });
         }
 

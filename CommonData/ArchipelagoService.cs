@@ -38,7 +38,7 @@ namespace YargArchipelagoPlugin
             packetClient.DeathLinkReceived += deathLinkData => YargEngineActions.ForceExitSong(this);
             packetClient.AvailableSongsReceived += AvailableSongs => {
                 UpdateCurrentlyAvailable(AvailableSongs);
-                if (!IsInSong() || !YargEngineActions.UpdateRecommendedSongsMenu())
+                if (IsInSong() || !YargEngineActions.UpdateRecommendedSongsMenu())
                     HasAvailableSongUpdate = true;
             };
             packetClient.ActionItemReceived += item => { YargEngineActions.ApplyActionItem(this, item); };

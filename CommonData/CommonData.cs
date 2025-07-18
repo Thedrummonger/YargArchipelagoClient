@@ -84,8 +84,8 @@ namespace YargArchipelagoCommon
         }
         public class ActionItemData
         {
-            public ActionItemData(FillerTrapType t) { type = t; }
-            public FillerTrapType type;
+            public ActionItemData(APActionItem t) { type = t; }
+            public APActionItem type;
         }
         public class CurrentlyPlayingData
         {
@@ -94,7 +94,7 @@ namespace YargArchipelagoCommon
             public static CurrentlyPlayingData CurrentlyPlayingSong(SongData t) => new CurrentlyPlayingData(t);
             public static CurrentlyPlayingData CurrentlyPlayingNone() => new CurrentlyPlayingData(null);
         }
-        public enum FillerTrapType
+        public enum APActionItem
         {
             Restart,
             StarPower,

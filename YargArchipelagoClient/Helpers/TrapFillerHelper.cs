@@ -23,20 +23,20 @@ namespace YargArchipelagoClient.Helpers
         public static void SendOneTrapFiller(ConnectionData Connection, ConfigData Config, APWorldData.StaticItems item)
         {
             var Type = GetFillerTrapType(item);
-            _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new CommonData.TrapData(Type) });
+            _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new CommonData.ActionItemData(Type) });
             Config.ProcessedTrapsFiller.SetIfEmpty(item, 0);
             Config.ProcessedTrapsFiller[item]++;
             Config.SaveConfigFile(Connection);
         }
 
-        public static CommonData.FillerTrapType GetFillerTrapType(this StaticItems item)
+        public static CommonData.APActionItem GetFillerTrapType(this StaticItems item)
             => typeof(StaticItems)
             .GetMember(item.ToString())
             .FirstOrDefault()?
             .GetCustomAttribute<FillerTrapTypeAttribute>(false)?.Type ?? 
-            CommonData.FillerTrapType.NonFiller;
+            CommonData.APActionItem.NonFiller;
 
-        public static bool IsTrapOrFiller(this StaticItems item) => item.GetFillerTrapType() != CommonData.FillerTrapType.NonFiller;
+        public static bool IsTrapOrFiller(this StaticItems item) => item.GetFillerTrapType() != CommonData.APActionItem.NonFiller;
     }
 
 

@@ -68,8 +68,7 @@ namespace YargArchipelagoPlugin
         {
             if (EventManager.APHandler.HasAvailableSongUpdate)
             {
-                MethodInfo m = AccessTools.Method(typeof(MusicLibraryMenu), "SetRecommendedSongs");
-                m.Invoke(__instance, null);
+                YargEngineActions.UpdateRecommendedSongsMenu();
             }
         }
 

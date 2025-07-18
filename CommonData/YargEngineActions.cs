@@ -20,9 +20,9 @@ namespace YargArchipelagoPlugin
     {
         public static void ApplyActionItem(ArchipelagoService APHandler, CommonData.ActionItemData ActionItem)
         {
-            if (ActionItem.type == CommonData.FillerTrapType.Restart)
+            if (ActionItem.type == CommonData.APActionItem.Restart)
                 ForceExitSong(APHandler);
-            if (ActionItem.type == CommonData.FillerTrapType.StarPower && !APHandler.IsInSong() && !APHandler.GetCurrentSong().IsPractice)
+            if (ActionItem.type == CommonData.APActionItem.StarPower && !APHandler.IsInSong() && !APHandler.GetCurrentSong().IsPractice)
                 foreach (var i in APHandler.GetCurrentSong().Players)
                     ApplyStarPowerItem(i, APHandler);
         }

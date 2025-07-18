@@ -17,9 +17,9 @@ namespace YargArchipelagoClient.Data
             FullCombo
         }
         [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
-        public sealed class FillerTrapTypeAttribute(CommonData.FillerTrapType type) : Attribute
+        public sealed class FillerTrapTypeAttribute(CommonData.APActionItem type) : Attribute
         {
-            public CommonData.FillerTrapType Type { get; } = type;
+            public CommonData.APActionItem Type { get; } = type;
         }
         public enum StaticItems
         {
@@ -27,7 +27,7 @@ namespace YargArchipelagoClient.Data
             Victory,
             [Description("Fame Point")]
             FamePoint,
-            [Description("Star Power"), FillerTrapType(CommonData.FillerTrapType.StarPower)]
+            [Description("Star Power"), FillerTrapType(CommonData.APActionItem.StarPower)]
             StarPower,
             [Description("Swap Song (Random)")]
             SwapRandom,
@@ -35,7 +35,7 @@ namespace YargArchipelagoClient.Data
             SwapPick,
             [Description("Lower Difficulty")]
             LowerDifficulty,
-            [Description("Restart Trap"), FillerTrapType(CommonData.FillerTrapType.Restart)]
+            [Description("Restart Trap"), FillerTrapType(CommonData.APActionItem.Restart)]
             TrapRestart
         }
         public enum StaticLocations
