@@ -7,6 +7,7 @@ using YARG.Core.Song;
 using YARG.Core.Song.Cache;
 using YARG.Gameplay;
 using YARG.Gameplay.Player;
+using YARG.Localization;
 using YARG.Menu.MusicLibrary;
 using YARG.Scores;
 using YARG.Song;
@@ -77,5 +78,32 @@ namespace YargArchipelagoPlugin
             => Archipelago.HasAvailableSongUpdate = false;
 
         #endregion
+
+        [HarmonyPatch(typeof(MusicLibraryMenu), "CreateNormalViewList")]
+        [HarmonyPostfix]
+        public static List<ViewType> MusicLibraryMenu_CreateNormalViewList_Postfix(List<ViewType> __result)
+        {
+            // The two localized forms for Recommended Songs
+            var singularKey = Localize.Key("Menu.MusicLibrary.RecommendedSongs", "Singular");
+            var pluralKey = Localize.Key("Menu.MusicLibrary.RecommendedSongs", "Plural");
+            const string newHeader = "Available Archipelago Songs";
+
+            // Grab the private '_primary' field where CategoryViewType holds its text
+            var primaryField = AccessTools.Field(typeof(CategoryViewType), "_primary");
+
+            foreach (var vt in __result)
+            {
+                if (vt is CategoryViewType cat)
+                {
+                    string current = (string)primaryField.GetValue(cat);
+                    if (current == singularKey || current == pluralKey)
+                    {
+                        primaryField.SetValue(cat, newHeader);
+                    }
+                }
+            }
+
+            return __result;
+        }
     }
 }

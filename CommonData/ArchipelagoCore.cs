@@ -14,6 +14,7 @@ using YARG.Core.Song.Cache;
 using YARG.Core.Utility;
 using YARG.Gameplay;
 using YARG.Gameplay.Player;
+using YARG.Menu.MusicLibrary;
 using YARG.Scores;
 using YARG.Song;
 using YargArchipelagoCommon;
@@ -181,7 +182,8 @@ namespace YargArchipelagoPlugin
             if (BasePacket.AvailableSongs != null)
             {
                 CurrentlyAvailableSongs = BasePacket.AvailableSongs;
-                HasAvailableSongUpdate = true;
+                if (CurrentGame != null || !UpdateRecommendedSongsMenu())
+                    HasAvailableSongUpdate = true;
             }
         }
 
@@ -221,6 +223,16 @@ namespace YargArchipelagoPlugin
                 ManualLogSource?.LogInfo($"Failed to apply start power to engine of type {engine.GetType()}\n{e}");
             }
 #endif
+        }
+
+        public static bool UpdateRecommendedSongsMenu()
+        {
+            var Menu = UnityEngine.Object.FindObjectOfType<MusicLibraryMenu>();
+            if (Menu == null || !Menu.gameObject.activeInHierarchy)
+                return false;
+
+            Menu.RefreshAndReselect();
+            return true;
         }
     }
 }
