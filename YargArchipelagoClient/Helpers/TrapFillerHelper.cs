@@ -23,7 +23,7 @@ namespace YargArchipelagoClient.Helpers
         public static void SendOneTrapFiller(ConnectionData Connection, ConfigData Config, APWorldData.StaticItems item)
         {
             var Type = GetFillerTrapType(item);
-            _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { trapData = new CommonData.TrapData(Type) });
+            _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new CommonData.TrapData(Type) });
             Config.ProcessedTrapsFiller.SetIfEmpty(item, 0);
             Config.ProcessedTrapsFiller[item]++;
             Config.SaveConfigFile(Connection);

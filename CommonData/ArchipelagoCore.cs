@@ -18,32 +18,86 @@ using YARG.Menu.MusicLibrary;
 using YARG.Scores;
 using YARG.Song;
 using YargArchipelagoCommon;
+using static YargArchipelagoCommon.CommonData;
 using static YargArchipelagoCommon.CommonData.Networking;
 
 namespace YargArchipelagoPlugin
 {
-    public class Archipelago
+    public class ArchipelagoService
     {
-        public static YargPacketClient packetClient;
-        public static Action<BasePlayer> _gainStarPowerDelegate;
-        public static ManualLogSource ManualLogSource;
-        private static GameManager CurrentGame = null;
-        public static bool HasAvailableSongUpdate = false;
-
-        public static string[] CurrentlyAvailableSongs = Array.Empty<string>();
-        public static void RecordScoreForArchipelago(List<PlayerScoreRecord> playerScoreRecords, GameRecord record)
+        public ArchipelagoService(ManualLogSource LogSource)
         {
-            ManualLogSource?.LogInfo($"Recording Score for AP");
+            packetClient = new YargPacketClient(this);
+            harmony = new Harmony(ArchipelagoPlugin.pluginGuid);
+            Logger = LogSource;
+        }
+        private ManualLogSource Logger;
+        private Harmony harmony;
+        public Harmony GetPatcher() => harmony;
+        private GameManager CurrentGame = null;
+        public string[] CurrentlyAvailableSongs { get; private set; } = Array.Empty<string>();
+
+        public bool HasAvailableSongUpdate { get; set; } = false;
+        public YargPacketClient packetClient { get; private set; }
+
+        public void SetCurrentSong(GameManager Manager) => CurrentGame = Manager;
+        public void ClearCurrentSong() => CurrentGame = null;
+        public bool IsInSong() => CurrentGame != null;
+        public GameManager GetCurrentSong() => CurrentGame;
+        public void Log(string message, LogLevel level = LogLevel.Info) => Logger.Log(level, message);
+
+        public void StartAPPacketServer()
+        {
+            _ = packetClient.ConnectAsync();
+            packetClient.DeathLinkReceived += deathLinkData => YargEngineActions.ForceExitSong(this);
+            packetClient.AvailableSongsReceived += AvailableSongs => {
+                UpdateCurrentlyAvailable(AvailableSongs);
+                if (!IsInSong() || !YargEngineActions.UpdateRecommendedSongsMenu())
+                    HasAvailableSongUpdate = true;
+            };
+            packetClient.ActionItemReceived += item => { YargEngineActions.ApplyActionItem(this, item); };
+        }
+
+        public void UpdateCurrentlyAvailable(IEnumerable<string> availableSongs)
+        {
+            CurrentlyAvailableSongs = availableSongs.ToArray();
+            HasAvailableSongUpdate = true;
+        }
+
+        public SongEntry[] GetAvailableSongs()
+        {
+            List<SongEntry> songEntries = new List<SongEntry>();
+            foreach (var i in CurrentlyAvailableSongs)
+            {
+                var Target = SongContainer.Songs.FirstOrDefault(x => Convert.ToBase64String(x.Hash.HashBytes) == i);
+                if (Target != null)
+                    songEntries.Add(Target);
+            }
+            Log($"{songEntries.Count} Songs Available");
+            return songEntries.ToArray();
+        }
+    }
+
+    public class ArchipelagoEventManager
+    {
+        public ArchipelagoService APHandler { get; private set; }
+        public ArchipelagoEventManager(ArchipelagoService Handler)
+        {
+            APHandler = Handler;
+        }
+        public void SendSongCompletionResults(List<PlayerScoreRecord> playerScoreRecords, GameRecord record)
+        {
+            APHandler.Log($"Recording Score for AP");
             var songPassInfo = new CommonData.SongPassInfo(Convert.ToBase64String(record.SongChecksum));
             songPassInfo.participants = playerScoreRecords
-                .Where(x => IsSupportedInstrument(x.Instrument, out _))
+                .Where(x => YargAPUtils.IsSupportedInstrument(x.Instrument, out _))
                 .Select(x => new CommonData.SongParticipantInfo()
                 {
-                    Difficulty = GetSupportedDifficulty(x.Difficulty),
-                    instrument = IsSupportedInstrument(x.Instrument, out var SupportedInstrument) ? SupportedInstrument : null,
+                    Difficulty = YargAPUtils.GetSupportedDifficulty(x.Difficulty),
+                    instrument = YargAPUtils.IsSupportedInstrument(x.Instrument, out var SupportedInstrument) ? SupportedInstrument : null,
                     FC = x.IsFc,
 #if NIGHTLY
-                    Percentage = x.Percent??0,
+                    Percentage = x.Percent ?? 0,
 #elif STABLE
                     Percentage = x.Percent,
 #endif
@@ -53,67 +107,50 @@ namespace YargArchipelagoPlugin
                 }).ToArray();
             songPassInfo.SongPassed = true; //Always true for now, will be handled when yarg implements fail mode
 
-            _ = packetClient?.SendPacketAsync(new YargAPPacket { passInfo = songPassInfo });
+            _ = APHandler.packetClient?.SendPacketAsync(new YargAPPacket { passInfo = songPassInfo });
         }
 
-        public static void SongStarted(GameManager gameManager)
+        public void SongStarted(GameManager gameManager)
         {
-            CurrentGame = gameManager;
-            _ = packetClient?.SendPacketAsync(new YargAPPacket
+            APHandler.SetCurrentSong(gameManager);
+            _ = APHandler.packetClient?.SendPacketAsync(new YargAPPacket
             {
-                CurrentlyPlaying = CommonData.CurrentlyPlayingData.CurrentlyPlayingSong(ToSongData(gameManager.Song))
+                CurrentlyPlaying = CommonData.CurrentlyPlayingData.CurrentlyPlayingSong(gameManager.Song.ToSongData())
             });
         }
-        public static void SongEnded()
+        public void SongEnded()
         {
-            CurrentGame = null;
-            HasAvailableSongUpdate = true;
-            _ = packetClient?.SendPacketAsync(new YargAPPacket
+            APHandler.ClearCurrentSong();
+            APHandler.HasAvailableSongUpdate = true;
+            _ = APHandler.packetClient?.SendPacketAsync(new YargAPPacket
             {
                 CurrentlyPlaying = CommonData.CurrentlyPlayingData.CurrentlyPlayingNone()
             });
         }
+    }
 
-        public static void DumpAvailableSongs(SongCache SongCache)
+    public static class YargAPUtils
+    {
+        public static bool IsSupportedInstrument(Instrument source, out CommonData.SupportedInstrument? target)
         {
-            Dictionary<string, CommonData.SongData> SongData = new Dictionary<string, CommonData.SongData>();
-
-            foreach (var instrument in SongCache.Instruments)
+            int value = (int)source;
+            if (Enum.IsDefined(typeof(CommonData.SupportedInstrument), value))
             {
-                if (!IsSupportedInstrument(instrument.Key, out var supportedInstrument))
-                    continue;
-                foreach (var Difficulty in instrument.Value)
-                {
-                    if (Difficulty.Key < 0)
-                        continue;
-                    foreach (var song in Difficulty.Value)
-                    {
-                        var data = ToSongData(song);
-                        if (!SongData.ContainsKey(data.SongChecksum))
-                            SongData[data.SongChecksum] = data;
-                        SongData[data.SongChecksum].Difficulties[supportedInstrument.Value] = Difficulty.Key;
-                    }
-                }
+                target = (CommonData.SupportedInstrument)value;
+                return true;
             }
-            ManualLogSource?.LogInfo($"Dumping Info for {SongData.Values.Count} songs");
-            if (!Directory.Exists(CommonData.DataFolder)) Directory.CreateDirectory(CommonData.DataFolder);
-            File.WriteAllText(CommonData.SongExportFile, JsonConvert.SerializeObject(SongData.Values.ToArray(), Formatting.Indented));
+            target = default;
+            return false;
         }
-
-        public static SongEntry[] GetAvailableSongs()
+        public static CommonData.SupportedDifficulty GetSupportedDifficulty(Difficulty source)
         {
-            List<SongEntry> songEntries = new List<SongEntry>();
-            foreach (var i in CurrentlyAvailableSongs)
-            {
-                var Target = SongContainer.Songs.FirstOrDefault(x => Convert.ToBase64String(x.Hash.HashBytes) == i);
-                if (Target != null)
-                    songEntries.Add(Target);
-            }
-            ManualLogSource?.LogInfo($"{songEntries.Count} Songs Available");
-            return songEntries.ToArray();
+            if (source > Difficulty.Expert)
+                return CommonData.SupportedDifficulty.Expert;
+            if (source < Difficulty.Easy)
+                return CommonData.SupportedDifficulty.Easy;
+            return (CommonData.SupportedDifficulty)(int)source;
         }
-
-        private static CommonData.SongData ToSongData(SongEntry song)
+        public static CommonData.SongData ToSongData(this SongEntry song)
         {
             return new CommonData.SongData()
             {
@@ -130,76 +167,19 @@ namespace YargArchipelagoPlugin
                 Difficulties = new Dictionary<CommonData.SupportedInstrument, int>()
             };
         }
-        private static bool IsSupportedInstrument(Instrument source, out CommonData.SupportedInstrument? target)
-        {
-            int value = (int)source;
-            if (Enum.IsDefined(typeof(CommonData.SupportedInstrument), value))
-            {
-                target = (CommonData.SupportedInstrument)value;
-                return true;
-            }
-            target = default;
-            return false;
-        }
-        private static CommonData.SupportedDifficulty GetSupportedDifficulty(Difficulty source)
-        {
-            if (source > Difficulty.Expert)
-                return CommonData.SupportedDifficulty.Expert;
-            if (source < Difficulty.Easy)
-                return CommonData.SupportedDifficulty.Easy;
-            return (CommonData.SupportedDifficulty)(int)source;
-        }
+    }
 
-        public static void StartAPClient()
+    public static class YargEngineActions
+    {
+        public static void ApplyActionItem(ArchipelagoService APHandler, ActionItemData ActionItem)
         {
-            packetClient = new YargPacketClient();
-            _ = packetClient.ConnectAsync();
+            if (ActionItem.type == CommonData.FillerTrapType.Restart)
+                ForceExitSong(APHandler);
+            if (ActionItem.type == CommonData.FillerTrapType.StarPower && !APHandler.IsInSong() && !APHandler.GetCurrentSong().IsPractice)
+                foreach (var i in APHandler.GetCurrentSong().Players)
+                    ApplyStarPowerItem(i, APHandler);
         }
-
-        internal static void ParseClientPacket(string line)
-        {
-            YargAPPacket BasePacket;
-            try
-            {
-                BasePacket = JsonConvert.DeserializeObject<YargAPPacket>(line, PacketSerializeSettings);
-            }
-            catch (Exception e)
-            {
-                ManualLogSource?.LogInfo($"Failed to parse client packet\n{line}\n{e}");
-                return;
-            }
-
-            if (BasePacket.deathLinkData != null)
-                CauseDeathLink();
-            if (BasePacket.trapData != null)
-            {
-                if (BasePacket.trapData.type == CommonData.FillerTrapType.Restart)
-                    CauseDeathLink();
-                if (BasePacket.trapData.type == CommonData.FillerTrapType.StarPower && CurrentGame != null && !CurrentGame.IsPractice)
-                    foreach (var i in CurrentGame.Players)
-                        ApplyStarPowerItem(i);
-            }
-            if (BasePacket.AvailableSongs != null)
-            {
-                CurrentlyAvailableSongs = BasePacket.AvailableSongs;
-                if (CurrentGame != null || !UpdateRecommendedSongsMenu())
-                    HasAvailableSongUpdate = true;
-            }
-        }
-
-        private static void CauseDeathLink()
-        {
-            try
-            {
-                CurrentGame?.ForceQuitSong();
-            }
-            catch (Exception e)
-            {
-                ManualLogSource?.LogInfo($"Failed to apply deathlink\n{e}");
-            }
-        }
-
-        public static void ApplyStarPowerItem(BasePlayer player)
+        public static void ApplyStarPowerItem(BasePlayer player, ArchipelagoService handler)
         {
 #if NIGHTLY
             // thank you nightly build for being cool and letting me call GainStarPower directly from BaseEngine
@@ -220,11 +200,24 @@ namespace YargArchipelagoPlugin
             }
             catch (Exception e)
             {
-                ManualLogSource?.LogInfo($"Failed to apply start power to engine of type {engine.GetType()}\n{e}");
+                handler.Log($"Failed to apply start power to engine of type {engine.GetType()}\n{e}");
             }
 #endif
         }
 
+        public static void ForceExitSong(ArchipelagoService handler)
+        {
+            if (!handler.IsInSong())
+                return;
+            try
+            {
+                handler.GetCurrentSong().ForceQuitSong();
+            }
+            catch (Exception e)
+            {
+                handler.Log($"Failed to apply deathlink\n{e}");
+            }
+        }
         public static bool UpdateRecommendedSongsMenu()
         {
             var Menu = UnityEngine.Object.FindObjectOfType<MusicLibraryMenu>();
@@ -233,6 +226,31 @@ namespace YargArchipelagoPlugin
 
             Menu.RefreshAndReselect();
             return true;
+        }
+        public static void DumpAvailableSongs(SongCache SongCache, ArchipelagoService handler)
+        {
+            Dictionary<string, CommonData.SongData> SongData = new Dictionary<string, CommonData.SongData>();
+
+            foreach (var instrument in SongCache.Instruments)
+            {
+                if (!YargAPUtils.IsSupportedInstrument(instrument.Key, out var supportedInstrument))
+                    continue;
+                foreach (var Difficulty in instrument.Value)
+                {
+                    if (Difficulty.Key < 0)
+                        continue;
+                    foreach (var song in Difficulty.Value)
+                    {
+                        var data = YargAPUtils.ToSongData(song);
+                        if (!SongData.ContainsKey(data.SongChecksum))
+                            SongData[data.SongChecksum] = data;
+                        SongData[data.SongChecksum].Difficulties[supportedInstrument.Value] = Difficulty.Key;
+                    }
+                }
+            }
+            handler.Log($"Dumping Info for {SongData.Values.Count} songs");
+            if (!Directory.Exists(CommonData.DataFolder)) Directory.CreateDirectory(CommonData.DataFolder);
+            File.WriteAllText(CommonData.SongExportFile, JsonConvert.SerializeObject(SongData.Values.ToArray(), Formatting.Indented));
         }
     }
 }

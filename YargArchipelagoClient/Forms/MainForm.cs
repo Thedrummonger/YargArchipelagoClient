@@ -97,7 +97,7 @@ namespace YargArchipelagoClient
             {
                 _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket
                 {
-                    deathLinkData = new CommonData.DeatLinkData { Source = deathLink.Source, Cause = deathLink.Cause }
+                    deathLinkData = new CommonData.DeathLinkData { Source = deathLink.Source, Cause = deathLink.Cause }
                 });
                 WriteToLog($"Deathlink {deathLink.Source}: {deathLink.Cause}");
             }
@@ -133,7 +133,7 @@ namespace YargArchipelagoClient
         {
             _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket
             {
-                trapData = new(CommonData.FillerTrapType.StarPower)
+                ActionItem = new(CommonData.FillerTrapType.StarPower)
             });
         }
 

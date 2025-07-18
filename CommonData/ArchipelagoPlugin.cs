@@ -24,13 +24,13 @@ namespace YargArchipelagoPlugin
 
         public void Awake()
         {
-            Archipelago.ManualLogSource = Logger;
+            var APHandler = new ArchipelagoService(Logger);
+            APPatches.EventManager = new ArchipelagoEventManager(APHandler);
+
+            APHandler.GetPatcher().PatchAll();
+
             Logger.LogInfo("Starting AP");
-
-            Harmony harmony = new Harmony(pluginGuid);
-            harmony.PatchAll();
-
-            Archipelago.StartAPClient();
+            APHandler.StartAPPacketServer();
         }
     }
 }

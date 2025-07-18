@@ -74,15 +74,15 @@ namespace YargArchipelagoCommon
             Expert = 4,
         }
 
-        public class DeatLinkData
+        public class DeathLinkData
         {
             public string Source;
 
             public string Cause;
         }
-        public class TrapData
+        public class ActionItemData
         {
-            public TrapData(FillerTrapType t) { type = t; }
+            public ActionItemData(FillerTrapType t) { type = t; }
             public FillerTrapType type;
         }
         public class CurrentlyPlayingData
@@ -108,8 +108,8 @@ namespace YargArchipelagoCommon
                 public SongPassInfo passInfo = null;
                 public string Message = null;
                 public CurrentlyPlayingData CurrentlyPlaying = null;
-                public DeatLinkData deathLinkData = null;
-                public TrapData trapData = null;
+                public DeathLinkData deathLinkData = null;
+                public ActionItemData ActionItem = null;
                 public string[] AvailableSongs = null;
             }
 
