@@ -1,9 +1,11 @@
 ﻿using BepInEx.Logging;
+using HarmonyLib;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using YARG.Core;
 using YARG.Core.Engine;
 using YARG.Core.Game;
@@ -25,6 +27,7 @@ namespace YargArchipelagoPlugin
         public static Action<BasePlayer> _gainStarPowerDelegate;
         public static ManualLogSource ManualLogSource;
         private static GameManager CurrentGame = null;
+        public static bool HasAvailableSongUpdate = false;
 
         public static string[] CurrentlyAvailableSongs = Array.Empty<string>();
         public static void RecordScoreForArchipelago(List<PlayerScoreRecord> playerScoreRecords, GameRecord record)
@@ -63,6 +66,7 @@ namespace YargArchipelagoPlugin
         public static void SongEnded()
         {
             CurrentGame = null;
+            HasAvailableSongUpdate = true;
             _ = packetClient?.SendPacketAsync(new YargAPPacket
             {
                 CurrentlyPlaying = CommonData.CurrentlyPlayingData.CurrentlyPlayingNone()
@@ -172,10 +176,13 @@ namespace YargArchipelagoPlugin
                     CauseDeathLink();
                 if (BasePacket.trapData.type == CommonData.trapType.StarPower && CurrentGame != null && !CurrentGame.IsPractice)
                     foreach (var i in CurrentGame.Players)
-                        APPatches.ApplyStarPowerItem(i);
+                        ApplyStarPowerItem(i);
             }
             if (BasePacket.AvailableSongs != null)
+            {
                 CurrentlyAvailableSongs = BasePacket.AvailableSongs;
+                HasAvailableSongUpdate = true;
+            }
         }
 
         private static void CauseDeathLink()
@@ -188,6 +195,32 @@ namespace YargArchipelagoPlugin
             {
                 ManualLogSource?.LogInfo($"Failed to apply deathlink\n{e}");
             }
+        }
+
+        public static void ApplyStarPowerItem(BasePlayer player)
+        {
+#if NIGHTLY
+            // thank you nightly build for being cool and letting me call GainStarPower directly from BaseEngine
+            MethodInfo method = AccessTools.Method(typeof(BaseEngine), "GainStarPower");
+            method.Invoke(player.BaseEngine, new object[] { player.BaseEngine.TicksPerQuarterSpBar });
+#elif STABLE
+            var engine = player.BaseEngine;
+            try
+            {
+                // stable build is not cool
+                dynamic stats = AccessTools.Field(engine.GetType(), "EngineStats").GetValue(engine);
+                double newAmount = stats.StarPowerAmount + 0.25;
+                stats.StarPowerAmount = (newAmount > 1) ? 1 : newAmount;
+
+                MethodInfo rebase = AccessTools.Method(engine.GetType(), "RebaseProgressValues");
+                dynamic state = AccessTools.Property(engine.GetType(), "State").GetValue(engine);
+                rebase.Invoke(engine, new object[] { state.CurrentTick });
+            }
+            catch (Exception e)
+            {
+                ManualLogSource?.LogInfo($"Failed to apply start power to engine of type {engine.GetType()}\n{e}");
+            }
+#endif
         }
     }
 }
