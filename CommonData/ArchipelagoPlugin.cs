@@ -1,13 +1,4 @@
 ﻿using BepInEx;
-using BepInEx.Logging;
-using HarmonyLib;
-using System;
-using System.Reflection;
-using YARG.Core.Engine;
-using YARG.Gameplay;
-using YARG.Menu.MusicLibrary;
-using YARG.Scores;
-using YARG.Song;
 
 namespace YargArchipelagoPlugin
 {

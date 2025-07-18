@@ -62,21 +62,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\CommonData\APPacketClient.cs">
-      <Link>APPacketClient.cs</Link>
-    </Compile>
-    <Compile Include="..\CommonData\APPatches.cs">
-      <Link>APPatches.cs</Link>
-    </Compile>
-    <Compile Include="..\CommonData\ArchipelagoCore.cs">
-      <Link>ArchipelagoCore.cs</Link>
-    </Compile>
-    <Compile Include="..\CommonData\ArchipelagoPlugin.cs">
-      <Link>ArchipelagoPlugin.cs</Link>
-    </Compile>
-    <Compile Include="..\CommonData\CommonData.cs">
-      <Link>CommonData.cs</Link>
-    </Compile>
+	  <Compile Include="..\CommonData\*.cs">
+		  <Link>%(Filename)%(Extension)</Link>
+	  </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
