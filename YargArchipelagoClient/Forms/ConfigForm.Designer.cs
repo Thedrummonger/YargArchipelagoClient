@@ -86,7 +86,7 @@
             gbCurrentPool.Controls.Add(label2);
             gbCurrentPool.Location = new Point(238, 27);
             gbCurrentPool.Name = "gbCurrentPool";
-            gbCurrentPool.Size = new Size(210, 255);
+            gbCurrentPool.Size = new Size(210, 243);
             gbCurrentPool.TabIndex = 2;
             gbCurrentPool.TabStop = false;
             gbCurrentPool.Text = "Lead Guitar";
@@ -344,7 +344,7 @@
             // 
             // btnStartGame
             // 
-            btnStartGame.Location = new Point(12, 225);
+            btnStartGame.Location = new Point(12, 232);
             btnStartGame.Name = "btnStartGame";
             btnStartGame.Size = new Size(105, 23);
             btnStartGame.TabIndex = 16;
@@ -394,7 +394,7 @@
             // 
             // button1
             // 
-            button1.Location = new Point(123, 226);
+            button1.Location = new Point(123, 233);
             button1.Name = "button1";
             button1.Size = new Size(105, 23);
             button1.TabIndex = 21;
@@ -406,7 +406,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(460, 307);
+            ClientSize = new Size(460, 281);
             Controls.Add(button1);
             Controls.Add(gbSongPoolSelect);
             Controls.Add(lblRequiredSongCount);

@@ -82,8 +82,8 @@ namespace YargArchipelagoCommon
         }
         public class TrapData
         {
-            public TrapData(trapType t) { type = t; }
-            public trapType type;
+            public TrapData(FillerTrapType t) { type = t; }
+            public FillerTrapType type;
         }
         public class CurrentlyPlayingData
         {
@@ -92,10 +92,11 @@ namespace YargArchipelagoCommon
             public static CurrentlyPlayingData CurrentlyPlayingSong(SongData t) => new CurrentlyPlayingData(t);
             public static CurrentlyPlayingData CurrentlyPlayingNone() => new CurrentlyPlayingData(null);
         }
-        public enum trapType
+        public enum FillerTrapType
         {
             Restart,
-            StarPower
+            StarPower,
+            NonFiller
         }
 
         public static class Networking

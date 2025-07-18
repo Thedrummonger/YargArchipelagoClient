@@ -10,7 +10,7 @@ namespace YargArchipelagoClient.Helpers
         public static bool HasFamePointGoal(this ConnectionData Connection, ConfigData Config) =>
             GetCurrentFame(Connection) >= Config.FamePointsNeeded;
         public static int GetCurrentFame(this ConnectionData Connection) =>
-            Connection.ReceivedFiller.TryGetValue(APWorldData.StaticItems.FamePoint, out var famePoints) ? famePoints : 0;
+            Connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.FamePoint, out var famePoints) ? famePoints : 0;
 
         public static void CheckLocations(ConfigData Config, ConnectionData Connection, CommonData.SongPassInfo passInfo)
         {
@@ -32,7 +32,7 @@ namespace YargArchipelagoClient.Helpers
                         AlteredLocations.Add(Target);
                     }
                     else if (Config.deathLinkEnabled && SL1DL)
-                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"Failed {Target.GetSongDisplayName(Config!)}"));
+                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {Target.GetSongDisplayName(Config!)}"));
                 }
                 if (Target.ExtraCheckAvailable(Connection, out var EL1))
                 {
@@ -42,7 +42,7 @@ namespace YargArchipelagoClient.Helpers
                         AlteredLocations.Add(Target);
                     }
                     else if (Config.deathLinkEnabled && EL1DL)
-                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"Failed {Target.GetSongDisplayName(Config!)}"));
+                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {Target.GetSongDisplayName(Config!)}"));
                 }
                 if (Target.FameCheckAvailable([.. Connection.CheckedLocations, .. ToCheck], out var FL2))
                 {
@@ -55,7 +55,7 @@ namespace YargArchipelagoClient.Helpers
                 Connection.CommitCheckLocations(ToCheck, AlteredLocations, Config);
         }
 
-        public static void CheckLocations(ConfigData Config, ConnectionData Connection, IEnumerable<SongLocation> locations, bool SkipValidation)
+        public static void CheckLocations(ConfigData Config, ConnectionData Connection, IEnumerable<SongLocation> locations, bool SkipConfirmPrompt)
         {
             if (!Config!.ManualMode) return;
             var locationIDs = new HashSet<long>();
@@ -86,7 +86,7 @@ namespace YargArchipelagoClient.Helpers
                 if (btnCheckCount > 1)
                     buttons.Add(CustomMessageResult.Both);
 
-                var result = SkipValidation ?
+                var result = SkipConfirmPrompt ?
                     CustomMessageResult.Both :
                     APSongMessageBox.Show(
                     $"Check Song {songLocation.GetSongDisplayName(Config!, false, false, true)}",

@@ -8,6 +8,11 @@ using static YargArchipelagoCommon.CommonData;
 
 namespace YargArchipelagoClient.Helpers
 {
+    static class DeathLinkTimeout
+    {
+        public static DateTime lastManualDeathLink = DateTime.MinValue;
+        public static int ManualDeathLinkTimeout = 5;
+    }
     public class ContextMenuBuilder(MainForm mainForm, SongLocation song)
     {
         ConfigData config = mainForm.Config!;
@@ -15,15 +20,15 @@ namespace YargArchipelagoClient.Helpers
         public static ContextMenuStrip BuildSongMenu(MainForm mainForm, SongLocation song) => new ContextMenuBuilder(mainForm, song).BuildSongMenu();
         public ContextMenuStrip BuildSongMenu()
         {
-            int RandomSwapsTotal = connection.ReceivedFiller.TryGetValue(APWorldData.StaticItems.SwapRandom, out int rst) ? rst : 0;
+            int RandomSwapsTotal = connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.SwapRandom, out int rst) ? rst : 0;
             int RandomSwapsUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.SwapRandom, out int rsu) ? rsu : 0;
             int RandomSwapsAvailable = RandomSwapsTotal - RandomSwapsUsed;
 
-            int SwapsTotal = connection.ReceivedFiller.TryGetValue(APWorldData.StaticItems.SwapPick, out int st) ? st : 0;
+            int SwapsTotal = connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.SwapPick, out int st) ? st : 0;
             int SwapsUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.SwapPick, out int su) ? su : 0;
             int SwapsAvailable = SwapsTotal - SwapsUsed;
 
-            int LowerDiffTotal = connection.ReceivedFiller.TryGetValue(APWorldData.StaticItems.LowerDifficulty, out int lt) ? lt : 0;
+            int LowerDiffTotal = connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.LowerDifficulty, out int lt) ? lt : 0;
             int LowerDiffUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.LowerDifficulty, out int lu) ? lu : 0;
             int LowerDiffAvailable = LowerDiffTotal - LowerDiffUsed;
 
@@ -78,8 +83,15 @@ namespace YargArchipelagoClient.Helpers
             {
                 menu.Items.Add(new ToolStripSeparator());
                 menu.Items.AddItem("Send Song Fail Death Link", () =>
-                    connection.DeathLinkService!.SendDeathLink(new(connection.SlotName,
-                    $"Failed {song.GetSongDisplayName(config!)}")));
+                {
+                    if((DateTime.UtcNow - DeathLinkTimeout.lastManualDeathLink) < TimeSpan.FromMinutes(DeathLinkTimeout.ManualDeathLinkTimeout))
+                    {
+                        MessageBox.Show($"Manual Deathlinks can only be sent every {DeathLinkTimeout.ManualDeathLinkTimeout} minutes");
+                        return;
+                    }
+                    connection.DeathLinkService!.SendDeathLink(new(connection.SlotName, $"{connection.SlotName} failed song {song.GetSongDisplayName(config!)}"));
+                    DeathLinkTimeout.lastManualDeathLink = DateTime.UtcNow;
+                });
             }
 
             menu.Items.Add(new ToolStripSeparator());
