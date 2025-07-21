@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-//Don't Let visual studios like to me these are needed
+//Don't Let visual studios lie to me these are needed
 using YARG.Core.Engine;
 using YARG.Core.Song;
 using YARG.Core.Song.Cache;
@@ -20,11 +20,19 @@ namespace YargArchipelagoPlugin
     {
         public static void ApplyActionItem(ArchipelagoService APHandler, CommonData.ActionItemData ActionItem)
         {
-            if (ActionItem.type == CommonData.APActionItem.Restart)
-                ForceExitSong(APHandler);
-            if (ActionItem.type == CommonData.APActionItem.StarPower && !APHandler.IsInSong() && !APHandler.GetCurrentSong().IsPractice)
-                foreach (var i in APHandler.GetCurrentSong().Players)
-                    ApplyStarPowerItem(i, APHandler);
+            if (!APHandler.IsInSong() || APHandler.GetCurrentSong().IsPractice)
+                return;
+
+            switch (ActionItem.type)
+            {
+                case CommonData.APActionItem.Restart:
+                    ForceExitSong(APHandler);
+                    break;
+                case CommonData.APActionItem.StarPower:
+                    foreach (var i in APHandler.GetCurrentSong().Players)
+                        ApplyStarPowerItem(i, APHandler);
+                    break;
+            }
         }
         public static void ApplyStarPowerItem(BasePlayer player, ArchipelagoService handler)
         {
