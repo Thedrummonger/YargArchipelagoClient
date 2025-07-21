@@ -36,12 +36,15 @@ namespace YargArchipelagoPlugin
         }
         public static void ApplyStarPowerItem(BasePlayer player, ArchipelagoService handler)
         {
+            if (!handler.IsInSong())
+                return;
 #if NIGHTLY
             // thank you nightly build for being cool and letting me call GainStarPower directly from BaseEngine
             MethodInfo method = AccessTools.Method(typeof(BaseEngine), "GainStarPower");
             method.Invoke(player.BaseEngine, new object[] { player.BaseEngine.TicksPerQuarterSpBar });
 #elif STABLE
             var engine = player.BaseEngine;
+            /*
             try
             {
                 // stable build is not cool
@@ -57,7 +60,17 @@ namespace YargArchipelagoPlugin
             {
                 handler.Log($"Failed to apply start power to engine of type {engine.GetType()}\n{e}");
             }
+            */
+
+            dynamic state = AccessTools.Property(engine.GetType(), "State").GetValue(engine);
+            uint ticksPerMeasure = state.TicksEveryMeasure;
+            uint ticksToGain = ticksPerMeasure * 2;
+
+            var rebase = AccessTools.Method(engine.GetType(), "RebaseProgressValues");
+            rebase.Invoke(engine, new object[] { state.CurrentTick });
+
 #endif
+
         }
 
         public static void ForceExitSong(ArchipelagoService handler)
