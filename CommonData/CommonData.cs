@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-//Don't Let visual studios like to me these are needed
+//Don't Let visual studios lie to me these are needed
 using System;
 using System.Collections.Generic;
 using System.IO;
