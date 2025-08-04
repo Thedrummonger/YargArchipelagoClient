@@ -5,6 +5,7 @@ namespace YargArchipelagoClient.Data
 {
     public class APWorldData
     {
+        public static readonly Version APVersion = new(0, 6, 2);
         public enum CompletionReq
         {
             Clear,

@@ -42,7 +42,7 @@ namespace YargArchipelagoClient
                 ArchipelagoSession session = ArchipelagoSessionFactory.CreateSession("localhost");
                 Connection = new("localhost", "Player1", "", session);
 
-                session.TryConnectAndLogin("Yarg", "Player1", ItemsHandlingFlags.AllItems, new(0, 5, 1), ["AP"], null);
+                session.TryConnectAndLogin("Yarg", "Player1", ItemsHandlingFlags.AllItems, APWorldData.APVersion, ["AP"], null);
                 DialogResult = DialogResult.OK;
                 Close();
             }
@@ -60,7 +60,7 @@ namespace YargArchipelagoClient
             ArchipelagoSession session = ArchipelagoSessionFactory.CreateSession(ip, port);
             ConnectionData data = new(txtServerAddress.Text, txtSlotName.Text, txtPassword.Text, session);
 
-            var result = session.TryConnectAndLogin("Yarg", data.SlotName, ItemsHandlingFlags.AllItems, new(0, 5, 1), ["AP"], null, data.Password);
+            var result = session.TryConnectAndLogin("Yarg", data.SlotName, ItemsHandlingFlags.AllItems, APWorldData.APVersion, ["AP"], null, data.Password);
 
             if (result is LoginFailure failure)
             {
