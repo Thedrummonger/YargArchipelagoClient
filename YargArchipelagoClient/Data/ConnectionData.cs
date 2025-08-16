@@ -32,7 +32,7 @@ namespace YargArchipelagoClient.Data
 
         [JsonIgnore]
         private APPacketServer PacketServer;
-        public APPacketServer GetPacketServer(ConfigData Config)
+        public APPacketServer CreatePacketServer(ConfigData Config)
         {
             if (PacketServer is not null) throw new Exception("Packet server was already started!");
             PacketServer = new APPacketServer(Config, this);

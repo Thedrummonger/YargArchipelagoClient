@@ -59,7 +59,7 @@ namespace YargArchipelagoClient
 
             UpdateData = true;
 
-            var PacketServer = Connection.GetPacketServer(Config);
+            var PacketServer = Connection.CreatePacketServer(Config);
             PacketServer.PacketServerClosed += PackerServerClosed;
             PacketServer.ConnectionChanged += UpdateConnected;
             PacketServer.CurrentSongUpdated += UpdateCurrentlyPlaying;
@@ -292,13 +292,11 @@ namespace YargArchipelagoClient
                     SongImporter.RescanSongs(Config, Connection);
                     PrintSongs();
                     break;
-                case "debug_star":
-                    if (!Debugger.IsAttached) break;
+                case "debug_star" when Debugger.IsAttached:
                     lbConsole.AppendString($"Simulating start power item");
                     SendStarPowerItem();
                     break;
-                case "debug_dl":
-                    if (!Debugger.IsAttached) break;
+                case "debug_dl" when Debugger.IsAttached:
                     lbConsole.AppendString($"Simulating Death Link");
                     _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket
                     {
