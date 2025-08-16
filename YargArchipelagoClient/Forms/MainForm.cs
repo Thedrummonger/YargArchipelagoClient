@@ -300,7 +300,10 @@ namespace YargArchipelagoClient
                 case "debug_dl":
                     if (!Debugger.IsAttached) break;
                     lbConsole.AppendString($"Simulating Death Link");
-                    DeathLinkService_OnDeathLinkReceived(new DeathLink("command"));
+                    _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket
+                    {
+                        deathLinkData = new CommonData.DeathLinkData { Source = "Self", Cause = "Command" }
+                    });
                     break;
                 default:
                     lbConsole.AppendString($"{v} is not a valid command");

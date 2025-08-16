@@ -27,11 +27,7 @@ namespace YargArchipelagoPlugin
                     Difficulty = YargAPUtils.GetSupportedDifficulty(x.Difficulty),
                     instrument = YargAPUtils.IsSupportedInstrument(x.Instrument, out var SupportedInstrument) ? SupportedInstrument : null,
                     FC = x.IsFc,
-#if NIGHTLY
                     Percentage = x.Percent ?? 0,
-#elif STABLE
-                    Percentage = x.Percent,
-#endif
                     Score = x.Score,
                     Stars = StarAmountHelper.GetStarCount(x.Stars),
                     WasGoldStar = x.Stars == StarAmount.StarGold,

@@ -36,11 +36,7 @@ namespace YargArchipelagoPlugin
                 Artist = RichTextUtils.StripRichTextTags(song.Artist),
                 Charter = RichTextUtils.StripRichTextTags(song.Charter),
                 Name = RichTextUtils.StripRichTextTags(song.Name),
-#if NIGHTLY
                 Path = song.ActualLocation,
-#elif STABLE
-                Path = song.Directory,
-#endif
                 SongChecksum = Convert.ToBase64String(song.Hash.HashBytes),
                 Difficulties = new Dictionary<CommonData.SupportedInstrument, int>()
             };

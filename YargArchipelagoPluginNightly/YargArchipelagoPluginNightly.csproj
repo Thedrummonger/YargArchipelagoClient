@@ -60,14 +60,14 @@
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>Libraries\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
-    <Reference Include="YARG.Core">
-      <HintPath>Libraries\YARG.Core.dll</HintPath>
+    <Reference Include="YARG.Core.Package">
+      <HintPath>Libraries\YARG.Core.Package.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-	  <Compile Include="..\CommonData\*.cs">
-		  <Link>%(Filename)%(Extension)</Link>
-	  </Compile>
+    <Compile Include="..\CommonData\*.cs">
+      <Link>%(Filename)%(Extension)</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

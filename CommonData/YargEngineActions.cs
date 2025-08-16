@@ -20,8 +20,12 @@ namespace YargArchipelagoPlugin
     {
         public static void ApplyActionItem(ArchipelagoService APHandler, CommonData.ActionItemData ActionItem)
         {
+            APHandler.Log($"Applying Action Item {ActionItem.type}");
             if (!APHandler.IsInSong() || APHandler.GetCurrentSong().IsPractice)
+            {
+                APHandler.Log($"Exiting, not in Song");
                 return;
+            }
 
             switch (ActionItem.type)
             {
@@ -38,28 +42,9 @@ namespace YargArchipelagoPlugin
         {
             if (!handler.IsInSong())
                 return;
-#if NIGHTLY
-            // thank you nightly build for being cool and letting me call GainStarPower directly from BaseEngine
+            handler.Log($"Gaining Star Power");
             MethodInfo method = AccessTools.Method(typeof(BaseEngine), "GainStarPower");
             method.Invoke(player.BaseEngine, new object[] { player.BaseEngine.TicksPerQuarterSpBar });
-#elif STABLE
-            var engine = player.BaseEngine;
-            try
-            {
-                // stable build is not cool
-                dynamic stats = AccessTools.Field(engine.GetType(), "EngineStats").GetValue(engine);
-                double newAmount = stats.StarPowerAmount + 0.25;
-                stats.StarPowerAmount = (newAmount > 1) ? 1 : newAmount;
-
-                MethodInfo rebase = AccessTools.Method(engine.GetType(), "RebaseProgressValues");
-                dynamic state = AccessTools.Property(engine.GetType(), "State").GetValue(engine);
-                rebase.Invoke(engine, new object[] { state.CurrentTick });
-            }
-            catch (Exception e)
-            {
-                handler.Log($"Failed to apply start power to engine of type {engine.GetType()}\n{e}");
-            }
-#endif
 
         }
 
@@ -69,6 +54,7 @@ namespace YargArchipelagoPlugin
                 return;
             try
             {
+                handler.Log($"Forcing Quit");
                 handler.GetCurrentSong().ForceQuitSong();
             }
             catch (Exception e)
