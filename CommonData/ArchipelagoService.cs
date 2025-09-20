@@ -35,7 +35,7 @@ namespace YargArchipelagoPlugin
         public void StartAPPacketServer()
         {
             _ = packetClient.ConnectAsync();
-            packetClient.DeathLinkReceived += deathLinkData => YargEngineActions.ForceExitSong(this);
+            packetClient.DeathLinkReceived += deathLinkData => YargEngineActions.ForceFailSong(this, deathLinkData);
             packetClient.AvailableSongsReceived += AvailableSongs => {
                 UpdateCurrentlyAvailable(AvailableSongs);
                 if (IsInSong() || !YargEngineActions.UpdateRecommendedSongsMenu())

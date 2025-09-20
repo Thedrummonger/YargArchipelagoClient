@@ -82,6 +82,14 @@ namespace YargArchipelagoCommon
 
             public string Cause;
         }
+        public class SongFailData
+        {
+            public SongData SongData;
+            public SongFailData(SongData failedSong)
+            {
+                SongData = failedSong;
+            }
+        }
         public class ActionItemData
         {
             public ActionItemData(APActionItem t) { type = t; }
@@ -111,6 +119,7 @@ namespace YargArchipelagoCommon
                 public string Message = null;
                 public CurrentlyPlayingData CurrentlyPlaying = null;
                 public DeathLinkData deathLinkData = null;
+                public SongFailData songFailData = null;
                 public ActionItemData ActionItem = null;
                 public (string SongHash, string Profile)[] AvailableSongs = null;
             }

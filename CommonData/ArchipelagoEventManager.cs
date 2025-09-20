@@ -54,5 +54,12 @@ namespace YargArchipelagoPlugin
                 CurrentlyPlaying = CommonData.CurrentlyPlayingData.CurrentlyPlayingNone()
             });
         }
+        public void SongFailed(GameManager gameManager)
+        {
+            _ = APHandler.packetClient?.SendPacketAsync(new YargAPPacket
+            {
+                songFailData = new CommonData.SongFailData(gameManager.Song.ToSongData())
+            });
+        }
     }
 }

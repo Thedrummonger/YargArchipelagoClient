@@ -5,10 +5,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+
 //Don't Let visual studios lie to me these are needed
 using YARG.Core.Engine;
 using YARG.Core.Song;
 using YARG.Core.Song.Cache;
+using YARG.Gameplay;
+using YARG.Core.Audio;
+using YARG.Menu.Persistent;
+
 //----------------------------------------------------
 using YARG.Gameplay.Player;
 using YARG.Menu.MusicLibrary;
@@ -46,6 +51,30 @@ namespace YargArchipelagoPlugin
             MethodInfo method = AccessTools.Method(typeof(BaseEngine), "GainStarPower");
             method.Invoke(player.BaseEngine, new object[] { player.BaseEngine.TicksPerQuarterSpBar });
 
+        }
+
+        public static void ForceFailSong(ArchipelagoService handler, CommonData.DeathLinkData deathLinkData = null)
+        {
+#if STABLE
+            ForceExitSong(handler);
+#else
+            if (!handler.IsInSong())
+                return;
+            try
+            {
+                handler.Log($"Forcing Fail");
+                GameManager gameManager = handler.GetCurrentSong();
+                gameManager.PlayerHasFailed = true;
+                GlobalAudioHandler.PlayVoxSample(VoxSample.FailSound);
+                gameManager.Pause(true);
+                if (deathLinkData != null)
+                    DialogManager.Instance.ShowMessage("DeathLink Received!", $"{deathLinkData.Source} {deathLinkData.Cause}");
+            }
+            catch (Exception e)
+            {
+                handler.Log($"Failed to apply deathlink\n{e}");
+            }
+#endif
         }
 
         public static void ForceExitSong(ArchipelagoService handler)

@@ -93,6 +93,11 @@ namespace YargArchipelagoClient.Data
                     LogMessage?.Invoke(Packet.Message);
                 if (Packet.CurrentlyPlaying is not null)
                     CurrentSongUpdated?.Invoke(Packet.CurrentlyPlaying.song);
+                if (Packet.songFailData is not null)
+                {
+                    if (Config.deathLinkEnabled)
+                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {Packet.songFailData.SongData.GetSongDisplayName(true, true)}"));
+                }
             }
             catch (Exception e)
             {
