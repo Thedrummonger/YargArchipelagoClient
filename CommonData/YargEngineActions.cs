@@ -35,7 +35,7 @@ namespace YargArchipelagoPlugin
             switch (ActionItem.type)
             {
                 case CommonData.APActionItem.Restart:
-                    ForceExitSong(APHandler);
+                    ApplyRestartTrap(APHandler);
                     break;
                 case CommonData.APActionItem.StarPower:
                     foreach (var i in APHandler.GetCurrentSong().Players)
@@ -53,10 +53,12 @@ namespace YargArchipelagoPlugin
 
         }
 
-        public static void ForceFailSong(ArchipelagoService handler, CommonData.DeathLinkData deathLinkData = null)
+        public static void ApplyDeathLink(ArchipelagoService handler, CommonData.DeathLinkData deathLinkData)
         {
 #if STABLE
             ForceExitSong(handler);
+            if (deathLinkData != null)
+                DialogManager.Instance.ShowMessage("DeathLink Received!", $"{deathLinkData.Source} {deathLinkData.Cause}");
 #else
             if (!handler.IsInSong())
                 return;
@@ -77,7 +79,13 @@ namespace YargArchipelagoPlugin
 #endif
         }
 
-        public static void ForceExitSong(ArchipelagoService handler)
+        public static void ApplyRestartTrap(ArchipelagoService handler)
+        {
+            ForceExitSong(handler);
+            DialogManager.Instance.ShowMessage("Restart Trap Received!","");
+        }
+
+        private static void ForceExitSong(ArchipelagoService handler)
         {
             if (!handler.IsInSong())
                 return;
