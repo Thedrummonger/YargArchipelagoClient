@@ -55,34 +55,31 @@ namespace YargArchipelagoPlugin
 
         public static void ApplyDeathLink(ArchipelagoService handler, CommonData.DeathLinkData deathLinkData)
         {
-#if STABLE
-            ForceExitSong(handler);
-            if (deathLinkData != null)
-                DialogManager.Instance.ShowMessage("DeathLink Received!", $"{deathLinkData.Source} {deathLinkData.Cause}");
-#else
             if (!handler.IsInSong())
                 return;
             try
             {
-                handler.Log($"Forcing Fail");
+                handler.Log($"Applying Death Link");
+#if STABLE
+                ForceExitSong(handler);
+#else
                 GameManager gameManager = handler.GetCurrentSong();
                 gameManager.PlayerHasFailed = true;
                 GlobalAudioHandler.PlayVoxSample(VoxSample.FailSound);
                 gameManager.Pause(true);
-                if (deathLinkData != null)
-                    DialogManager.Instance.ShowMessage("DeathLink Received!", $"{deathLinkData.Source} {deathLinkData.Cause}");
+#endif
+                DialogManager.Instance.ShowMessage("DeathLink Received!", $"{deathLinkData.Source} {deathLinkData.Cause}");
             }
             catch (Exception e)
             {
                 handler.Log($"Failed to apply deathlink\n{e}");
             }
-#endif
         }
 
         public static void ApplyRestartTrap(ArchipelagoService handler)
         {
             ForceExitSong(handler);
-            DialogManager.Instance.ShowMessage("Restart Trap Received!","");
+            DialogManager.Instance.ShowMessage("Restart Trap","A player has sent you a Restart Trap!");
         }
 
         private static void ForceExitSong(ArchipelagoService handler)
@@ -96,7 +93,7 @@ namespace YargArchipelagoPlugin
             }
             catch (Exception e)
             {
-                handler.Log($"Failed to apply deathlink\n{e}");
+                handler.Log($"Failed to force exit song\n{e}");
             }
         }
         public static bool UpdateRecommendedSongsMenu()
