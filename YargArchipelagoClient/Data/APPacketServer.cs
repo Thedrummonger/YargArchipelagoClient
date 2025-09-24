@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
+using System.IO;
+using System.IO.Pipes;
 using System.Text;
 using TDMUtils;
 using YargArchipelagoClient.Helpers;
@@ -9,23 +9,20 @@ using YargArchipelagoCommon;
 
 namespace YargArchipelagoClient.Data
 {
-    public class APPacketServer
+    public class APPipeServer
     {
-        private TcpListener listener;
-        private CancellationTokenSource cts;
+        private readonly CancellationTokenSource cts = new();
         private StreamWriter? currentWriter;
-        private ConfigData Config;
-        private ConnectionData Connection;
+        private readonly ConfigData Config;
+        private readonly ConnectionData Connection;
 
-        public event Action<string> LogMessage;
-        public event Action<CommonData.SongData> CurrentSongUpdated;
-        public event Action<bool> ConnectionChanged;
-        public event Action<string> PacketServerClosed;
+        public event Action<string>? LogMessage;
+        public event Action<CommonData.SongData>? CurrentSongUpdated;
+        public event Action<bool>? ConnectionChanged;
+        public event Action<string>? PacketServerClosed;
 
-        public APPacketServer(ConfigData config, ConnectionData connection)
+        public APPipeServer(ConfigData config, ConnectionData connection)
         {
-            listener = new TcpListener(IPAddress.Any, CommonData.Networking.PORT);
-            cts = new CancellationTokenSource();
             Config = config;
             Connection = connection;
         }
@@ -34,83 +31,99 @@ namespace YargArchipelagoClient.Data
         {
             try
             {
-                listener.Start();
-                Debug.WriteLine("AP Packet Server started, waiting for YARG client connection...");
+                Debug.WriteLine("AP Pipe Server started, waiting for YARG client connection...");
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    using var server = new NamedPipeServerStream(
+                        CommonData.Networking.PipeName,
+                        PipeDirection.InOut,
+                        maxNumberOfServerInstances: 1,
+                        transmissionMode: PipeTransmissionMode.Message,
+                        options: PipeOptions.Asynchronous);
+
+                    await server.WaitForConnectionAsync(cts.Token);
+                    LogMessage?.Invoke("YARG game Client connected.");
+
+                    try { await HandleClientAsync(server, cts.Token); }
+                    finally
+                    {
+                        if (server.IsConnected) server.Disconnect();
+                    }
+                }
             }
-            catch 
+            catch (OperationCanceledException)
             {
-                PacketServerClosed.Invoke("Failed To Start Listener");
-                return; 
+                // normal shutdown
+            }
+            catch
+            {
+                PacketServerClosed?.Invoke("Failed To Start Pipe Server");
+                return;
             }
 
-            // Only one client is accepted at a time.
-            while (!cts.Token.IsCancellationRequested)
-            {
-                TcpClient client = await listener.AcceptTcpClientAsync();
-                LogMessage?.Invoke("YARG game Client connected.");
-                await HandleClientAsync(client, cts.Token);
-            }
-
-            listener.Stop();
-            PacketServerClosed.Invoke("Connection was canceled");
-            Debug.WriteLine("AP Packet Server stopped.");
+            PacketServerClosed?.Invoke("Connection was canceled");
+            Debug.WriteLine("AP Pipe Server stopped.");
         }
 
-        private async Task HandleClientAsync(TcpClient client, CancellationToken token)
+        private async Task HandleClientAsync(NamedPipeServerStream server, CancellationToken token)
         {
-            using (client)
-            using (NetworkStream stream = client.GetStream())
-            using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
-            using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true })
+            using var reader = new StreamReader(server, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 8192, leaveOpen: true);
+            using var writer = new StreamWriter(server, Encoding.UTF8, bufferSize: 8192, leaveOpen: true) { AutoFlush = true };
+
+            currentWriter = writer;
+            server.ReadMode = PipeTransmissionMode.Message;
+            ConnectionChanged?.Invoke(true);
+
+            try
             {
-                currentWriter = writer;
-                ConnectionChanged?.Invoke(true);
-                // In this example we assume that the YARG client sends packets that we process.
                 while (!token.IsCancellationRequested)
                 {
-                    string? line = await reader.ReadLineAsync();
-                    if (line == null)
-                        break;
+                    var line = await reader.ReadLineAsync();
+                    if (line is null) break;
                     Debug.WriteLine("Received from YARG client: " + line);
-                    // Process the incoming packet, for example:
                     ParsePacket(line);
                 }
             }
-            ConnectionChanged?.Invoke(false);
-            LogMessage?.Invoke("YARG game client disconnected.");
-            currentWriter = null;
+            finally
+            {
+                ConnectionChanged?.Invoke(false);
+                LogMessage?.Invoke("YARG game client disconnected.");
+                currentWriter = null;
+            }
         }
 
         private void ParsePacket(string line)
         {
             try
             {
-                var Packet = JsonConvert.DeserializeObject<CommonData.Networking.YargAPPacket>(line, CommonData.Networking.PacketSerializeSettings);
-                if (Packet is null) return;
-                if (Packet.passInfo is not null)
-                    CheckLocationHelpers.CheckLocations(Config, Connection, Packet.passInfo);
-                if (Packet.Message is not null)
-                    LogMessage?.Invoke(Packet.Message);
-                if (Packet.CurrentlyPlaying is not null)
-                    CurrentSongUpdated?.Invoke(Packet.CurrentlyPlaying.song);
-                if (Packet.songFailData is not null)
-                {
-                    if (Config.deathLinkEnabled)
-                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {Packet.songFailData.SongData.GetSongDisplayName(true, true)}"));
-                }
+                var packet = JsonConvert.DeserializeObject<CommonData.Networking.YargAPPacket>(line, CommonData.Networking.PacketSerializeSettings);
+                if (packet is null) return;
+
+                if (packet.passInfo is not null)
+                    CheckLocationHelpers.CheckLocations(Config, Connection, packet.passInfo);
+
+                if (packet.Message is not null)
+                    LogMessage?.Invoke(packet.Message);
+
+                if (packet.CurrentlyPlaying is not null)
+                    CurrentSongUpdated?.Invoke(packet.CurrentlyPlaying.song);
+
+                if (packet.songFailData is not null && Config.deathLinkEnabled)
+                    Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {packet.songFailData.SongData.GetSongDisplayName(true, true)}"));
             }
             catch (Exception e)
             {
                 Debug.WriteLine($"Failed to Parse Packet\n{line.ToFormattedJson()}\n{e}");
-                return;
             }
         }
 
         public async Task SendPacketAsync(CommonData.Networking.YargAPPacket packet)
         {
             if (currentWriter is null) return;
-            string json = JsonConvert.SerializeObject(packet, CommonData.Networking.PacketSerializeSettings) + "\n";
+            var json = JsonConvert.SerializeObject(packet, CommonData.Networking.PacketSerializeSettings) + "\n";
             await currentWriter.WriteAsync(json);
         }
+
+        public void Stop() => cts.Cancel();
     }
 }

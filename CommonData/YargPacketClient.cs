@@ -1,49 +1,55 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.IO;
-using System.Net.Sockets;
+using System.IO.Pipes;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using YargArchipelagoCommon;
-using static YargArchipelagoCommon.CommonData;
 using static YargArchipelagoCommon.CommonData.Networking;
 
 namespace YargArchipelagoPlugin
 {
-    public class YargPacketClient
+    public class YargPipeClient
     {
-        private readonly string serverIP = "127.0.0.1"; // Always connect to localhost.
-        private readonly int serverPort = CommonData.Networking.PORT;
-        private TcpClient client;
-        private NetworkStream stream;
-        private CancellationTokenSource cts;
-        private ArchipelagoService APHandler;
+        private NamedPipeClientStream pipe;
+        private Stream stream;
+        private readonly CancellationTokenSource cts = new CancellationTokenSource();
+        private readonly ArchipelagoService APHandler;
 
-        public event Action<DeathLinkData> DeathLinkReceived;
-        public event Action<ActionItemData> ActionItemReceived;
+        public event Action<CommonData.DeathLinkData> DeathLinkReceived;
+        public event Action<CommonData.ActionItemData> ActionItemReceived;
         public event Action<(string SongHash, string Profile)[]> AvailableSongsReceived;
 
-        public bool IsConnected => client != null && client.Connected;
+        public bool IsConnected => pipe != null && pipe.IsConnected;
 
-        public YargPacketClient(ArchipelagoService handler)
-        {
-            cts = new CancellationTokenSource();
-            APHandler = handler;
-        }
+        public YargPipeClient(ArchipelagoService handler) => APHandler = handler;
 
         public async Task ConnectAsync()
         {
-            while (!cts.Token.IsCancellationRequested)
+            while (!cts.IsCancellationRequested)
             {
                 try
                 {
-                    client = new TcpClient();
-                    APHandler.Log("Listening for Yarg Client");
-                    await client.ConnectAsync(serverIP, serverPort);
-                    stream = client.GetStream();
-                    APHandler.Log("YARG client connected to AP Packet Server.");
+                    APHandler.Log("Listening for YARG AP pipe server");
+
+                    pipe = new NamedPipeClientStream(
+                        ".",
+                        CommonData.Networking.PipeName,
+                        PipeDirection.InOut,
+                        PipeOptions.Asynchronous);
+
+                    await Task.Run(() => pipe.Connect(10000), cts.Token); // 10s timeout
+                    pipe.ReadMode = PipeTransmissionMode.Message;
+
+                    stream = pipe;
+                    APHandler.Log("YARG client connected to AP Pipe Server.");
+
                     await ReceiveLoopAsync();
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
                 }
                 catch (Exception ex)
                 {
@@ -55,21 +61,21 @@ namespace YargArchipelagoPlugin
 
         private async Task ReceiveLoopAsync()
         {
-            if (stream == null)
-                return;
-            using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
+            if (stream == null) return;
+
+            using (var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 8192, leaveOpen: true))
             {
                 try
                 {
-                    while (!cts.Token.IsCancellationRequested)
+                    while (!cts.IsCancellationRequested)
                     {
-                        string line = await reader.ReadLineAsync();
+                        var line = await reader.ReadLineAsync();
                         if (line == null)
                         {
-                            APHandler.Log("AP Packet Server disconnected.");
+                            APHandler.Log("AP Pipe Server disconnected.");
                             break;
                         }
-                        APHandler.Log("Received from AP Packet Server: ");
+                        APHandler.Log("Received from AP Pipe Server: ");
                         ParseClientPacket(line);
                     }
                 }
@@ -80,15 +86,16 @@ namespace YargArchipelagoPlugin
             }
         }
 
-        public async Task SendPacketAsync(Networking.YargAPPacket packet)
+        public async Task SendPacketAsync(YargAPPacket packet)
         {
-            if (!IsConnected || stream == null)
-                return;
-            string json = JsonConvert.SerializeObject(packet, Networking.PacketSerializeSettings) + "\n";
-            byte[] bytes = Encoding.UTF8.GetBytes(json);
+            if (!IsConnected || stream == null) return;
+
+            var json = JsonConvert.SerializeObject(packet, PacketSerializeSettings) + "\n";
+            var bytes = Encoding.UTF8.GetBytes(json);
             try
             {
                 await stream.WriteAsync(bytes, 0, bytes.Length);
+                await stream.FlushAsync();
             }
             catch (Exception ex)
             {
@@ -98,25 +105,31 @@ namespace YargArchipelagoPlugin
 
         internal void ParseClientPacket(string line)
         {
-            YargAPPacket BasePacket;
             try
             {
-                BasePacket = JsonConvert.DeserializeObject<YargAPPacket>(line, PacketSerializeSettings);
+                var basePacket = JsonConvert.DeserializeObject<YargAPPacket>(line, PacketSerializeSettings);
+                if (basePacket == null) return;
+
+                if (basePacket.deathLinkData != null)
+                    DeathLinkReceived?.Invoke(basePacket.deathLinkData);
+
+                if (basePacket.ActionItem != null)
+                    ActionItemReceived?.Invoke(basePacket.ActionItem);
+
+                if (basePacket.AvailableSongs != null)
+                    AvailableSongsReceived?.Invoke(basePacket.AvailableSongs);
             }
             catch (Exception e)
             {
                 APHandler.Log($"Failed to parse client packet\n{line}\n{e}");
-                return;
             }
+        }
 
-            if (BasePacket.deathLinkData != null)
-                DeathLinkReceived?.Invoke(BasePacket.deathLinkData);
-
-            if (BasePacket.ActionItem != null)
-                ActionItemReceived?.Invoke(BasePacket.ActionItem);
-
-            if (BasePacket.AvailableSongs != null)
-                AvailableSongsReceived?.Invoke(BasePacket.AvailableSongs);
+        public void Stop()
+        {
+            cts.Cancel();
+            try { pipe?.Close(); } catch { }
+            try { pipe?.Dispose(); } catch { }
         }
     }
 }

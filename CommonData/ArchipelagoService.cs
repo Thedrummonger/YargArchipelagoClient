@@ -13,7 +13,7 @@ namespace YargArchipelagoPlugin
     {
         public ArchipelagoService(ManualLogSource LogSource)
         {
-            packetClient = new YargPacketClient(this);
+            packetClient = new YargPipeClient(this);
             harmony = new Harmony(ArchipelagoPlugin.pluginGuid);
             Logger = LogSource;
         }
@@ -24,7 +24,7 @@ namespace YargArchipelagoPlugin
         public (string SongHash, string Profile)[] CurrentlyAvailableSongs { get; private set; } = Array.Empty<(string SongHash, string Profile)>();
 
         public bool HasAvailableSongUpdate { get; set; } = false;
-        public YargPacketClient packetClient { get; private set; }
+        public YargPipeClient packetClient { get; private set; }
 
         public void SetCurrentSong(GameManager Manager) => CurrentGame = Manager;
         public void ClearCurrentSong() => CurrentGame = null;

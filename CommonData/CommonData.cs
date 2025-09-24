@@ -112,7 +112,7 @@ namespace YargArchipelagoCommon
         public static class Networking
         {
             public const int PORT = 26569;
-
+            public const string PipeName = "yarg_ap_pipe";
             public class YargAPPacket
             {
                 public SongPassInfo passInfo = null;

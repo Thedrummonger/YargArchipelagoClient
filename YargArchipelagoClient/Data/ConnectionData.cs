@@ -31,14 +31,14 @@ namespace YargArchipelagoClient.Data
         private Random? SeededRNG = null;
 
         [JsonIgnore]
-        private APPacketServer PacketServer;
-        public APPacketServer CreatePacketServer(ConfigData Config)
+        private APPipeServer PacketServer;
+        public APPipeServer CreatePacketServer(ConfigData Config)
         {
             if (PacketServer is not null) throw new Exception("Packet server was already started!");
-            PacketServer = new APPacketServer(Config, this);
+            PacketServer = new APPipeServer(Config, this);
             return PacketServer;
         }
-        public APPacketServer GetPacketServer()
+        public APPipeServer GetPacketServer()
         {
             if (PacketServer is null) throw new Exception("Attempted to retrieve packet server before it was started!");
             return PacketServer;
