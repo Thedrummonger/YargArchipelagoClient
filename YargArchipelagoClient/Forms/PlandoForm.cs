@@ -77,7 +77,7 @@ namespace YargArchipelagoClient.Forms
 
         public bool CanPlandoSongToThisLocation(PlandoData selectedSong)
         {
-            return Parent.SongPoolManager.GetOverallAssignedCount() < Parent.data.TotalAPSongLocations || selectedSong.HasValidSongPlando;
+            return Parent.SongPoolManager.GetOverallAssignedCount() < Parent.data.TotalAPSongLocations || selectedSong.HasValidPlando;
         }
 
         private void LoadSongUIFromSelectedItem()
