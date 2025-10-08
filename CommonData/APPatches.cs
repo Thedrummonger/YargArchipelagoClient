@@ -11,6 +11,7 @@ using YARG.Gameplay.Player;
 using YARG.Localization;
 using YARG.Menu.MusicLibrary;
 using YARG.Scores;
+using YARG.Settings;
 using YARG.Song;
 
 namespace YargArchipelagoPlugin
@@ -51,26 +52,14 @@ namespace YargArchipelagoPlugin
         }
 
 #if NIGHTLY 
-        [HarmonyPatch(typeof(BasePlayer), "OnSongFailed")]
-        [HarmonyPostfix]
-        public static void BasePlayer_OnSongFailed(BasePlayer __instance)
+        [HarmonyPatch(typeof(GameManager), "OnSongFailed")]
+        [HarmonyPrefix]
+        public static void GameManager_OnSongFailed(GameManager __instance)
         {
-            try
+            if (!SettingsManager.Settings.NoFailMode.Value && !__instance.IsPractice && __instance?.Song != null)
             {
-                //In this case GameManager is private, I should be using reflection here, but we can pretty much guarantee our own game manager reference will not be null here
-                //var gm = __instance?.GameManager;
-                var gm = EventManager.APHandler.GetCurrentSong();
-                if (gm?.Song != null)
-                {
-                    EventManager?.APHandler?.Log($"Failed Song {gm.Song.Name}");
-                    EventManager.SongFailed(gm);
-                }
-                else
-                    EventManager?.APHandler?.Log($"Could not retrieve failed song data", BepInEx.Logging.LogLevel.Warning);
-            }
-            catch (Exception e)
-            {
-                EventManager?.APHandler?.Log($"Error in BasePlayer_OnSongFailed patch: {e}", BepInEx.Logging.LogLevel.Warning);
+                EventManager?.APHandler?.Log($"Failed Song {__instance.Song.Name}: {__instance.Song.Album} [{__instance.Song.Hash}]");
+                EventManager.SongFailed(__instance);
             }
         }
 #endif
