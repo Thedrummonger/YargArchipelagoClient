@@ -101,6 +101,7 @@ namespace YargArchipelagoClient.Data
 
                 if (packet.SongCompletedInfo is not null)
                 {
+                    Debug.WriteLine($"Song Passed: {packet.SongCompletedInfo.SongPassed}");
                     if (packet.SongCompletedInfo.SongPassed)
                         CheckLocationHelpers.CheckLocations(Config, Connection, packet.SongCompletedInfo);
                     else if (Config.deathLinkEnabled)

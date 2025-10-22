@@ -52,7 +52,7 @@ namespace YargArchipelagoPlugin
             if (!SettingsManager.Settings.NoFailMode.Value && !__instance.IsPractice && !__instance.PlayerHasFailed && __instance?.Song != null)
             {
                 EventManager?.APHandler?.Log($"Failed Song {__instance.Song.Name}: {__instance.Song.Album} [{__instance.Song.Hash}]");
-                var songPassInfo = new CommonData.SongCompletedData(__instance.Song.ToSongData(), true);
+                var songPassInfo = new CommonData.SongCompletedData(__instance.Song.ToSongData(), false);
                 songPassInfo.participants = YargAPUtils.CreatePlayerScores(__instance);
                 EventManager.SendSongCompletionResults(songPassInfo);
             }
