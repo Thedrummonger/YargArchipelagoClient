@@ -92,8 +92,13 @@ namespace YargArchipelagoPlugin
                 var gm = handler.GetCurrentSong();
                 var field = AccessTools.Field(typeof(GameManager), "_pauseMenu");
                 object pauseMenuObj = field.GetValue(gm);
-                if (pauseMenuObj is PauseMenuManager pm) 
+                if (pauseMenuObj is PauseMenuManager pm)
+                {
+                    //TODO: This works but YARG spits out a bunch of errors. I thinks it because I don't give the pause menu enough time to load before restarting.
+                    if (!gm.Paused)
+                        gm.Pause(true);
                     pm.Restart();
+                }
             }
             catch (Exception e)
             {

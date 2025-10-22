@@ -129,14 +129,6 @@ namespace YargArchipelagoClient
                 CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
         }
 
-        private void SendStarPowerItem()
-        {
-            _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket
-            {
-                ActionItem = new(CommonData.APActionItem.StarPower)
-            });
-        }
-
         private void SyncTimerTick(object? sender, EventArgs e)
         {
             if (!Connection.GetSession().Socket.Connected)
@@ -300,7 +292,11 @@ namespace YargArchipelagoClient
                     break;
                 case "debug_star" when Debugger.IsAttached:
                     lbConsole.AppendString($"Simulating start power item");
-                    SendStarPowerItem();
+                    _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket  { ActionItem = new(CommonData.APActionItem.StarPower)});
+                    break;
+                case "debug_restart" when Debugger.IsAttached:
+                    lbConsole.AppendString($"Simulating restart trap");
+                    _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new(CommonData.APActionItem.Restart) });
                     break;
                 case "debug_dl" when Debugger.IsAttached:
                     lbConsole.AppendString($"Simulating Death Link");
