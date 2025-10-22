@@ -49,7 +49,7 @@ namespace YargArchipelagoPlugin
         [HarmonyPrefix]
         public static void GameManager_OnSongFailed(GameManager __instance)
         {
-            if (!SettingsManager.Settings.NoFailMode.Value && !__instance.IsPractice && __instance?.Song != null)
+            if (!SettingsManager.Settings.NoFailMode.Value && !__instance.IsPractice && !__instance.PlayerHasFailed && __instance?.Song != null)
             {
                 EventManager?.APHandler?.Log($"Failed Song {__instance.Song.Name}: {__instance.Song.Album} [{__instance.Song.Hash}]");
                 var songPassInfo = new CommonData.SongCompletedData(__instance.Song.ToSongData(), true);

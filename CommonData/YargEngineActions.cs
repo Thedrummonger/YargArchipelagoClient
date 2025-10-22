@@ -18,6 +18,7 @@ using YARG.Menu.Persistent;
 using YARG.Gameplay.Player;
 using YARG.Menu.MusicLibrary;
 using YargArchipelagoCommon;
+using YARG.Gameplay.HUD;
 
 namespace YargArchipelagoPlugin
 {
@@ -63,10 +64,7 @@ namespace YargArchipelagoPlugin
 #if STABLE
                 ForceExitSong(handler);
 #else
-                GameManager gameManager = handler.GetCurrentSong();
-                gameManager.PlayerHasFailed = true;
-                //GlobalAudioHandler.PlayVoxSample(VoxSample.FailSound);
-                gameManager.Pause(true);
+                ForceFailSong(handler);
 #endif
                 ToastManager.ToastInformation($"DeathLink Received!\n\n{deathLinkData.Source} {deathLinkData.Cause}");
                 //DialogManager.Instance.ShowMessage("DeathLink Received!", $"{deathLinkData.Source} {deathLinkData.Cause}");
@@ -79,10 +77,49 @@ namespace YargArchipelagoPlugin
 
         public static void ApplyRestartTrap(ArchipelagoService handler)
         {
-            ForceExitSong(handler);
+            ForceRestartSong(handler);
             ToastManager.ToastInformation("A player has sent you a Restart Trap!");
             //DialogManager.Instance.ShowMessage("Restart Trap","A player has sent you a Restart Trap!");
         }
+
+        private static void ForceRestartSong(ArchipelagoService handler)
+        {
+            if (!handler.IsInSong()) 
+                return;
+            try
+            {
+                var gm = handler.GetCurrentSong();
+                var field = AccessTools.Field(typeof(GameManager), "_pauseMenu");
+                object pauseMenuObj = field.GetValue(gm);
+                if (pauseMenuObj is PauseMenuManager pm) 
+                    pm.Restart();
+            }
+            catch (Exception e)
+            {
+                handler.Log($"Failed to force restart song\n{e}");
+            }
+        }
+
+#if NIGHTLY
+        public static void ForceFailSong(ArchipelagoService handler)
+        {
+            var gameManager = handler.GetCurrentSong();
+            if (!handler.IsInSong() || gameManager.IsPractice)
+                return;
+
+            gameManager.PlayerHasFailed = true;
+            try
+            {
+                var mixerObj = AccessTools.Field(typeof(GameManager), "_mixer")?.GetValue(gameManager);
+                var fade = mixerObj?.GetType().GetMethod("FadeOut", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                fade?.Invoke(mixerObj, new object[] { GameManager.SONG_END_DELAY });
+            }
+            catch { }
+            //UniTask.Delay(TimeSpan.FromSeconds(GameManager.SONG_END_DELAY));
+            GlobalAudioHandler.PlayVoxSample(VoxSample.FailSound);
+            gameManager.Pause(true);
+        }
+#endif
 
         private static void ForceExitSong(ArchipelagoService handler)
         {
