@@ -19,6 +19,7 @@ using YARG.Gameplay.Player;
 using YARG.Menu.MusicLibrary;
 using YargArchipelagoCommon;
 using YARG.Gameplay.HUD;
+using Cysharp.Threading.Tasks;
 
 namespace YargArchipelagoPlugin
 {
@@ -101,7 +102,7 @@ namespace YargArchipelagoPlugin
         }
 
 #if NIGHTLY
-        public static void ForceFailSong(ArchipelagoService handler)
+        public static async void ForceFailSong(ArchipelagoService handler)
         {
             var gameManager = handler.GetCurrentSong();
             if (!handler.IsInSong() || gameManager.IsPractice)
@@ -115,7 +116,7 @@ namespace YargArchipelagoPlugin
                 fade?.Invoke(mixerObj, new object[] { GameManager.SONG_END_DELAY });
             }
             catch { }
-            //UniTask.Delay(TimeSpan.FromSeconds(GameManager.SONG_END_DELAY));
+            await UniTask.Delay(TimeSpan.FromSeconds(GameManager.SONG_END_DELAY));
             GlobalAudioHandler.PlayVoxSample(VoxSample.FailSound);
             gameManager.Pause(true);
         }

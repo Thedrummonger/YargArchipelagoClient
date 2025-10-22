@@ -54,6 +54,9 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="UniTask">
+      <HintPath>Libraries\UniTask.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine">
       <HintPath>Libraries\UnityEngine.dll</HintPath>
     </Reference>
