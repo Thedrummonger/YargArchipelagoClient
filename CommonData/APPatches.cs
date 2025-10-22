@@ -4,6 +4,8 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using YARG.Core.Engine;
+using YARG.Core.Game;
+using YARG.Core.Replays;
 using YARG.Core.Song;
 using YARG.Core.Song.Cache;
 using YARG.Gameplay;
@@ -13,6 +15,7 @@ using YARG.Menu.MusicLibrary;
 using YARG.Scores;
 using YARG.Settings;
 using YARG.Song;
+using YargArchipelagoCommon;
 
 namespace YargArchipelagoPlugin
 {
@@ -31,11 +34,30 @@ namespace YargArchipelagoPlugin
         public static void GameManager_OnDestroy() => EventManager.SongEnded();
 
 
-        [HarmonyPatch(typeof(ScoreContainer), "RecordScore")]
+        [HarmonyPatch(typeof(GameManager), "RecordScores")]
         [HarmonyPostfix]
-        public static void ScoreContainer_RecordScore(GameRecord gameRecord, List<PlayerScoreRecord> playerEntries)
-            => EventManager.SendSongCompletionResults(playerEntries, gameRecord);
+        public static void GameManager_RecordScores_Postfix(GameManager __instance, ReplayInfo replayInfo)
+        {
+            EventManager?.APHandler?.Log($"Passed Song {__instance.Song.Name}: {__instance.Song.Album} [{__instance.Song.Hash}]");
+            var songPassInfo = new CommonData.SongCompletedData(__instance.Song.ToSongData(), true);
+            songPassInfo.participants = YargAPUtils.CreatePlayerScores(__instance);
+            EventManager.SendSongCompletionResults(songPassInfo);
+        }
 
+#if NIGHTLY 
+        [HarmonyPatch(typeof(GameManager), "OnSongFailed")]
+        [HarmonyPrefix]
+        public static void GameManager_OnSongFailed(GameManager __instance)
+        {
+            if (!SettingsManager.Settings.NoFailMode.Value && !__instance.IsPractice && __instance?.Song != null)
+            {
+                EventManager?.APHandler?.Log($"Failed Song {__instance.Song.Name}: {__instance.Song.Album} [{__instance.Song.Hash}]");
+                var songPassInfo = new CommonData.SongCompletedData(__instance.Song.ToSongData(), true);
+                songPassInfo.participants = YargAPUtils.CreatePlayerScores(__instance);
+                EventManager.SendSongCompletionResults(songPassInfo);
+            }
+        }
+#endif
 
         [HarmonyPatch(typeof(SongContainer), "FillContainers")]
         [HarmonyPostfix]
@@ -50,19 +72,6 @@ namespace YargArchipelagoPlugin
             if (EventManager.APHandler.HasAvailableSongUpdate)
                 YargEngineActions.UpdateRecommendedSongsMenu();
         }
-
-#if NIGHTLY 
-        [HarmonyPatch(typeof(GameManager), "OnSongFailed")]
-        [HarmonyPrefix]
-        public static void GameManager_OnSongFailed(GameManager __instance)
-        {
-            if (!SettingsManager.Settings.NoFailMode.Value && !__instance.IsPractice && __instance?.Song != null)
-            {
-                EventManager?.APHandler?.Log($"Failed Song {__instance.Song.Name}: {__instance.Song.Album} [{__instance.Song.Hash}]");
-                EventManager.SongFailed(__instance);
-            }
-        }
-#endif
 
         [HarmonyPatch(typeof(MusicLibraryMenu), "CreateNormalViewList")]
         [HarmonyPostfix]

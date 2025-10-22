@@ -4,6 +4,9 @@ using YARG.Core.Song;
 using YARG.Core.Utility;
 using YARG.Core;
 using YargArchipelagoCommon;
+using YARG.Core.Game;
+using YARG.Gameplay;
+using YARG.Scores;
 
 namespace YargArchipelagoPlugin
 {
@@ -40,6 +43,29 @@ namespace YargArchipelagoPlugin
                 SongChecksum = Convert.ToBase64String(song.Hash.HashBytes),
                 Difficulties = new Dictionary<CommonData.SupportedInstrument, int>()
             };
+        }
+
+        public static CommonData.SongParticipantInfo[] CreatePlayerScores(GameManager __instance)
+        {
+            List<CommonData.SongParticipantInfo> participants = new List<CommonData.SongParticipantInfo>();
+            foreach (var player in __instance.Players)
+            {
+                var Profile = player.Player.Profile;
+                if (!YargAPUtils.IsSupportedInstrument(Profile.CurrentInstrument, out var SupportedInstrument)) continue;
+                if (!ScoreContainer.IsSoloScoreValid(__instance.SongSpeed, player.Player)) continue;
+                var Participant = new CommonData.SongParticipantInfo()
+                {
+                    Difficulty = YargAPUtils.GetSupportedDifficulty(Profile.CurrentDifficulty),
+                    instrument = SupportedInstrument,
+                    FC = player.IsFc,
+                    Percentage = player.BaseStats.Percent,
+                    Score = player.Score,
+                    Stars = (int)player.Stars,
+                    WasGoldStar = StarAmountHelper.GetStarsFromInt((int)player.Stars) == StarAmount.StarGold,
+                };
+                participants.Add(Participant);
+            }
+            return participants.ToArray();
         }
     }
 }

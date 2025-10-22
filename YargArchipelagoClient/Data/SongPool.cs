@@ -31,12 +31,12 @@ namespace YargArchipelagoClient.Data
                 .Where(j => !alreadyAssigned.TryGetValue(Name, out var value) || !value.Contains(j.SongChecksum))
                 .ToDictionary(j => j.SongChecksum);
 
-        public bool MetStandard(CommonData.SongPassInfo passInfo, out bool DeathLink) =>
+        public bool MetStandard(CommonData.SongCompletedData passInfo, out bool DeathLink) =>
             MetReq(passInfo, out DeathLink, CompletionRequirement.Reward1Req, CompletionRequirement.Reward1Diff);
-        public bool MetExtra(CommonData.SongPassInfo passInfo, out bool DeathLink) =>
+        public bool MetExtra(CommonData.SongCompletedData passInfo, out bool DeathLink) =>
             MetReq(passInfo, out DeathLink, CompletionRequirement.Reward2Req, CompletionRequirement.Reward2Diff);
 
-        private bool MetReq(CommonData.SongPassInfo passInfo, out bool DeathLink, APWorldData.CompletionReq req, CommonData.SupportedDifficulty diff)
+        private bool MetReq(CommonData.SongCompletedData passInfo, out bool DeathLink, APWorldData.CompletionReq req, CommonData.SupportedDifficulty diff)
         {
             DeathLink = false;
             var ValidParticipants = passInfo.participants.Where(x => x.instrument == Instrument && x.Difficulty >= diff);

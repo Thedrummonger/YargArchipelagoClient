@@ -99,17 +99,19 @@ namespace YargArchipelagoClient.Data
                 var packet = JsonConvert.DeserializeObject<CommonData.Networking.YargAPPacket>(line, CommonData.Networking.PacketSerializeSettings);
                 if (packet is null) return;
 
-                if (packet.passInfo is not null)
-                    CheckLocationHelpers.CheckLocations(Config, Connection, packet.passInfo);
+                if (packet.SongCompletedInfo is not null)
+                {
+                    if (packet.SongCompletedInfo.SongPassed)
+                        CheckLocationHelpers.CheckLocations(Config, Connection, packet.SongCompletedInfo);
+                    else if (Config.deathLinkEnabled)
+                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {packet.SongCompletedInfo.songData.GetSongDisplayName(true, true)}"));
+                }
 
                 if (packet.Message is not null)
                     LogMessage?.Invoke(packet.Message);
 
                 if (packet.CurrentlyPlaying is not null)
                     CurrentSongUpdated?.Invoke(packet.CurrentlyPlaying.song);
-
-                if (packet.songFailData is not null && Config.deathLinkEnabled)
-                    Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {packet.songFailData.SongData.GetSongDisplayName(true, true)}"));
             }
             catch (Exception e)
             {

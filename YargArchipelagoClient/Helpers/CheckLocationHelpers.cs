@@ -12,13 +12,13 @@ namespace YargArchipelagoClient.Helpers
         public static int GetCurrentFame(this ConnectionData Connection) =>
             Connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.FamePoint, out var famePoints) ? famePoints : 0;
 
-        public static void CheckLocations(ConfigData Config, ConnectionData Connection, CommonData.SongPassInfo passInfo)
+        public static void CheckLocations(ConfigData Config, ConnectionData Connection, CommonData.SongCompletedData passInfo)
         {
             HashSet<long> ToCheck = [];
             HashSet<SongLocation> AlteredLocations = [];
             foreach (var Target in Config.GetAllSongLocations())
             {
-                if (Target.SongHash != passInfo!.SongHash)
+                if (Target.SongHash != passInfo!.songData.SongChecksum)
                     continue;
 
                 if (!Target.SongAvailableToPlay(Connection, Config))

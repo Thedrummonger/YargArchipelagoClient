@@ -50,10 +50,10 @@ namespace YargArchipelagoCommon
             public bool TryGetDifficulty(SupportedInstrument instrument, out int Difficulty) => Difficulties.TryGetValue(instrument, out Difficulty);
         }
 
-        public class SongPassInfo
+        public class SongCompletedData
         {
-            public SongPassInfo(string Hash, bool Passed = true) { SongHash = Hash; SongPassed = Passed; }
-            public string SongHash;
+            public SongCompletedData(SongData Song, bool Passed) { songData = Song; SongPassed = Passed; }
+            public SongData songData;
             public bool SongPassed;
             public SongParticipantInfo[] participants = Array.Empty<SongParticipantInfo>();
         }
@@ -88,14 +88,6 @@ namespace YargArchipelagoCommon
             public string Source;
 
             public string Cause;
-        }
-        public class SongFailData
-        {
-            public SongData SongData;
-            public SongFailData(SongData failedSong)
-            {
-                SongData = failedSong;
-            }
         }
         public class ActionItemData
         {
@@ -138,17 +130,13 @@ namespace YargArchipelagoCommon
 
                 //AP Parsed
                 /// <summary>
-                /// Sent to AP Client when a song is passed.
+                /// Sent to AP Client when a song is completed including whether it passed or failed and what the score was.
                 /// </summary>
-                public SongPassInfo passInfo = null;
+                public SongCompletedData SongCompletedInfo = null;
                 /// <summary>
                 /// Sent to AP Client when the currently playing song is changed to update the client title
                 /// </summary>
                 public CurrentlyPlayingData CurrentlyPlaying = null;
-                /// <summary>
-                /// Sent to the AP client when a song is failed to send a deathlink to others.
-                /// </summary>
-                public SongFailData songFailData = null;
 
                 //DUAL PARSED
                 /// <summary>
