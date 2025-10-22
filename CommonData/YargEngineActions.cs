@@ -65,10 +65,11 @@ namespace YargArchipelagoPlugin
 #else
                 GameManager gameManager = handler.GetCurrentSong();
                 gameManager.PlayerHasFailed = true;
-                GlobalAudioHandler.PlayVoxSample(VoxSample.FailSound);
+                //GlobalAudioHandler.PlayVoxSample(VoxSample.FailSound);
                 gameManager.Pause(true);
 #endif
-                DialogManager.Instance.ShowMessage("DeathLink Received!", $"{deathLinkData.Source} {deathLinkData.Cause}");
+                ToastManager.ToastInformation($"DeathLink Received!\n\n{deathLinkData.Source} {deathLinkData.Cause}");
+                //DialogManager.Instance.ShowMessage("DeathLink Received!", $"{deathLinkData.Source} {deathLinkData.Cause}");
             }
             catch (Exception e)
             {
@@ -79,7 +80,8 @@ namespace YargArchipelagoPlugin
         public static void ApplyRestartTrap(ArchipelagoService handler)
         {
             ForceExitSong(handler);
-            DialogManager.Instance.ShowMessage("Restart Trap","A player has sent you a Restart Trap!");
+            ToastManager.ToastInformation("A player has sent you a Restart Trap!");
+            //DialogManager.Instance.ShowMessage("Restart Trap","A player has sent you a Restart Trap!");
         }
 
         private static void ForceExitSong(ArchipelagoService handler)
