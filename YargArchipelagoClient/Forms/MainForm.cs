@@ -163,10 +163,10 @@ namespace YargArchipelagoClient
         }
 
 
-        private void Locations_CheckedLocationsUpdated(System.Collections.ObjectModel.ReadOnlyCollection<long> newCheckedLocations) =>
+        private void Locations_CheckedLocationsUpdated(System.Collections.ObjectModel.ReadOnlyCollection<long> newCheckedLocations) => 
             UpdateData = true;
 
-        private void Items_ItemReceived(Archipelago.MultiClient.Net.Helpers.ReceivedItemsHelper helper) =>
+        private void Items_ItemReceived(Archipelago.MultiClient.Net.Helpers.ReceivedItemsHelper helper) => 
             UpdateData = true;
 
         private void MessageLog_OnMessageReceived(LogMessage message)
@@ -175,8 +175,14 @@ namespace YargArchipelagoClient
             foreach (var part in message.Parts)
                 formattedMessage.AddText(part.Text, part.Color.ConvertToSystemColor(), false);
 
-            //if (message is ItemSendLogMessage ItemSend)
-            //    BroadcastSongNameToServer(ItemSend);
+            if (message is ItemSendLogMessage ItemLog)
+            {
+                //BroadcastSongNameToServer(ItemSend);
+                if (Config.InGameItemLog == CommonData.ItemLog.All || (Config.InGameItemLog == CommonData.ItemLog.ToMe && ItemLog.IsReceiverTheActivePlayer))
+                    _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { Message = message.ToString() });
+            }
+            if (message is ChatLogMessage && Config.InGameAPChat)
+                _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { Message = message.ToString() });
 
             LogQueue.Enqueue(formattedMessage);
             LogSignal.Release();

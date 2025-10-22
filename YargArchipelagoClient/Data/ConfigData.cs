@@ -1,6 +1,7 @@
 ﻿using Archipelago.MultiClient.Net;
 using TDMUtils;
 using YargArchipelagoCommon;
+using static YargArchipelagoCommon.CommonData;
 
 namespace YargArchipelagoClient.Data
 {
@@ -22,6 +23,9 @@ namespace YargArchipelagoClient.Data
         public Dictionary<APWorldData.StaticItems, int> UsedFiller = [];
 
         public bool BroadcastSongName = false;
+
+        public bool InGameAPChat = true;
+        public ItemLog InGameItemLog = ItemLog.ToMe;
 
         public bool ManualMode = false;
 

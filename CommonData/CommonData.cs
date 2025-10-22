@@ -76,6 +76,13 @@ namespace YargArchipelagoCommon
             Expert = 4,
         }
 
+        public enum ItemLog
+        {
+            None = 0,
+            ToMe = 1,
+            All = 2,
+        }
+
         public class DeathLinkData
         {
             public string Source;
@@ -115,13 +122,39 @@ namespace YargArchipelagoCommon
             public const string PipeName = "yarg_ap_pipe";
             public class YargAPPacket
             {
-                public SongPassInfo passInfo = null;
-                public string Message = null;
-                public CurrentlyPlayingData CurrentlyPlaying = null;
+                //YARG PARSED
+                /// <summary>
+                /// Sent to Yarg when a deathlink happens in AP. Causes the current song to fail and exit.
+                /// </summary>
                 public DeathLinkData deathLinkData = null;
-                public SongFailData songFailData = null;
+                /// <summary>
+                /// Sent to Yarg when an item is recieved that causes yarg to perform an action, such as adding start power or triggering traps
+                /// </summary>
                 public ActionItemData ActionItem = null;
+                /// <summary>
+                /// Sent to Yarg to update the game with what songs are available
+                /// </summary>
                 public (string SongHash, string Profile)[] AvailableSongs = null;
+
+                //AP Parsed
+                /// <summary>
+                /// Sent to AP Client when a song is passed.
+                /// </summary>
+                public SongPassInfo passInfo = null;
+                /// <summary>
+                /// Sent to AP Client when the currently playing song is changed to update the client title
+                /// </summary>
+                public CurrentlyPlayingData CurrentlyPlaying = null;
+                /// <summary>
+                /// Sent to the AP client when a song is failed to send a deathlink to others.
+                /// </summary>
+                public SongFailData songFailData = null;
+
+                //DUAL PARSED
+                /// <summary>
+                /// A log Message. When sent to AP client, prints to the chat log. When sent to Yarg, prints to the Unity Log
+                /// </summary>
+                public string Message = null;
             }
 
             public readonly static JsonSerializerSettings PacketSerializeSettings = new JsonSerializerSettings()

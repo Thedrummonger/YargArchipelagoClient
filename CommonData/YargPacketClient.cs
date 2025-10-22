@@ -5,6 +5,7 @@ using System.IO.Pipes;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using YARG.Menu.Persistent;
 using YargArchipelagoCommon;
 using static YargArchipelagoCommon.CommonData.Networking;
 
@@ -109,6 +110,9 @@ namespace YargArchipelagoPlugin
             {
                 var basePacket = JsonConvert.DeserializeObject<YargAPPacket>(line, PacketSerializeSettings);
                 if (basePacket == null) return;
+
+                if (basePacket.Message != null)
+                    ToastManager.ToastMessage(basePacket.Message);
 
                 if (basePacket.deathLinkData != null)
                     DeathLinkReceived?.Invoke(basePacket.deathLinkData);
