@@ -110,9 +110,17 @@ namespace YargArchipelagoClient
         public void UpdateClientTitle()
         {
             string CurrentTitle = Title;
-            CurrentTitle += IsConnectedToYarg ? " [Game Connected]" : " [Game Disconnected]";
+            //CurrentTitle += $" [YARG Connected: {IsConnectedToYarg}]";
+            //if (Connection.CurrentlyPlaying is not null)
+            //    CurrentTitle += $" [Currently Playing: {Connection.CurrentlyPlaying.GetSongDisplayName()}]";
+
+            yARGConnectedToolStripMenuItem.Text = $"YARG Connected: {IsConnectedToYarg}";
+            currentSongToolStripMenuItem.Text = "Current Song: ";
             if (Connection.CurrentlyPlaying is not null)
-                CurrentTitle += $" [Currently Playing: {Connection.CurrentlyPlaying.GetSongDisplayName()}]";
+                currentSongToolStripMenuItem.Text += $" {Connection.CurrentlyPlaying.GetSongDisplayName()}";
+            else
+                currentSongToolStripMenuItem.Text += $" None";
+
 
             this.Text = CurrentTitle;
         }
@@ -140,6 +148,7 @@ namespace YargArchipelagoClient
             TrapFillerHelper.SendPendingTrapOrFiller(Connection, Config);
             PrintSongs();
             CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
+            fame0ToolStripMenuItem.Text = $"Fame: {Connection.GetCurrentFame()} / {Config.FamePointsNeeded}";
         }
 
         private void lvSongList_Resize(object sender, EventArgs e) =>
@@ -155,10 +164,10 @@ namespace YargArchipelagoClient
         }
 
 
-        private void Locations_CheckedLocationsUpdated(System.Collections.ObjectModel.ReadOnlyCollection<long> newCheckedLocations) => 
+        private void Locations_CheckedLocationsUpdated(System.Collections.ObjectModel.ReadOnlyCollection<long> newCheckedLocations) =>
             UpdateData = true;
 
-        private void Items_ItemReceived(Archipelago.MultiClient.Net.Helpers.ReceivedItemsHelper helper) => 
+        private void Items_ItemReceived(Archipelago.MultiClient.Net.Helpers.ReceivedItemsHelper helper) =>
             UpdateData = true;
 
         private void MessageLog_OnMessageReceived(LogMessage message)
@@ -273,7 +282,12 @@ namespace YargArchipelagoClient
                     lbConsole.AppendString($"Manual Mode: {Config.ManualMode}");
                     break;
                 case "deathlink":
-                    if (Config is null || !Connection.GetSession().RoomState.ServerTags.Contains("DeathLink")) return;
+                    if (Config is null) return;
+                    if (!Config.ServerDeathLink)
+                    {
+                        lbConsole.AppendString($"Deathlink was not enabled in YAML");
+                        return;
+                    }
                     Config.deathLinkEnabled = !Config.deathLinkEnabled;
                     Config.SaveConfigFile(Connection);
                     lbConsole.AppendString($"Deathlink Enabled: {Config.deathLinkEnabled}");
@@ -292,7 +306,7 @@ namespace YargArchipelagoClient
                     break;
                 case "debug_star" when Debugger.IsAttached:
                     lbConsole.AppendString($"Simulating start power item");
-                    _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket  { ActionItem = new(CommonData.APActionItem.StarPower)});
+                    _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new(CommonData.APActionItem.StarPower) });
                     break;
                 case "debug_restart" when Debugger.IsAttached:
                     lbConsole.AppendString($"Simulating restart trap");
@@ -318,6 +332,68 @@ namespace YargArchipelagoClient
                 if (lvSongList.HitTest(e.Location).Item is ListViewItem item && item.Tag is SongLocation Song)
                     ContextMenuBuilder.BuildSongMenu(this, Song).Show(MousePosition);
             }
+        }
+
+        bool DropDownUpdating = false;
+        private void UpdatedDropDownChecks(object Sender, EventArgs e)
+        {
+            DropDownUpdating = true;
+            broadcastSongNamesToolStripMenuItem.Checked = Config.BroadcastSongName;
+            manualModeToolStripMenuItem.Checked = Config.ManualMode;
+            deathLinkToolStripMenuItem.Enabled = Config.ServerDeathLink;
+            deathLinkToolStripMenuItem.Checked = Config.deathLinkEnabled;
+            cmbItemNotifMode.SelectedIndex = (int)Config.InGameItemLog;
+            yARGChatNotificationsToolStripMenuItem.Checked = Config.InGameAPChat;
+            DropDownUpdating = false;
+        }
+
+        private void OptionDropDownItemChanged(object Sender, EventArgs e)
+        {
+            if (DropDownUpdating) return;
+            Config.BroadcastSongName = broadcastSongNamesToolStripMenuItem.Checked;
+            Config.ManualMode = manualModeToolStripMenuItem.Checked;
+            Config.ServerDeathLink = deathLinkToolStripMenuItem.Checked;
+            Config.InGameItemLog = (CommonData.ItemLog)cmbItemNotifMode.SelectedIndex;
+            Config.InGameAPChat = yARGChatNotificationsToolStripMenuItem.Checked;
+            Config.SaveConfigFile(Connection);
+            UpdatedDropDownChecks(Sender, e);
+        }
+
+        private void broadcastSongNamesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            broadcastSongNamesToolStripMenuItem.Checked = !broadcastSongNamesToolStripMenuItem.Checked;
+            OptionDropDownItemChanged(sender, e);
+        }
+
+        private void manualModeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            manualModeToolStripMenuItem.Checked = !manualModeToolStripMenuItem.Checked;
+            OptionDropDownItemChanged(sender, e);
+        }
+
+        private void deathLinkToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            deathLinkToolStripMenuItem.Checked = !deathLinkToolStripMenuItem.Checked;
+            OptionDropDownItemChanged(sender, e);
+        }
+
+        private void cmbItemNotifMode_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            OptionDropDownItemChanged(sender, e);
+        }
+
+        private void yARGChatNotificationsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            yARGChatNotificationsToolStripMenuItem.Checked = !yARGChatNotificationsToolStripMenuItem.Checked;
+            OptionDropDownItemChanged(sender, e);
+        }
+
+        private void updateAvailableSongsToolStripMenuItem_Click(object sender, EventArgs e) => CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
+
+        private void rescanSongListToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SongImporter.RescanSongs(Config, Connection);
+            PrintSongs();
         }
     }
 }

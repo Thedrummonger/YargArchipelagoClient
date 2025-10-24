@@ -31,6 +31,8 @@ namespace YargArchipelagoClient.Data
 
         public int FamePointsNeeded = 0;
 
+        public bool ServerDeathLink = false;
+
         public bool deathLinkEnabled = false;
 
         public Dictionary<APWorldData.StaticItems, int> ProcessedTrapsFiller = [];

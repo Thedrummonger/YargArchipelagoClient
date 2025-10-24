@@ -59,6 +59,7 @@ namespace YargArchipelagoClient.Helpers
 
             if (SlotData.TryGetValue("death_link", out var DLO) && DLO is Int64 DLI && DLI > 0)
             {
+                config.ServerDeathLink = true;
                 config.deathLinkEnabled = true;
                 Connection.DeathLinkService?.EnableDeathLink();
             }
