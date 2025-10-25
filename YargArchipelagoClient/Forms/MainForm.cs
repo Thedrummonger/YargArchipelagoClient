@@ -29,6 +29,12 @@ namespace YargArchipelagoClient
         {
             InitializeComponent();
             lvSongList_Resize(this, new());
+
+            settingsToolStripMenuItem.DropDown.Closing += (_, e) =>
+            {
+                if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked)
+                    e.Cancel = true;
+            };
         }
         private void MainForm_Shown(object sender, EventArgs e)
         {
