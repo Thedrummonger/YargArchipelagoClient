@@ -26,8 +26,7 @@ namespace YargArchipelagoClient.Helpers
         {
             configData = null;
             var SeedDir = ConnectionData.GetSeedPath();
-            if (!Directory.Exists(SeedDir))
-                Directory.CreateDirectory(SeedDir);
+            Directory.CreateDirectory(SeedDir);
 
             var ConfigFile = Directory.GetFiles(SeedDir).FirstOrDefault(file => Path.GetFileName(file) == Connection.getSaveFileName());
             if (ConfigFile is not null)
@@ -42,14 +41,15 @@ namespace YargArchipelagoClient.Helpers
                 var Dialog = configForm.ShowDialog();
                 if (Dialog != DialogResult.OK)
                     return false;
-                configData = configForm.data!;
+                configData = configForm.data;
+                if (configData is not null)
+                    ReadSlotData(Connection, configData);
             }
             return configData is not null;
         }
 
         public static void ReadSlotData(ConnectionData Connection, ConfigData config)
         {
-
             var SlotData = Connection!.GetSession().DataStorage.GetSlotData();
 
             if (SlotData["fame_points_for_goal"] is Int64 FPSlotDataVal)
@@ -61,7 +61,6 @@ namespace YargArchipelagoClient.Helpers
             {
                 config.ServerDeathLink = true;
                 config.deathLinkEnabled = true;
-                Connection.DeathLinkService?.EnableDeathLink();
             }
         }
 

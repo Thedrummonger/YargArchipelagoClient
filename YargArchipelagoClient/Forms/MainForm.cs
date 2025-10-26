@@ -52,12 +52,13 @@ namespace YargArchipelagoClient
                 return;
             }
             Config = configResult!;
-            ClientInitializationHelper.ReadSlotData(Connection, Config);
             Config.SaveConfigFile(Connection);
 
             Debug.WriteLine($"The Following Songs were not valid for any profile in this config\n\n{Config.GetUnusableSongs().Select(x => x.GetSongDisplayName()).ToFormattedJson()}");
 
             // Subscribe to session events.
+            if (Config.ServerDeathLink)
+                Connection.DeathLinkService?.EnableDeathLink();
             Connection!.GetSession().Items.ItemReceived += Items_ItemReceived;
             Connection!.GetSession().MessageLog.OnMessageReceived += MessageLog_OnMessageReceived;
             Connection!.GetSession().Locations.CheckedLocationsUpdated += Locations_CheckedLocationsUpdated;

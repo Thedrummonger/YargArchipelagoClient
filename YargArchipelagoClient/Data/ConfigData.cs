@@ -31,8 +31,14 @@ namespace YargArchipelagoClient.Data
 
         public int FamePointsNeeded = 0;
 
+        /// <summary>
+        /// This value tracks if deathlink was enabled in the YAML. it will never change
+        /// </summary>
         public bool ServerDeathLink = false;
 
+        /// <summary>
+        /// This value is a togglable deathlink override. If ServerDeathLink is enabled, this can be disabled to prevent Deathlinks.
+        /// </summary>
         public bool deathLinkEnabled = false;
 
         public Dictionary<APWorldData.StaticItems, int> ProcessedTrapsFiller = [];
