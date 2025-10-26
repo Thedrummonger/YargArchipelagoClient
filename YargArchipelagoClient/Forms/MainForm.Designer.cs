@@ -51,6 +51,9 @@ namespace YargArchipelagoClient
             utilityToolStripMenuItem = new ToolStripMenuItem();
             updateAvailableSongsToolStripMenuItem = new ToolStripMenuItem();
             rescanSongListToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator1 = new ToolStripSeparator();
+            aPServerToolStripMenuItem = new ToolStripMenuItem();
+            changeServerToolStripMenuItem = new ToolStripMenuItem();
             fame0ToolStripMenuItem = new ToolStripMenuItem();
             yARGConnectedToolStripMenuItem = new ToolStripMenuItem();
             currentSongToolStripMenuItem = new ToolStripMenuItem();
@@ -235,7 +238,7 @@ namespace YargArchipelagoClient
             // 
             // utilityToolStripMenuItem
             // 
-            utilityToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { updateAvailableSongsToolStripMenuItem, rescanSongListToolStripMenuItem });
+            utilityToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { updateAvailableSongsToolStripMenuItem, rescanSongListToolStripMenuItem, toolStripSeparator1, aPServerToolStripMenuItem, changeServerToolStripMenuItem });
             utilityToolStripMenuItem.Name = "utilityToolStripMenuItem";
             utilityToolStripMenuItem.Size = new Size(50, 20);
             utilityToolStripMenuItem.Text = "Utility";
@@ -253,6 +256,25 @@ namespace YargArchipelagoClient
             rescanSongListToolStripMenuItem.Size = new Size(198, 22);
             rescanSongListToolStripMenuItem.Text = "Rescan Song List";
             rescanSongListToolStripMenuItem.Click += rescanSongListToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator1
+            // 
+            toolStripSeparator1.Name = "toolStripSeparator1";
+            toolStripSeparator1.Size = new Size(195, 6);
+            // 
+            // aPServerToolStripMenuItem
+            // 
+            aPServerToolStripMenuItem.Enabled = false;
+            aPServerToolStripMenuItem.Name = "aPServerToolStripMenuItem";
+            aPServerToolStripMenuItem.Size = new Size(198, 22);
+            aPServerToolStripMenuItem.Text = "AP Server:";
+            // 
+            // changeServerToolStripMenuItem
+            // 
+            changeServerToolStripMenuItem.Name = "changeServerToolStripMenuItem";
+            changeServerToolStripMenuItem.Size = new Size(198, 22);
+            changeServerToolStripMenuItem.Text = "Disconnect from AP";
+            changeServerToolStripMenuItem.Click += DisconnectFromAP;
             // 
             // fame0ToolStripMenuItem
             // 
@@ -321,5 +343,8 @@ namespace YargArchipelagoClient
         private ToolStripMenuItem yARGChatNotificationsToolStripMenuItem;
         private ToolStripMenuItem yARGConnectedToolStripMenuItem;
         private ToolStripMenuItem currentSongToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator1;
+        private ToolStripMenuItem changeServerToolStripMenuItem;
+        private ToolStripMenuItem aPServerToolStripMenuItem;
     }
 }

@@ -13,7 +13,6 @@ namespace YargArchipelagoClient
 {
     public partial class MainForm : Form
     {
-        // Fields using target-typed new expressions
         public ConnectionData Connection;
         public ConfigData Config;
 
@@ -24,6 +23,11 @@ namespace YargArchipelagoClient
         private readonly System.Windows.Forms.Timer SyncTimer = new();
 
         private bool UpdateData = false;
+
+        public const string Title = "Yarg Archipelago Client";
+        public bool IsConnectedToYarg = false;
+
+        public static bool DebugPrintAllSongs = false;
 
         public MainForm()
         {
@@ -38,10 +42,19 @@ namespace YargArchipelagoClient
         }
         private void MainForm_Shown(object sender, EventArgs e)
         {
+            if (!ConnectToAP())
+                return;
+            ConnectPipeServer();
+            CreateAppQueues(sender, e);
+            UpdateClientTitle();
+        }
+
+        private bool ConnectToAP()
+        {
             if (!ClientInitializationHelper.ConnectToServer(out var connectResult))
             {
                 Close();
-                return;
+                return false;
             }
             Connection = connectResult!;
             File.WriteAllText(ConnectionForm.ConnectionCachePath, Connection.ToFormattedJson());
@@ -49,14 +62,13 @@ namespace YargArchipelagoClient
             if (!ClientInitializationHelper.GetConfig(Connection, out var configResult))
             {
                 Close();
-                return;
+                return false;
             }
             Config = configResult!;
             Config.SaveConfigFile(Connection);
 
             Debug.WriteLine($"The Following Songs were not valid for any profile in this config\n\n{Config.GetUnusableSongs().Select(x => x.GetSongDisplayName()).ToFormattedJson()}");
 
-            // Subscribe to session events.
             if (Config.ServerDeathLink)
                 Connection.DeathLinkService?.EnableDeathLink();
             Connection!.GetSession().Items.ItemReceived += Items_ItemReceived;
@@ -64,15 +76,39 @@ namespace YargArchipelagoClient
             Connection!.GetSession().Locations.CheckedLocationsUpdated += Locations_CheckedLocationsUpdated;
             Connection.DeathLinkService!.OnDeathLinkReceived += DeathLinkService_OnDeathLinkReceived;
 
+            aPServerToolStripMenuItem.Text = $"AP Server: {Connection.SlotName}@{Connection.Address}";
+            return true;
+        }
+
+        private async void DisconnectFromAP(object sender, EventArgs e)
+        {
+            SyncTimer.Stop();
+            try { await Connection!.GetSession().Socket.DisconnectAsync(); } catch { }
+            DisconnectPipeServer();
+            Connection = null;
+            Config = null;
+            ConnectToAP();
+            ConnectPipeServer();
+            UpdateClientTitle();
+            SyncTimer.Start();
+        }
+
+        public void ConnectPipeServer()
+        {
             UpdateData = true;
-
-            var PacketServer = Connection.CreatePacketServer(Config);
-            PacketServer.PacketServerClosed += PackerServerClosed;
-            PacketServer.ConnectionChanged += UpdateConnected;
-            PacketServer.CurrentSongUpdated += UpdateCurrentlyPlaying;
-            PacketServer.LogMessage += WriteToLog;
+            var PacketServer = Connection!.CreatePacketServer(Config);
+            PacketServer.TogglePacketServerListeners(this, true);
             _ = PacketServer.StartAsync();
+        }
+        public void DisconnectPipeServer()
+        {
+            var PacketServer = Connection!.GetPacketServer();
+            PacketServer.TogglePacketServerListeners(this, false);
+            PacketServer.Stop();
+        }
 
+        public void CreateAppQueues(object sender, EventArgs e)
+        {
             SyncTimerTick(sender, e);
 
             SyncTimer.Interval = 200;
@@ -80,19 +116,19 @@ namespace YargArchipelagoClient
             SyncTimer.Start();
 
             Task.Run(ProcessLogQueueAsync);
-
-            UpdateClientTitle();
         }
 
-        private void PackerServerClosed(string obj)
+        public void PackerServerClosed(string obj)
         {
+            SyncTimer.Stop();
             MessageBox.Show($"The YARG connection service was stopped unexpectedly, the application will close\n\n{obj}");
             this.Close();
         }
         private void APServerClosed(string obj)
         {
+            SyncTimer.Stop();
             MessageBox.Show($"The Archipelago connection service was stopped unexpectedly, the application will close\n\n{obj}");
-            this.Close();
+            DisconnectFromAP(this, null);
         }
 
         private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink)
@@ -111,15 +147,9 @@ namespace YargArchipelagoClient
 
         }
 
-        public const string Title = "Yarg Archipelago Client";
-        public bool IsConnectedToYarg = false;
-
         public void UpdateClientTitle()
         {
             string CurrentTitle = Title;
-            //CurrentTitle += $" [YARG Connected: {IsConnectedToYarg}]";
-            //if (Connection.CurrentlyPlaying is not null)
-            //    CurrentTitle += $" [Currently Playing: {Connection.CurrentlyPlaying.GetSongDisplayName()}]";
 
             yARGConnectedToolStripMenuItem.Text = $"YARG Connected: {IsConnectedToYarg}";
             currentSongToolStripMenuItem.Text = "Current Song: ";
@@ -133,6 +163,7 @@ namespace YargArchipelagoClient
         }
         public void UpdateCurrentlyPlaying(CommonData.SongData? Song)
         {
+            if (Connection is null) return;
             Connection.CurrentlyPlaying = Song;
             UpdateClientTitle();
         }
@@ -146,6 +177,8 @@ namespace YargArchipelagoClient
 
         private void SyncTimerTick(object? sender, EventArgs e)
         {
+            if (Connection is null || Config is null)
+                return;
             if (!Connection.GetSession().Socket.Connected)
                 APServerClosed("AP server connection lost");
             if (!UpdateData) return;
@@ -185,7 +218,6 @@ namespace YargArchipelagoClient
 
             if (message is ItemSendLogMessage ItemLog)
             {
-                //BroadcastSongNameToServer(ItemSend);
                 if (Config.InGameItemLog == CommonData.ItemLog.All || (Config.InGameItemLog == CommonData.ItemLog.ToMe && ItemLog.IsReceiverTheActivePlayer))
                     _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { Message = message.ToString() });
             }
@@ -194,20 +226,6 @@ namespace YargArchipelagoClient
 
             LogQueue.Enqueue(formattedMessage);
             LogSignal.Release();
-        }
-
-        private void BroadcastSongNameToServer(ItemSendLogMessage message)
-        {
-            if (!message.IsReceiverTheActivePlayer) return;
-            if (!APWorldData.APIDs.SongItemIds.TryGetValue(message.Item.ItemId, out var SongNum))
-                return;
-            if (!Config!.ApLocationData.TryGetValue(SongNum, out var Song))
-                return;
-            string SongMessage = Song.GetSongDisplayName(Config!, true, true, true);
-            if (Config.BroadcastSongName)
-                Connection.GetSession().Say(SongMessage);
-            else
-                LogQueue.Enqueue(new ColoredString().AddText(SongMessage));
         }
 
         private async Task ProcessLogQueueAsync()
@@ -230,27 +248,30 @@ namespace YargArchipelagoClient
             LogQueue.Enqueue(new ColoredString(message));
             LogSignal.Release();
         }
-
         public void PrintSongs()
         {
             lvSongList.SafeInvoke(lvSongList.Items.Clear);
 
-            if (Config.GoalSong.SongAvailableToPlay(Connection, Config))
+            var GoalSongAvailable = Config.GoalSong.SongAvailableToPlay(Connection, Config);
+            if (GoalSongAvailable || DebugPrintAllSongs)
             {
+                string Debug = DebugPrintAllSongs ? !Config.GoalSong.HasUncheckedLocations(Connection) ? "@ " : (GoalSongAvailable ? "O " : "X ") : "";
                 ListViewItem goalItem = new(Config.GoalSong.SongNumber.ToString()) { Tag = Config!.GoalSong };
-                goalItem.SubItems.Add($"Goal Song: {Config.GoalSong.GetSongDisplayName(Config!)} [{Config.GoalSong.Requirements!.Name}]");
+                goalItem.SubItems.Add($"{Debug}Goal Song: {Config.GoalSong.GetSongDisplayName(Config!)} [{Config.GoalSong.Requirements!.Name}]");
                 lvSongList.SafeInvoke(() => lvSongList.Items.Add(goalItem));
             }
 
             foreach (var i in Config!.ApLocationData.OrderBy(x => x.Key))
             {
-                if (!i.Value.SongAvailableToPlay(Connection, Config))
+                var SongAvailable = i.Value.SongAvailableToPlay(Connection, Config);
+                if (!SongAvailable && !DebugPrintAllSongs)
                     continue;
                 if (!string.IsNullOrWhiteSpace(txtFilter.Text) && !i.Value.GetSongDisplayName(Config!).Contains(txtFilter.Text))
                     continue;
 
+                string Debug = DebugPrintAllSongs ? !i.Value.HasUncheckedLocations(Connection) ? "@ " : SongAvailable ? "O " : "X " : "";
                 ListViewItem item = new(i.Value.SongNumber.ToString()) { Tag = i.Value };
-                item.SubItems.Add($"{i.Value.GetSongDisplayName(Config!)} [{i.Value.Requirements!.Name}]");
+                item.SubItems.Add($"{Debug}{i.Value.GetSongDisplayName(Config!)} [{i.Value.Requirements!.Name}]");
 
                 lvSongList.SafeInvoke(() => lvSongList.Items.Add(item));
             }
@@ -264,72 +285,12 @@ namespace YargArchipelagoClient
             string Text = textBox1.Text;
             if (Text.IsNullOrWhiteSpace()) return;
             textBox1.Text = string.Empty;
-            if (Text.Length > 1 && Text[0] == '/')
-                ProcessCommand(Text[1..]);
+            if (Text.Length > 1 && Text[0] == '/' && Debugger.IsAttached)
+                LocalCommandProcessor.ProcessCommand(Config, Connection, WriteToLog, PrintSongs, Text[1..]);
             else
                 Connection.GetSession().Say(Text);
 
             LogSignal.Release();
-        }
-
-        private void ProcessCommand(string v)
-        {
-            switch (v.ToLower())
-            {
-                case "broadcast":
-                    if (Config is null) return;
-                    Config.BroadcastSongName = !Config.BroadcastSongName;
-                    Config.SaveConfigFile(Connection);
-                    lbConsole.AppendString($"Broadcasting Songs: {Config.BroadcastSongName}");
-                    break;
-                case "manual":
-                    if (Config is null) return;
-                    Config.ManualMode = !Config.ManualMode;
-                    Config.SaveConfigFile(Connection);
-                    lbConsole.AppendString($"Manual Mode: {Config.ManualMode}");
-                    break;
-                case "deathlink":
-                    if (Config is null) return;
-                    if (!Config.ServerDeathLink)
-                    {
-                        lbConsole.AppendString($"Deathlink was not enabled in YAML");
-                        return;
-                    }
-                    Config.deathLinkEnabled = !Config.deathLinkEnabled;
-                    Config.SaveConfigFile(Connection);
-                    lbConsole.AppendString($"Deathlink Enabled: {Config.deathLinkEnabled}");
-                    break;
-                case "fame":
-                    lbConsole.AppendString($"Fame Points: {Connection.GetCurrentFame()}/{Config!.FamePointsNeeded}");
-                    break;
-                case "update":
-                    lbConsole.AppendString($"Updating Available");
-                    CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
-                    break;
-                case "rescan":
-                    lbConsole.AppendString($"Rescanning available songs");
-                    SongImporter.RescanSongs(Config, Connection);
-                    PrintSongs();
-                    break;
-                case "debug_star" when Debugger.IsAttached:
-                    lbConsole.AppendString($"Simulating start power item");
-                    _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new(CommonData.APActionItem.StarPower) });
-                    break;
-                case "debug_restart" when Debugger.IsAttached:
-                    lbConsole.AppendString($"Simulating restart trap");
-                    _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new(CommonData.APActionItem.Restart) });
-                    break;
-                case "debug_dl" when Debugger.IsAttached:
-                    lbConsole.AppendString($"Simulating Death Link");
-                    _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket
-                    {
-                        deathLinkData = new CommonData.DeathLinkData { Source = "Self", Cause = "Command" }
-                    });
-                    break;
-                default:
-                    lbConsole.AppendString($"{v} is not a valid command");
-                    break;
-            }
         }
 
         private void lvSongList_MouseUp(object sender, MouseEventArgs e)

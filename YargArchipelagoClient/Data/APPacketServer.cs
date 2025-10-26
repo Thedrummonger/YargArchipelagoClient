@@ -65,6 +65,23 @@ namespace YargArchipelagoClient.Data
             Debug.WriteLine("AP Pipe Server stopped.");
         }
 
+        public void TogglePacketServerListeners(MainForm mainForm, bool attach)
+        {
+            var s = Connection.GetPacketServer();
+            if (s is null) return;
+
+            var pairs = new (Action add, Action remove)[]
+            {
+                (() => s.LogMessage += mainForm.WriteToLog,                      () => s.LogMessage -= mainForm.WriteToLog),
+                (() => s.CurrentSongUpdated += mainForm.UpdateCurrentlyPlaying,  () => s.CurrentSongUpdated -= mainForm.UpdateCurrentlyPlaying),
+                (() => s.ConnectionChanged += mainForm.UpdateConnected,          () => s.ConnectionChanged -= mainForm.UpdateConnected),
+                (() => s.PacketServerClosed += mainForm.PackerServerClosed,      () => s.PacketServerClosed -= mainForm.PackerServerClosed),
+            };
+
+            foreach (var (add, remove) in pairs)
+                (attach ? add : remove)();
+        }
+
         private async Task HandleClientAsync(NamedPipeServerStream server, CancellationToken token)
         {
             using var reader = new StreamReader(server, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 8192, leaveOpen: true);

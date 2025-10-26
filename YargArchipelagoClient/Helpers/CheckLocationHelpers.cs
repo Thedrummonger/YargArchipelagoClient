@@ -119,6 +119,7 @@ namespace YargArchipelagoClient.Helpers
 
         public static void SendAvailableSongUpdate(ConfigData Config, ConnectionData Connection)
         {
+            if (Connection is null || Config is null) return;
             _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket
             {
                 AvailableSongs = [.. Config.GetAllSongLocations().Where(x => 
