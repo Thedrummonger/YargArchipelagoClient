@@ -129,8 +129,7 @@ namespace YargArchipelagoClient.Helpers
 
         }
 
-        static Archipelago.MultiClient.Net.Helpers.MessageLogHelper.MessageReceivedHandler? _chatHandler;
-        public static bool ConnectSession(Func<ConnectionData?> CreateNewConnection, Func<ConfigData?> CreateNewConfig, Action<ConnectionData> ApplyListeners, out ConnectionData? Connection, out ConfigData? Config)
+        public static bool ConnectSession(Func<ConnectionData?> CreateNewConnection, Func<ConfigData?> CreateNewConfig, Action<ConnectionData> ApplyUIListeners, out ConnectionData? Connection, out ConfigData? Config)
         {
             Connection = null;
             Config = null;
@@ -152,33 +151,45 @@ namespace YargArchipelagoClient.Helpers
             var PacketServer = Connection!.CreatePacketServer(Config);
             _ = PacketServer.StartAsync();
 
-            ApplyListeners(Connection);
-
             Connection.clientSyncHelper = new YargArchipelagoCore.Helpers.YargClientSyncHelper(Connection, Config);
-            Connection.clientSyncHelper.timer.Start();
 
-            var c = Connection;
-            var o = Config;
-            _chatHandler = new Archipelago.MultiClient.Net.Helpers.MessageLogHelper.MessageReceivedHandler(m => RelayChatToYARG(m, c, o));
-            Connection.GetSession().MessageLog.OnMessageReceived += _chatHandler;
-            Connection.GetSession().Items.ItemReceived += (_) => c.clientSyncHelper.ShouldUpdate = true;
-            Connection.GetSession().Locations.CheckedLocationsUpdated += (_) => c.clientSyncHelper.ShouldUpdate = true;
+            Connection.eventManager = new CoreEventManager(Config, Connection);
+            Connection.eventManager.ApplyEvents();
+            ApplyUIListeners(Connection);
+
+            Connection.clientSyncHelper.timer.Start();
 
             return Config is not null && Connection is not null;
         }
-        public static async Task DisconnectSession(ConnectionData Connection, ConfigData Config, Action<ConnectionData> RemoveListeners)
+        public static async Task DisconnectSession(ConnectionData Connection, ConfigData Config, Action<ConnectionData> RemoveUIListeners)
         {
             Connection.clientSyncHelper?.timer?.Stop();
-            if (_chatHandler is not null)
-            {
-                Connection.GetSession().MessageLog.OnMessageReceived -= _chatHandler;
-                _chatHandler = null;
-            }
-            RemoveListeners(Connection);
+            Connection.eventManager?.RemoveEvents();
+            RemoveUIListeners(Connection);
             try { Connection.GetPacketServer()?.Stop(); } catch { }
             try { await Connection.GetSession().Socket.DisconnectAsync(); } catch { }
         }
-        private static void RelayChatToYARG(LogMessage message, ConnectionData connection, ConfigData config)
+    }
+
+    public class CoreEventManager(ConfigData config, ConnectionData connection)
+    {
+        public void ApplyEvents()
+        {
+            connection.GetSession().MessageLog.OnMessageReceived += RelayChatToYARG;
+            connection.GetSession().Items.ItemReceived += Items_ItemReceived;
+            connection.GetSession().Locations.CheckedLocationsUpdated += Locations_CheckedLocationsUpdated;
+        }
+
+        public void RemoveEvents()
+        {
+            connection.GetSession().MessageLog.OnMessageReceived -= RelayChatToYARG;
+            connection.GetSession().Items.ItemReceived -= Items_ItemReceived;
+            connection.GetSession().Locations.CheckedLocationsUpdated -= Locations_CheckedLocationsUpdated;
+        }
+
+        private void Locations_CheckedLocationsUpdated(System.Collections.ObjectModel.ReadOnlyCollection<long> newCheckedLocations) => connection.clientSyncHelper.ShouldUpdate = true;
+        private void Items_ItemReceived(Archipelago.MultiClient.Net.Helpers.ReceivedItemsHelper helper) => connection.clientSyncHelper.ShouldUpdate = true;
+        private void RelayChatToYARG(LogMessage message)
         {
             if (message is ItemSendLogMessage ItemLog)
             {

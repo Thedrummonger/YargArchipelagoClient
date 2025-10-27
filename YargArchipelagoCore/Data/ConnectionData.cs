@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using TDMUtils;
+using YargArchipelagoClient.Helpers;
 using YargArchipelagoCommon;
 using YargArchipelagoCore.Helpers;
 
@@ -37,6 +38,8 @@ namespace YargArchipelagoClient.Data
         private APPipeServer PacketServer;
         [JsonIgnore]
         public YargClientSyncHelper clientSyncHelper;
+        [JsonIgnore]
+        public CoreEventManager eventManager;
         public APPipeServer CreatePacketServer(ConfigData Config)
         {
             if (PacketServer is not null) throw new Exception("Packet server was already started!");
