@@ -130,7 +130,7 @@ namespace YargArchipelagoClient
         }
         public void PackerServerClosed(string obj)
         {
-            Connection.clientSyncHelper?.timer.Stop();
+            Connection.clientSyncHelper?.StopTimer();
             MessageBox.Show($"The YARG connection service was stopped unexpectedly, the application will close\n\n{obj}");
             ResetConnection(this, null);
         }
@@ -181,7 +181,7 @@ namespace YargArchipelagoClient
                 BeginInvoke((Action)(() => APServerClosed(obj)));
             else
             {
-                Connection.clientSyncHelper?.timer.Stop();
+                Connection.clientSyncHelper?.StopTimer();
                 MessageBox.Show($"The Archipelago connection service was stopped unexpectedly, the application will close\n\n{obj}");
                 ResetConnection(this, null);
             }

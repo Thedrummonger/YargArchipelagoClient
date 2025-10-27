@@ -18,14 +18,24 @@ namespace YargArchipelagoCore.Helpers
             timer.Elapsed += SyncTimerTick;
         }
 
-        public System.Timers.Timer timer = new System.Timers.Timer(200);
+        private System.Timers.Timer timer = new System.Timers.Timer(200);
 
         public event Action<string>? APServerClosed;
         public bool ShouldUpdate = true; //Start true so we do an update when it initializes
         public event Action ConstantCallback;
         public event Action OnUpdateCallback;
 
-        private void SyncTimerTick(object? sender, ElapsedEventArgs e)
+        public void StartTimer()
+        {
+            SyncTimerTick(this, null);
+            timer.Start();
+        }
+        public void StopTimer()
+        {
+            timer.Stop();
+        }
+
+        public void SyncTimerTick(object? sender, ElapsedEventArgs e)
         {
             if (connection is null || config is null)
                 return;

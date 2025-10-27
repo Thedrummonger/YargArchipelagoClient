@@ -157,13 +157,14 @@ namespace YargArchipelagoClient.Helpers
             Connection.eventManager.ApplyEvents();
             ApplyUIListeners(Connection);
 
-            Connection.clientSyncHelper.timer.Start();
+            Connection.clientSyncHelper.SyncTimerTick(null,null);
+            Connection.clientSyncHelper.StartTimer();
 
             return Config is not null && Connection is not null;
         }
         public static async Task DisconnectSession(ConnectionData Connection, ConfigData Config, Action<ConnectionData> RemoveUIListeners)
         {
-            Connection.clientSyncHelper?.timer?.Stop();
+            Connection.clientSyncHelper?.StopTimer();
             Connection.eventManager?.RemoveEvents();
             RemoveUIListeners(Connection);
             try { Connection.GetPacketServer()?.Stop(); } catch { }

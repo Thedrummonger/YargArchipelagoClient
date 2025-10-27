@@ -21,14 +21,21 @@ namespace YargArchipelagoClient.Helpers
             string Error = "Your available song data was missing or corrupt. Please run the AP build of YARG at least once before launching the client.\n\n" +
                 "You may also need to point YARG a valid song path and run a scan for any newly added songs.\nThis can be found in Settings -> Songs in YARG.";
             data = [];
-            if (!Directory.Exists(CommonData.DataFolder) || !File.Exists(CommonData.SongExportFile))
+
+            string? DataPath = null;
+            if (File.Exists("SongExport.json"))
+                DataPath = "SongExport.json";
+            else if (File.Exists(CommonData.SongExportFile))
+                DataPath = CommonData.SongExportFile;
+
+            if (DataPath is null)
             {
                 MessageBox.Show(Error, "Song Cache Missing");
                 return false;
             }
             try
             {
-                CommonData.SongData[]? songData = JsonConvert.DeserializeObject<CommonData.SongData[]>(File.ReadAllText(CommonData.SongExportFile));
+                CommonData.SongData[]? songData = JsonConvert.DeserializeObject<CommonData.SongData[]>(File.ReadAllText(DataPath));
                 if (songData is null || songData.Length == 0)
                 {
                     MessageBox.Show(Error, "Song Cache Corrupt");
