@@ -10,7 +10,7 @@ namespace YargArchipelagoClient.Helpers
     {
         public static void SendPendingTrapOrFiller(ConnectionData Connection, ConfigData Config)
         {
-            if (Connection.CurrentlyPlaying is null) return;
+            if (Connection.IsCurrentlyPlayingSong(out _)) return;
             foreach(var Item in Connection.ReceivedStaticItems)
             {
                 if (!Item.Key.IsTrapOrFiller() || Item.Value < 1) continue;

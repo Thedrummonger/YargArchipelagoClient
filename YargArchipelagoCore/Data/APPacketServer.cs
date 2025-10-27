@@ -21,6 +21,8 @@ namespace YargArchipelagoClient.Data
         public event Action<bool>? ConnectionChanged;
         public event Action<string>? PacketServerClosed;
 
+        public bool IsConnected => currentWriter is not null;
+
         public APPipeServer(ConfigData config, ConnectionData connection)
         {
             Config = config;
@@ -74,6 +76,7 @@ namespace YargArchipelagoClient.Data
             server.ReadMode = PipeTransmissionMode.Message;
             ConnectionChanged?.Invoke(true);
 
+            SendClientStatusPacket();
             try
             {
                 while (!token.IsCancellationRequested)
@@ -112,7 +115,10 @@ namespace YargArchipelagoClient.Data
                     LogMessage?.Invoke(packet.Message);
 
                 if (packet.CurrentlyPlaying is not null)
+                {
+                    Connection.SetCurrentlyPlaying(packet.CurrentlyPlaying.song);
                     CurrentSongUpdated?.Invoke(packet.CurrentlyPlaying.song);
+                }
             }
             catch (Exception e)
             {
@@ -125,6 +131,18 @@ namespace YargArchipelagoClient.Data
             if (currentWriter is null) return;
             var json = JsonConvert.SerializeObject(packet, CommonData.Networking.PacketSerializeSettings) + "\n";
             await currentWriter.WriteAsync(json);
+        }
+
+        public void SendClientStatusPacket()
+        {
+            if (Connection is null || Config is null) return;
+            _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket
+            {
+                AvailableSongs = [.. Config.GetAllSongLocations().Where(x =>
+                    x.SongHash is not null &&
+                    x.Requirements is not null &&
+                    x.SongAvailableToPlay(Connection, Config)).Select(x => (x.SongHash!, x.Requirements!.Name))]
+            });
         }
 
         public void Stop() => cts.Cancel();

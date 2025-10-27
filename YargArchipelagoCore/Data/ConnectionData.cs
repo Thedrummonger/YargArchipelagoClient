@@ -1,10 +1,13 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
+using Archipelago.MultiClient.Net.MessageLog.Messages;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using TDMUtils;
+using YargArchipelagoCommon;
+using YargArchipelagoCore.Helpers;
 
 namespace YargArchipelagoClient.Data
 {
@@ -32,6 +35,8 @@ namespace YargArchipelagoClient.Data
 
         [JsonIgnore]
         private APPipeServer PacketServer;
+        [JsonIgnore]
+        public YargClientSyncHelper clientSyncHelper;
         public APPipeServer CreatePacketServer(ConfigData Config)
         {
             if (PacketServer is not null) throw new Exception("Packet server was already started!");
@@ -43,7 +48,7 @@ namespace YargArchipelagoClient.Data
             if (PacketServer is null) throw new Exception("Attempted to retrieve packet server before it was started!");
             return PacketServer;
         }
-        
+
         [JsonIgnore]
         public HashSet<int> ReceivedSongs { get; } = [];
         [JsonIgnore]
@@ -53,8 +58,17 @@ namespace YargArchipelagoClient.Data
         [JsonIgnore]
         public DeathLinkService? DeathLinkService { get; }
         [JsonIgnore]
-        public YargArchipelagoCommon.CommonData.SongData? CurrentlyPlaying = null;
+        private YargArchipelagoCommon.CommonData.SongData? CurrentlyPlaying = null;
+        [JsonIgnore]
+        public bool IsConnectedToYarg => PacketServer is not null && PacketServer.IsConnected;
 
+        public void SetCurrentlyPlaying(YargArchipelagoCommon.CommonData.SongData? song = null) => CurrentlyPlaying = song;
+        public YargArchipelagoCommon.CommonData.SongData? GetCurrentlyPlaying() => CurrentlyPlaying;
+        public bool IsCurrentlyPlayingSong(out YargArchipelagoCommon.CommonData.SongData? CurrentSong)
+        {
+            CurrentSong = CurrentlyPlaying;
+            return CurrentlyPlaying is not null;
+        }
         public void UpdateCheckedLocations()
         {
             foreach (var i in Session.Locations.AllLocationsChecked)
@@ -94,7 +108,6 @@ namespace YargArchipelagoClient.Data
             if (ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.Victory, out var v) && v > 0)
                 Session.SetGoalAchieved();
         }
-
         public string getSaveFileName() =>
             $"{Session.RoomState.Seed}_{SlotName}_{Session.Players.ActivePlayer.Slot}_{Session.Players.ActivePlayer.GetHashCode()}";
     }

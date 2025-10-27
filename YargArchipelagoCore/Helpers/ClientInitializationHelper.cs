@@ -1,9 +1,12 @@
-﻿using Newtonsoft.Json;
+﻿using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
+using Archipelago.MultiClient.Net.MessageLog.Messages;
+using Newtonsoft.Json;
 using System.Diagnostics;
 using TDMUtils;
 using YargArchipelagoClient.Data;
 using YargArchipelagoCommon;
 using YargArchipelagoCore.Data;
+using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
 
 namespace YargArchipelagoClient.Helpers
 {
@@ -126,6 +129,7 @@ namespace YargArchipelagoClient.Helpers
 
         }
 
+        static Archipelago.MultiClient.Net.Helpers.MessageLogHelper.MessageReceivedHandler? _chatHandler;
         public static bool ConnectSession(Func<ConnectionData?> CreateNewConnection, Func<ConfigData?> CreateNewConfig, Action<ConnectionData> ApplyListeners, out ConnectionData? Connection, out ConfigData? Config)
         {
             Connection = null;
@@ -150,14 +154,39 @@ namespace YargArchipelagoClient.Helpers
 
             ApplyListeners(Connection);
 
+            Connection.clientSyncHelper = new YargArchipelagoCore.Helpers.YargClientSyncHelper(Connection, Config);
+            Connection.clientSyncHelper.timer.Start();
+
+            var c = Connection;
+            var o = Config;
+            _chatHandler = new Archipelago.MultiClient.Net.Helpers.MessageLogHelper.MessageReceivedHandler(m => RelayChatToYARG(m, c, o));
+            Connection.GetSession().MessageLog.OnMessageReceived += _chatHandler;
+            Connection.GetSession().Items.ItemReceived += (_) => c.clientSyncHelper.ShouldUpdate = true;
+            Connection.GetSession().Locations.CheckedLocationsUpdated += (_) => c.clientSyncHelper.ShouldUpdate = true;
+
             return Config is not null && Connection is not null;
         }
-
         public static async Task DisconnectSession(ConnectionData Connection, ConfigData Config, Action<ConnectionData> RemoveListeners)
         {
+            Connection.clientSyncHelper?.timer?.Stop();
+            if (_chatHandler is not null)
+            {
+                Connection.GetSession().MessageLog.OnMessageReceived -= _chatHandler;
+                _chatHandler = null;
+            }
             RemoveListeners(Connection);
             try { Connection.GetPacketServer()?.Stop(); } catch { }
-            await Connection.GetSession().Socket.DisconnectAsync();
+            try { await Connection.GetSession().Socket.DisconnectAsync(); } catch { }
+        }
+        private static void RelayChatToYARG(LogMessage message, ConnectionData connection, ConfigData config)
+        {
+            if (message is ItemSendLogMessage ItemLog)
+            {
+                if (config.InGameItemLog == CommonData.ItemLog.All || (config.InGameItemLog == CommonData.ItemLog.ToMe && ItemLog.IsReceiverTheActivePlayer))
+                    _ = connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { Message = message.ToString() });
+            }
+            if (message is ChatLogMessage && config.InGameAPChat)
+                _ = connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { Message = message.ToString() });
         }
     }
 }

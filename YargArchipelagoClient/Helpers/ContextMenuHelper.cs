@@ -195,7 +195,7 @@ namespace YargArchipelagoClient.Helpers
 
             config.SaveConfigFile(connection);
             mainForm.SafeInvoke(mainForm.PrintSongs);
-            CheckLocationHelpers.SendAvailableSongUpdate(config, connection);
+            connection.GetPacketServer().SendClientStatusPacket();
         }
     }
     public static class ContextMenuHelper

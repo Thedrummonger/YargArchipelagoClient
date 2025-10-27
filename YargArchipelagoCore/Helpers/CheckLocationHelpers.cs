@@ -62,19 +62,7 @@ namespace YargArchipelagoClient.Helpers
                     Connection.GetSession().Say(i.GetSongDisplayName(Config!, true, true, true));
             }
             Connection!.GetSession().Locations.CompleteLocationChecks([.. Locations]);
-            SendAvailableSongUpdate(Config, Connection);
-        }
-
-        public static void SendAvailableSongUpdate(ConfigData Config, ConnectionData Connection)
-        {
-            if (Connection is null || Config is null) return;
-            _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket
-            {
-                AvailableSongs = [.. Config.GetAllSongLocations().Where(x => 
-                    x.SongHash is not null && 
-                    x.Requirements is not null && 
-                    x.SongAvailableToPlay(Connection, Config)).Select(x => (x.SongHash!, x.Requirements!.Name))]
-            });
+            Connection.GetPacketServer().SendClientStatusPacket();
         }
 
     }

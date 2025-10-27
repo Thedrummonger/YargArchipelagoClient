@@ -21,12 +21,7 @@ namespace YargArchipelagoClient
         private readonly SemaphoreSlim LogSignal = new(0);
         private readonly CancellationTokenSource LogCancellation = new();
 
-        private readonly System.Windows.Forms.Timer SyncTimer = new();
-
-        private bool UpdateData = false;
-
         public const string Title = "Yarg Archipelago Client";
-        public bool IsConnectedToYarg = false;
 
         public MainForm()
         {
@@ -49,22 +44,30 @@ namespace YargArchipelagoClient
                 this.Close();
                 return;
             }
-            UpdateData = true;
 
-            SyncTimerTick(sender, e);
-
-            SyncTimer.Interval = 200;
-            SyncTimer.Tick += SyncTimerTick;
-            SyncTimer.Start();
+            Connection!.clientSyncHelper.OnUpdateCallback += ClientSyncHelper_OnUpdateCallback;
+            Connection!.clientSyncHelper.APServerClosed += APServerClosed;
 
             Task.Run(ProcessLogQueueAsync);
+        }
 
-            UpdateClientTitle();
+        private void ClientSyncHelper_OnUpdateCallback()
+        {
+            if (InvokeRequired)
+                BeginInvoke((Action)(() => ClientSyncHelper_OnUpdateCallback()));
+            else
+            {
+                Debug.WriteLine("Hello!");
+                UpdateClientTitle();
+                PrintSongs();
+                fame0ToolStripMenuItem.Text = $"Fame: {Connection.GetCurrentFame()} / {Config.FamePointsNeeded}";
+            }
         }
 
         private async void ResetConnection(object sender, EventArgs e)
         {
-            SyncTimer.Stop();
+            Connection!.clientSyncHelper.OnUpdateCallback -= ClientSyncHelper_OnUpdateCallback;
+            Connection!.clientSyncHelper.APServerClosed -= APServerClosed;
             await ClientInitializationHelper.DisconnectSession(Connection, Config, RemoveConnectionListers);
             Connection = null;
             Config = null;
@@ -73,11 +76,8 @@ namespace YargArchipelagoClient
                 this.Close();
                 return;
             }
-            UpdateData = true;
-            SyncTimerTick(sender, e);
-            SyncTimer.Start();
-            CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
-            UpdateClientTitle();
+            Connection!.clientSyncHelper.OnUpdateCallback += ClientSyncHelper_OnUpdateCallback;
+            Connection!.clientSyncHelper.APServerClosed += APServerClosed;
         }
 
         private ConnectionData? NewConnectionCreator()
@@ -108,9 +108,7 @@ namespace YargArchipelagoClient
             PacketServer.PacketServerClosed += PackerServerClosed;
 
             var APSession = connection!.GetSession();
-            APSession.Items.ItemReceived += Items_ItemReceived;
             APSession.MessageLog.OnMessageReceived += MessageLog_OnMessageReceived;
-            APSession.Locations.CheckedLocationsUpdated += Locations_CheckedLocationsUpdated;
             connection.DeathLinkService!.OnDeathLinkReceived += DeathLinkService_OnDeathLinkReceived;
         }
         private void RemoveConnectionListers(ConnectionData connection)
@@ -122,23 +120,31 @@ namespace YargArchipelagoClient
             PacketServer.PacketServerClosed -= PackerServerClosed;
 
             var APSession = connection!.GetSession();
-            APSession.Items.ItemReceived -= Items_ItemReceived;
             APSession.MessageLog.OnMessageReceived -= MessageLog_OnMessageReceived;
-            APSession.Locations.CheckedLocationsUpdated -= Locations_CheckedLocationsUpdated;
             connection.DeathLinkService!.OnDeathLinkReceived -= DeathLinkService_OnDeathLinkReceived;
         }
 
+        public void WriteToLog(string message)
+        {
+            LogQueue.Enqueue(new ColoredString(message));
+            LogSignal.Release();
+        }
+        private void UpdateCurrentlyPlaying(CommonData.SongData? Song) => UpdateClientTitle();
+        public void UpdateConnected(bool Connected) => UpdateClientTitle();
         public void PackerServerClosed(string obj)
         {
-            SyncTimer.Stop();
+            Connection.clientSyncHelper?.timer.Stop();
             MessageBox.Show($"The YARG connection service was stopped unexpectedly, the application will close\n\n{obj}");
-            this.Close();
-        }
-        private void APServerClosed(string obj)
-        {
-            SyncTimer.Stop();
-            MessageBox.Show($"The Archipelago connection service was stopped unexpectedly, the application will close\n\n{obj}");
             ResetConnection(this, null);
+        }
+        private void MessageLog_OnMessageReceived(LogMessage message)
+        {
+            var formattedMessage = new ColoredString();
+            foreach (var part in message.Parts)
+                formattedMessage.AddText(part.Text, part.Color.ConvertToSystemColor(), false);
+
+            LogQueue.Enqueue(formattedMessage);
+            LogSignal.Release();
         }
 
         private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink)
@@ -161,10 +167,10 @@ namespace YargArchipelagoClient
         {
             string CurrentTitle = Title;
 
-            yARGConnectedToolStripMenuItem.Text = $"YARG Connected: {IsConnectedToYarg}";
+            yARGConnectedToolStripMenuItem.Text = $"YARG Connected: {Connection.IsConnectedToYarg}";
             currentSongToolStripMenuItem.Text = "Current Song: ";
-            if (Connection.CurrentlyPlaying is not null)
-                currentSongToolStripMenuItem.Text += $" {Connection.CurrentlyPlaying.GetSongDisplayName()}";
+            if (Connection.IsCurrentlyPlayingSong(out var CurSong))
+                currentSongToolStripMenuItem.Text += $" {CurSong!.GetSongDisplayName()}";
             else
                 currentSongToolStripMenuItem.Text += $" None";
 
@@ -172,34 +178,16 @@ namespace YargArchipelagoClient
 
             this.Text = CurrentTitle;
         }
-        public void UpdateCurrentlyPlaying(CommonData.SongData? Song)
+        private void APServerClosed(string obj)
         {
-            if (Connection is null) return;
-            Connection.CurrentlyPlaying = Song;
-            UpdateClientTitle();
-        }
-        public void UpdateConnected(bool Connected)
-        {
-            IsConnectedToYarg = Connected;
-            UpdateClientTitle();
-            if (Connected)
-                CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
-        }
-
-        private void SyncTimerTick(object? sender, EventArgs e)
-        {
-            if (Connection is null || Config is null)
-                return;
-            if (!Connection.GetSession().Socket.Connected)
-                APServerClosed("AP server connection lost");
-            if (!UpdateData) return;
-            UpdateData = false;
-            Connection.UpdateCheckedLocations();
-            Connection.UpdateReceivedItems();
-            TrapFillerHelper.SendPendingTrapOrFiller(Connection, Config);
-            PrintSongs();
-            CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
-            fame0ToolStripMenuItem.Text = $"Fame: {Connection.GetCurrentFame()} / {Config.FamePointsNeeded}";
+            if (InvokeRequired)
+                BeginInvoke((Action)(() => APServerClosed(obj)));
+            else
+            {
+                Connection.clientSyncHelper?.timer.Stop();
+                MessageBox.Show($"The Archipelago connection service was stopped unexpectedly, the application will close\n\n{obj}");
+                ResetConnection(this, null);
+            }
         }
 
         private void lvSongList_Resize(object sender, EventArgs e) =>
@@ -212,31 +200,6 @@ namespace YargArchipelagoClient
             var songLocations = lvSongList.SelectedItems.Cast<ListViewItem>().Select(x => x.Tag).OfType<SongLocation>();
             if (!songLocations.Any()) return;
             WinFormCheckLocationHelpers.CheckLocations(Config!, Connection, songLocations, ModifierKeys == Keys.Control);
-        }
-
-
-        private void Locations_CheckedLocationsUpdated(System.Collections.ObjectModel.ReadOnlyCollection<long> newCheckedLocations) =>
-            UpdateData = true;
-
-        private void Items_ItemReceived(Archipelago.MultiClient.Net.Helpers.ReceivedItemsHelper helper) =>
-            UpdateData = true;
-
-        private void MessageLog_OnMessageReceived(LogMessage message)
-        {
-            var formattedMessage = new ColoredString();
-            foreach (var part in message.Parts)
-                formattedMessage.AddText(part.Text, part.Color.ConvertToSystemColor(), false);
-
-            if (message is ItemSendLogMessage ItemLog)
-            {
-                if (Config.InGameItemLog == CommonData.ItemLog.All || (Config.InGameItemLog == CommonData.ItemLog.ToMe && ItemLog.IsReceiverTheActivePlayer))
-                    _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { Message = message.ToString() });
-            }
-            if (message is ChatLogMessage && Config.InGameAPChat)
-                _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { Message = message.ToString() });
-
-            LogQueue.Enqueue(formattedMessage);
-            LogSignal.Release();
         }
 
         private async Task ProcessLogQueueAsync()
@@ -254,11 +217,6 @@ namespace YargArchipelagoClient
             }
         }
 
-        public void WriteToLog(string message)
-        {
-            LogQueue.Enqueue(new ColoredString(message));
-            LogSignal.Release();
-        }
         public void PrintSongs()
         {
             lvSongList.SafeInvoke(lvSongList.Items.Clear);
@@ -367,12 +325,13 @@ namespace YargArchipelagoClient
             OptionDropDownItemChanged(sender, e);
         }
 
-        private void updateAvailableSongsToolStripMenuItem_Click(object sender, EventArgs e) => CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
+        private void updateAvailableSongsToolStripMenuItem_Click(object sender, EventArgs e) => Connection.GetPacketServer().SendClientStatusPacket();
 
         private void rescanSongListToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SongImporter.RescanSongs(Config, Connection);
             PrintSongs();
         }
+
     }
 }
