@@ -23,7 +23,7 @@ namespace YargArchipelagoCLI
             while (!ConsoleExiting)
             {
                 Console.Clear();
-                Console.WriteLine("S: Print Available Songs\nEnd: Exit Program");
+                Console.WriteLine("S: Print Available Songs\nF: Use Filler Item\nEnd: Exit Program");
                 var key = Console.ReadKey();
                 switch (key.Key)
                 {
@@ -33,7 +33,48 @@ namespace YargArchipelagoCLI
                     case ConsoleKey.S:
                         PrintSongs();
                         break;
+                    case ConsoleKey.F:
+                        UseFillerItem();
+                        break;
                 }
+            }
+        }
+
+        private static void UseFillerItem()
+        {
+            Console.Clear();
+            int RandomSwapsTotal = connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.SwapRandom, out int rst) ? rst : 0;
+            int RandomSwapsUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.SwapRandom, out int rsu) ? rsu : 0;
+            int RandomSwapsAvailable = RandomSwapsTotal - RandomSwapsUsed;
+
+            int SwapsTotal = connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.SwapPick, out int st) ? st : 0;
+            int SwapsUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.SwapPick, out int su) ? su : 0;
+            int SwapsAvailable = SwapsTotal - SwapsUsed;
+
+            int LowerDiffTotal = connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.LowerDifficulty, out int lt) ? lt : 0;
+            int LowerDiffUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.LowerDifficulty, out int lu) ? lu : 0;
+            int LowerDiffAvailable = LowerDiffTotal - LowerDiffUsed;
+
+            Console.WriteLine($"P: Use Swap Song (Pick) {SwapsAvailable}");
+            Console.WriteLine($"R: Use Swap Song (Random) {RandomSwapsAvailable}");
+            Console.WriteLine($"D: Lower Minimum Difficulty {LowerDiffAvailable}");
+            Console.WriteLine($"S: Lower Score Requirement {LowerDiffAvailable}");
+            Console.WriteLine("BackSpace: Go Back");
+
+            var Key = Console.ReadKey();
+            switch (Key.Key)
+            {
+                case ConsoleKey.Backspace:
+                    return;
+                case ConsoleKey.P:
+                    //UsePick();
+                    break;
+                case ConsoleKey.R:
+                    //UsePick();
+                    break;
+                case ConsoleKey.D:
+                    //UsePick();
+                    break;
             }
         }
 
@@ -70,9 +111,6 @@ namespace YargArchipelagoCLI
             return null;
         }
 
-        static void ApplyUIListeners(ConnectionData connectionData)
-        {
-
-        }
+        static void ApplyUIListeners(ConnectionData connectionData) { }
     }
 }
