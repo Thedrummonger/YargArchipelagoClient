@@ -17,8 +17,8 @@ namespace YargArchipelagoClient.Data
         private readonly ConnectionData Connection;
 
         public event Action<string>? LogMessage;
-        public event Action<CommonData.SongData>? CurrentSongUpdated;
-        public event Action<bool>? ConnectionChanged;
+        public event Action? CurrentSongUpdated;
+        public event Action? ConnectionChanged;
         public event Action<string>? PacketServerClosed;
 
         public bool IsConnected => currentWriter is not null;
@@ -74,7 +74,7 @@ namespace YargArchipelagoClient.Data
 
             currentWriter = writer;
             server.ReadMode = PipeTransmissionMode.Message;
-            ConnectionChanged?.Invoke(true);
+            ConnectionChanged?.Invoke();
 
             SendClientStatusPacket();
             try
@@ -89,7 +89,7 @@ namespace YargArchipelagoClient.Data
             }
             finally
             {
-                ConnectionChanged?.Invoke(false);
+                ConnectionChanged?.Invoke();
                 LogMessage?.Invoke("YARG game client disconnected.");
                 currentWriter = null;
             }
@@ -117,7 +117,7 @@ namespace YargArchipelagoClient.Data
                 if (packet.CurrentlyPlaying is not null)
                 {
                     Connection.SetCurrentlyPlaying(packet.CurrentlyPlaying.song);
-                    CurrentSongUpdated?.Invoke(packet.CurrentlyPlaying.song);
+                    CurrentSongUpdated?.Invoke();
                 }
             }
             catch (Exception e)

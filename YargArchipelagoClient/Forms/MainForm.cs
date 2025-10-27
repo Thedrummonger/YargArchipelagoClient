@@ -57,7 +57,6 @@ namespace YargArchipelagoClient
                 BeginInvoke((Action)(() => ClientSyncHelper_OnUpdateCallback()));
             else
             {
-                Debug.WriteLine("Hello!");
                 UpdateClientTitle();
                 PrintSongs();
                 fame0ToolStripMenuItem.Text = $"Fame: {Connection.GetCurrentFame()} / {Config.FamePointsNeeded}";
@@ -103,9 +102,9 @@ namespace YargArchipelagoClient
         {
             var PacketServer = connection.GetPacketServer();
             PacketServer.LogMessage += WriteToLog;
-            PacketServer.CurrentSongUpdated += UpdateCurrentlyPlaying;
-            PacketServer.ConnectionChanged += UpdateConnected;
             PacketServer.PacketServerClosed += PackerServerClosed;
+            PacketServer.CurrentSongUpdated += UpdateClientTitle;
+            PacketServer.ConnectionChanged += UpdateClientTitle;
 
             var APSession = connection!.GetSession();
             APSession.MessageLog.OnMessageReceived += MessageLog_OnMessageReceived;
@@ -115,9 +114,9 @@ namespace YargArchipelagoClient
         {
             var PacketServer = connection.GetPacketServer();
             PacketServer.LogMessage -= WriteToLog;
-            PacketServer.CurrentSongUpdated -= UpdateCurrentlyPlaying;
-            PacketServer.ConnectionChanged -= UpdateConnected;
             PacketServer.PacketServerClosed -= PackerServerClosed;
+            PacketServer.CurrentSongUpdated -= UpdateClientTitle;
+            PacketServer.ConnectionChanged -= UpdateClientTitle;
 
             var APSession = connection!.GetSession();
             APSession.MessageLog.OnMessageReceived -= MessageLog_OnMessageReceived;
@@ -129,8 +128,6 @@ namespace YargArchipelagoClient
             LogQueue.Enqueue(new ColoredString(message));
             LogSignal.Release();
         }
-        private void UpdateCurrentlyPlaying(CommonData.SongData? Song) => UpdateClientTitle();
-        public void UpdateConnected(bool Connected) => UpdateClientTitle();
         public void PackerServerClosed(string obj)
         {
             Connection.clientSyncHelper?.timer.Stop();
