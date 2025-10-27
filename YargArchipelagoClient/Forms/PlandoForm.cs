@@ -3,6 +3,7 @@ using TDMUtils;
 using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Helpers;
 using YargArchipelagoCommon;
+using YargArchipelagoCore.Data;
 
 namespace YargArchipelagoClient.Forms
 {
@@ -10,19 +11,6 @@ namespace YargArchipelagoClient.Forms
     {
         ConfigForm Parent;
         public Dictionary<int, PlandoData> PlandoSongData { get; set; }
-
-        public class PlandoData
-        {
-            public int SongNum { get; set; }
-            public bool PoolPlandoEnabled { get; set; }
-            public string? SongPool { get; set; }
-            public bool SongPlandoEnabled { get; set; }
-            public string? SongHash { get; set; }
-
-            public bool HasValidPoolPlando => PoolPlandoEnabled && SongPool is not null;
-            public bool HasValidSongPlando => SongPlandoEnabled && SongHash is not null;
-            public bool HasValidPlando => HasValidPoolPlando || HasValidSongPlando;
-        }
 
         public PlandoForm(ConfigForm parent, Dictionary<int, PlandoData> Plando)
         {

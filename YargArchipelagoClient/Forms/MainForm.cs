@@ -6,6 +6,7 @@ using TDMUtils;
 using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Helpers;
 using YargArchipelagoCommon;
+using YargArchipelagoCore.Helpers;
 using static YargArchipelagoClient.Data.ArchipelagoColorHelper;
 using static YargArchipelagoClient.Helpers.WinFormHelpers;
 
@@ -27,11 +28,10 @@ namespace YargArchipelagoClient
         public const string Title = "Yarg Archipelago Client";
         public bool IsConnectedToYarg = false;
 
-        public static bool DebugPrintAllSongs = false;
-
         public MainForm()
         {
             InitializeComponent();
+            SetMultiPlatformDialogBoxAction();
             lvSongList_Resize(this, new());
 
             settingsToolStripMenuItem.DropDown.Closing += (_, e) =>
@@ -40,18 +40,39 @@ namespace YargArchipelagoClient
                     e.Cancel = true;
             };
         }
+
+
         private void MainForm_Shown(object sender, EventArgs e)
         {
-            if (!ConnectToAP())
+            if (!ConnectToAP(NewConnectionCreator, NewConfigCreator))
                 return;
             ConnectPipeServer();
             CreateAppQueues(sender, e);
             UpdateClientTitle();
         }
 
-        private bool ConnectToAP()
+        private ConnectionData? NewConnectionCreator()
         {
-            if (!ClientInitializationHelper.ConnectToServer(out var connectResult))
+            var CForm = new ConnectionForm();
+            var dialog = CForm.ShowDialog();
+            if (dialog != DialogResult.OK)
+                return null;
+
+            return CForm.Connection;
+        }
+
+        private ConfigData? NewConfigCreator()
+        {
+            var configForm = new ConfigForm(Connection!);
+            var Dialog = configForm.ShowDialog();
+            if (Dialog != DialogResult.OK)
+                return null;
+            return configForm.data;
+        }
+
+        private bool ConnectToAP(Func<ConnectionData?> CreateNewConnection, Func<ConfigData?> CreateNewConfig)
+        {
+            if (!ClientInitializationHelper.ConnectToServer(out var connectResult, CreateNewConnection))
             {
                 Close();
                 return false;
@@ -59,7 +80,7 @@ namespace YargArchipelagoClient
             Connection = connectResult!;
             File.WriteAllText(ConnectionForm.ConnectionCachePath, Connection.ToFormattedJson());
 
-            if (!ClientInitializationHelper.GetConfig(Connection, out var configResult))
+            if (!ClientInitializationHelper.GetConfig(Connection, out var configResult, CreateNewConfig))
             {
                 Close();
                 return false;
@@ -87,7 +108,7 @@ namespace YargArchipelagoClient
             DisconnectPipeServer();
             Connection = null;
             Config = null;
-            ConnectToAP();
+            ConnectToAP(NewConnectionCreator, NewConfigCreator);
             ConnectPipeServer();
             UpdateClientTitle();
             SyncTimer.Start();
@@ -97,13 +118,19 @@ namespace YargArchipelagoClient
         {
             UpdateData = true;
             var PacketServer = Connection!.CreatePacketServer(Config);
-            PacketServer.TogglePacketServerListeners(this, true);
+            PacketServer.LogMessage += WriteToLog;
+            PacketServer.CurrentSongUpdated += UpdateCurrentlyPlaying;
+            PacketServer.ConnectionChanged += UpdateConnected;
+            PacketServer.PacketServerClosed += APServerClosed;
             _ = PacketServer.StartAsync();
         }
         public void DisconnectPipeServer()
         {
             var PacketServer = Connection!.GetPacketServer();
-            PacketServer.TogglePacketServerListeners(this, false);
+            PacketServer.LogMessage -= WriteToLog;
+            PacketServer.CurrentSongUpdated -= UpdateCurrentlyPlaying;
+            PacketServer.ConnectionChanged -= UpdateConnected;
+            PacketServer.PacketServerClosed -= APServerClosed;
             PacketServer.Stop();
         }
 
@@ -200,7 +227,7 @@ namespace YargArchipelagoClient
             if (lvSongList.SelectedItems == null || lvSongList.SelectedItems.Count == 0) return;
             var songLocations = lvSongList.SelectedItems.Cast<ListViewItem>().Select(x => x.Tag).OfType<SongLocation>();
             if (!songLocations.Any()) return;
-            CheckLocationHelpers.CheckLocations(Config!, Connection, songLocations, ModifierKeys == Keys.Control);
+            WinFormCheckLocationHelpers.CheckLocations(Config!, Connection, songLocations, ModifierKeys == Keys.Control);
         }
 
 
@@ -253,9 +280,9 @@ namespace YargArchipelagoClient
             lvSongList.SafeInvoke(lvSongList.Items.Clear);
 
             var GoalSongAvailable = Config.GoalSong.SongAvailableToPlay(Connection, Config);
-            if (GoalSongAvailable || DebugPrintAllSongs)
+            if (GoalSongAvailable || Config.DebugPrintAllSongs)
             {
-                string Debug = DebugPrintAllSongs ? !Config.GoalSong.HasUncheckedLocations(Connection) ? "@ " : (GoalSongAvailable ? "O " : "X ") : "";
+                string Debug = Config.DebugPrintAllSongs ? !Config.GoalSong.HasUncheckedLocations(Connection) ? "@ " : (GoalSongAvailable ? "O " : "X ") : "";
                 ListViewItem goalItem = new(Config.GoalSong.SongNumber.ToString()) { Tag = Config!.GoalSong };
                 goalItem.SubItems.Add($"{Debug}Goal Song: {Config.GoalSong.GetSongDisplayName(Config!)} [{Config.GoalSong.Requirements!.Name}]");
                 lvSongList.SafeInvoke(() => lvSongList.Items.Add(goalItem));
@@ -264,12 +291,12 @@ namespace YargArchipelagoClient
             foreach (var i in Config!.ApLocationData.OrderBy(x => x.Key))
             {
                 var SongAvailable = i.Value.SongAvailableToPlay(Connection, Config);
-                if (!SongAvailable && !DebugPrintAllSongs)
+                if (!SongAvailable && !Config.DebugPrintAllSongs)
                     continue;
                 if (!string.IsNullOrWhiteSpace(txtFilter.Text) && !i.Value.GetSongDisplayName(Config!).Contains(txtFilter.Text))
                     continue;
 
-                string Debug = DebugPrintAllSongs ? !i.Value.HasUncheckedLocations(Connection) ? "@ " : SongAvailable ? "O " : "X " : "";
+                string Debug = Config.DebugPrintAllSongs ? !i.Value.HasUncheckedLocations(Connection) ? "@ " : SongAvailable ? "O " : "X " : "";
                 ListViewItem item = new(i.Value.SongNumber.ToString()) { Tag = i.Value };
                 item.SubItems.Add($"{Debug}{i.Value.GetSongDisplayName(Config!)} [{i.Value.Requirements!.Name}]");
 

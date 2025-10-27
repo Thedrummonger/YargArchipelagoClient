@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using YargArchipelagoClient.Data;
+using YargArchipelagoCore.Helpers;
 
 namespace YargArchipelagoClient.Helpers
 {
@@ -94,6 +95,28 @@ namespace YargArchipelagoClient.Helpers
             }
 
             if (wasReadOnly) rtb.ReadOnly = true;
+        }
+
+        public static void SetMultiPlatformDialogBoxAction()
+        {
+            MultiplatformHelpers.MessageBox.ShowAction = (text, title, buttons, icon) => DialogToMulti(MessageBox.Show(text, title, ButtonsFromMulti(buttons), IconFromMulti(icon)));
+        }
+        private static MessageBoxButtons ButtonsFromMulti(MultiplatformHelpers.MessageBoxButtons? boxButtons)
+        {
+            if (boxButtons is null) return MessageBoxButtons.OK;
+            int Index = (int)boxButtons;
+            return (MessageBoxButtons)Index;
+        }
+        private static MessageBoxIcon IconFromMulti(MultiplatformHelpers.MessageBoxIcon? boxButtons)
+        {
+            if (boxButtons is null) return MessageBoxIcon.None;
+            int Index = (int)boxButtons;
+            return (MessageBoxIcon)Index;
+        }
+        private static MultiplatformHelpers.DialogResult DialogToMulti(DialogResult boxButtons)
+        {
+            int Index = (int)boxButtons;
+            return (MultiplatformHelpers.DialogResult)Index;
         }
     }
 }

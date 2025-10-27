@@ -2,27 +2,21 @@
 using System.Diagnostics;
 using TDMUtils;
 using YargArchipelagoClient.Data;
-using static YargArchipelagoClient.Forms.PlandoForm;
+using YargArchipelagoCore.Data;
 
 namespace YargArchipelagoClient.Helpers
 {
-    class ClientInitializationHelper
+    public class ClientInitializationHelper
     {
-        public static bool ConnectToServer(out ConnectionData? connection)
+        public static bool ConnectToServer(out ConnectionData? connection, Func<ConnectionData?> CreateNewConnection)
         {
-            connection = null;
-            var CForm = new ConnectionForm();
-            var dialog = CForm.ShowDialog();
-            if (dialog != DialogResult.OK)
-                return false;
-
-            connection = CForm.Connection;
-            return CForm.Connection is not null &&
-                CForm.Connection.GetSession() is not null &&
-                CForm.Connection.GetSession()!.Socket.Connected;
+            connection = CreateNewConnection();
+            return connection is not null &&
+                connection.GetSession() is not null &&
+                connection.GetSession()!.Socket.Connected;
         }
 
-        public static bool GetConfig(ConnectionData Connection, out ConfigData? configData)
+        public static bool GetConfig(ConnectionData Connection, out ConfigData? configData, Func<ConfigData?> CreateNewConfig)
         {
             configData = null;
             var SeedDir = ConnectionData.GetSeedPath();
@@ -37,11 +31,7 @@ namespace YargArchipelagoClient.Helpers
             }
             if (configData is null)
             {
-                var configForm = new ConfigForm(Connection!);
-                var Dialog = configForm.ShowDialog();
-                if (Dialog != DialogResult.OK)
-                    return false;
-                configData = configForm.data;
+                configData = CreateNewConfig();
                 if (configData is not null)
                     ReadSlotData(Connection, configData);
             }

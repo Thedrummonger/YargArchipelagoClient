@@ -6,6 +6,7 @@ using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Forms;
 using YargArchipelagoClient.Helpers;
 using YargArchipelagoCommon;
+using YargArchipelagoCore.Data;
 using static YargArchipelagoClient.Forms.PlandoForm;
 using static YargArchipelagoCommon.CommonData;
 

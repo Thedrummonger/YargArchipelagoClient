@@ -31,6 +31,9 @@ namespace YargArchipelagoClient.Data
 
         public int FamePointsNeeded = 0;
 
+        [Newtonsoft.Json.JsonIgnore]
+        public bool DebugPrintAllSongs = false;
+
         /// <summary>
         /// This value tracks if deathlink was enabled in the YAML. it will never change
         /// </summary>

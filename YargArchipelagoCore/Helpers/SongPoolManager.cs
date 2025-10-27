@@ -1,6 +1,6 @@
 ﻿using TDMUtils;
 using YargArchipelagoClient.Data;
-using static YargArchipelagoClient.Forms.PlandoForm;
+using YargArchipelagoCore.Data;
 using static YargArchipelagoCommon.CommonData;
 
 namespace YargArchipelagoClient.Helpers

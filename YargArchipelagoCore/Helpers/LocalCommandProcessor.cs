@@ -9,7 +9,7 @@ using YargArchipelagoCommon;
 
 namespace YargArchipelagoClient.Helpers
 {
-    class LocalCommandProcessor
+    public class LocalCommandProcessor
     {
         public static void ProcessCommand(ConfigData Config, ConnectionData Connection, Action<string> Log, Action RefreshSongList, string v)
         {
@@ -31,8 +31,8 @@ namespace YargArchipelagoClient.Helpers
                     });
                     break;
                 case "songs":
-                    Log($"Showing all songs {!MainForm.DebugPrintAllSongs}");
-                    MainForm.DebugPrintAllSongs = !MainForm.DebugPrintAllSongs;
+                    Log($"Showing all songs {!Config.DebugPrintAllSongs}");
+                    Config.DebugPrintAllSongs = !Config.DebugPrintAllSongs;
                     RefreshSongList();
                     break;
                 default:

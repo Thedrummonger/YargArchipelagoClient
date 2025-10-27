@@ -1,6 +1,6 @@
 ﻿namespace YargArchipelagoClient.Helpers
 {
-    internal class NetworkHelpers
+    public class NetworkHelpers
     {
         /// <summary>
         /// Parses an IP address string, extracting the IP and port if specified.
