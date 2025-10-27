@@ -9,6 +9,7 @@ namespace YargArchipelagoCommon
 {
     public class CommonData
     {
+        public static string ConnectionCachePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "connection.json");
 
         public static string DataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData", "LocalLow", "YARC", "YARG", "Archipelago");
         public static string SongExportFile = Path.Combine(DataFolder, "SongExport.json");

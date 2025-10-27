@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using TDMUtils;
 using YargArchipelagoClient.Data;
+using YargArchipelagoCommon;
 using YargArchipelagoCore.Data;
 
 namespace YargArchipelagoClient.Helpers
@@ -123,6 +124,40 @@ namespace YargArchipelagoClient.Helpers
 
             return true;
 
+        }
+
+        public static bool ConnectSession(Func<ConnectionData?> CreateNewConnection, Func<ConfigData?> CreateNewConfig, Action<ConnectionData> ApplyListeners, out ConnectionData? Connection, out ConfigData? Config)
+        {
+            Connection = null;
+            Config = null;
+            if (!ConnectToServer(out var connectResult, CreateNewConnection))
+                return false;
+            Connection = connectResult!;
+            File.WriteAllText(CommonData.ConnectionCachePath, Connection.ToFormattedJson());
+
+            if (!GetConfig(Connection, out var configResult, CreateNewConfig))
+                return false;
+            Config = configResult!;
+            Config.SaveConfigFile(Connection);
+
+            Debug.WriteLine($"The Following Songs were not valid for any profile in this config\n\n{Config.GetUnusableSongs().Select(x => x.GetSongDisplayName()).ToFormattedJson()}");
+
+            if (Config.ServerDeathLink)
+                Connection.DeathLinkService?.EnableDeathLink();
+
+            var PacketServer = Connection!.CreatePacketServer(Config);
+            _ = PacketServer.StartAsync();
+
+            ApplyListeners(Connection);
+
+            return Config is not null && Connection is not null;
+        }
+
+        public static async Task DisconnectSession(ConnectionData Connection, ConfigData Config, Action<ConnectionData> RemoveListeners)
+        {
+            RemoveListeners(Connection);
+            try { Connection.GetPacketServer()?.Stop(); } catch { }
+            await Connection.GetSession().Socket.DisconnectAsync();
         }
     }
 }

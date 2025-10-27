@@ -274,7 +274,7 @@ namespace YargArchipelagoClient
             changeServerToolStripMenuItem.Name = "changeServerToolStripMenuItem";
             changeServerToolStripMenuItem.Size = new Size(198, 22);
             changeServerToolStripMenuItem.Text = "Disconnect from AP";
-            changeServerToolStripMenuItem.Click += DisconnectFromAP;
+            changeServerToolStripMenuItem.Click += ResetConnection;
             // 
             // fame0ToolStripMenuItem
             // 

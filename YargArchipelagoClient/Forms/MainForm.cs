@@ -44,10 +44,39 @@ namespace YargArchipelagoClient
 
         private void MainForm_Shown(object sender, EventArgs e)
         {
-            if (!ConnectToAP(NewConnectionCreator, NewConfigCreator))
+            if (!ClientInitializationHelper.ConnectSession(NewConnectionCreator, NewConfigCreator, ApplyConnectionListeners, out Connection, out Config))
+            {
+                this.Close();
                 return;
-            ConnectPipeServer();
-            CreateAppQueues(sender, e);
+            }
+            UpdateData = true;
+
+            SyncTimerTick(sender, e);
+
+            SyncTimer.Interval = 200;
+            SyncTimer.Tick += SyncTimerTick;
+            SyncTimer.Start();
+
+            Task.Run(ProcessLogQueueAsync);
+
+            UpdateClientTitle();
+        }
+
+        private async void ResetConnection(object sender, EventArgs e)
+        {
+            SyncTimer.Stop();
+            await ClientInitializationHelper.DisconnectSession(Connection, Config, RemoveConnectionListers);
+            Connection = null;
+            Config = null;
+            if (!ClientInitializationHelper.ConnectSession(NewConnectionCreator, NewConfigCreator, ApplyConnectionListeners, out Connection!, out Config!))
+            {
+                this.Close();
+                return;
+            }
+            UpdateData = true;
+            SyncTimerTick(sender, e);
+            SyncTimer.Start();
+            CheckLocationHelpers.SendAvailableSongUpdate(Config, Connection);
             UpdateClientTitle();
         }
 
@@ -70,79 +99,33 @@ namespace YargArchipelagoClient
             return configForm.data;
         }
 
-        private bool ConnectToAP(Func<ConnectionData?> CreateNewConnection, Func<ConfigData?> CreateNewConfig)
+        private void ApplyConnectionListeners(ConnectionData connection)
         {
-            if (!ClientInitializationHelper.ConnectToServer(out var connectResult, CreateNewConnection))
-            {
-                Close();
-                return false;
-            }
-            Connection = connectResult!;
-            File.WriteAllText(ConnectionForm.ConnectionCachePath, Connection.ToFormattedJson());
-
-            if (!ClientInitializationHelper.GetConfig(Connection, out var configResult, CreateNewConfig))
-            {
-                Close();
-                return false;
-            }
-            Config = configResult!;
-            Config.SaveConfigFile(Connection);
-
-            Debug.WriteLine($"The Following Songs were not valid for any profile in this config\n\n{Config.GetUnusableSongs().Select(x => x.GetSongDisplayName()).ToFormattedJson()}");
-
-            if (Config.ServerDeathLink)
-                Connection.DeathLinkService?.EnableDeathLink();
-            Connection!.GetSession().Items.ItemReceived += Items_ItemReceived;
-            Connection!.GetSession().MessageLog.OnMessageReceived += MessageLog_OnMessageReceived;
-            Connection!.GetSession().Locations.CheckedLocationsUpdated += Locations_CheckedLocationsUpdated;
-            Connection.DeathLinkService!.OnDeathLinkReceived += DeathLinkService_OnDeathLinkReceived;
-
-            aPServerToolStripMenuItem.Text = $"AP Server: {Connection.SlotName}@{Connection.Address}";
-            return true;
-        }
-
-        private async void DisconnectFromAP(object sender, EventArgs e)
-        {
-            SyncTimer.Stop();
-            try { await Connection!.GetSession().Socket.DisconnectAsync(); } catch { }
-            DisconnectPipeServer();
-            Connection = null;
-            Config = null;
-            ConnectToAP(NewConnectionCreator, NewConfigCreator);
-            ConnectPipeServer();
-            UpdateClientTitle();
-            SyncTimer.Start();
-        }
-
-        public void ConnectPipeServer()
-        {
-            UpdateData = true;
-            var PacketServer = Connection!.CreatePacketServer(Config);
+            var PacketServer = connection.GetPacketServer();
             PacketServer.LogMessage += WriteToLog;
             PacketServer.CurrentSongUpdated += UpdateCurrentlyPlaying;
             PacketServer.ConnectionChanged += UpdateConnected;
-            PacketServer.PacketServerClosed += APServerClosed;
-            _ = PacketServer.StartAsync();
+            PacketServer.PacketServerClosed += PackerServerClosed;
+
+            var APSession = connection!.GetSession();
+            APSession.Items.ItemReceived += Items_ItemReceived;
+            APSession.MessageLog.OnMessageReceived += MessageLog_OnMessageReceived;
+            APSession.Locations.CheckedLocationsUpdated += Locations_CheckedLocationsUpdated;
+            connection.DeathLinkService!.OnDeathLinkReceived += DeathLinkService_OnDeathLinkReceived;
         }
-        public void DisconnectPipeServer()
+        private void RemoveConnectionListers(ConnectionData connection)
         {
-            var PacketServer = Connection!.GetPacketServer();
+            var PacketServer = connection.GetPacketServer();
             PacketServer.LogMessage -= WriteToLog;
             PacketServer.CurrentSongUpdated -= UpdateCurrentlyPlaying;
             PacketServer.ConnectionChanged -= UpdateConnected;
-            PacketServer.PacketServerClosed -= APServerClosed;
-            PacketServer.Stop();
-        }
+            PacketServer.PacketServerClosed -= PackerServerClosed;
 
-        public void CreateAppQueues(object sender, EventArgs e)
-        {
-            SyncTimerTick(sender, e);
-
-            SyncTimer.Interval = 200;
-            SyncTimer.Tick += SyncTimerTick;
-            SyncTimer.Start();
-
-            Task.Run(ProcessLogQueueAsync);
+            var APSession = connection!.GetSession();
+            APSession.Items.ItemReceived -= Items_ItemReceived;
+            APSession.MessageLog.OnMessageReceived -= MessageLog_OnMessageReceived;
+            APSession.Locations.CheckedLocationsUpdated -= Locations_CheckedLocationsUpdated;
+            connection.DeathLinkService!.OnDeathLinkReceived -= DeathLinkService_OnDeathLinkReceived;
         }
 
         public void PackerServerClosed(string obj)
@@ -155,7 +138,7 @@ namespace YargArchipelagoClient
         {
             SyncTimer.Stop();
             MessageBox.Show($"The Archipelago connection service was stopped unexpectedly, the application will close\n\n{obj}");
-            DisconnectFromAP(this, null);
+            ResetConnection(this, null);
         }
 
         private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink)
@@ -185,6 +168,7 @@ namespace YargArchipelagoClient
             else
                 currentSongToolStripMenuItem.Text += $" None";
 
+            aPServerToolStripMenuItem.Text = $"AP Server: {Connection.SlotName}@{Connection.Address}";
 
             this.Text = CurrentTitle;
         }

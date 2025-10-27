@@ -3,12 +3,12 @@ using Archipelago.MultiClient.Net.Enums;
 using Newtonsoft.Json;
 using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Helpers;
+using YargArchipelagoCommon;
 
 namespace YargArchipelagoClient
 {
     public partial class ConnectionForm : Form
     {
-        public static string ConnectionCachePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "connection.json");
         #region Constructors and Fields
 
         public ConnectionData? Connection = null;
@@ -24,11 +24,11 @@ namespace YargArchipelagoClient
         bool TestingMode = false;
         private void ConnectionForm_Shown(object sender, EventArgs e)
         {
-            if (File.Exists(ConnectionCachePath))
+            if (File.Exists(CommonData.ConnectionCachePath))
             {
                 try
                 {
-                    var TempConnection = JsonConvert.DeserializeObject<ConnectionData>(File.ReadAllText(ConnectionCachePath));
+                    var TempConnection = JsonConvert.DeserializeObject<ConnectionData>(File.ReadAllText(CommonData.ConnectionCachePath));
                     txtServerAddress.Text = TempConnection!.Address;
                     txtPassword.Text = TempConnection!.Password;
                     txtSlotName.Text = TempConnection!.SlotName;

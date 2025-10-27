@@ -31,8 +31,13 @@ namespace YargArchipelagoClient.Helpers
                     });
                     break;
                 case "songs":
-                    Log($"Showing all songs {!Config.DebugPrintAllSongs}");
                     Config.DebugPrintAllSongs = !Config.DebugPrintAllSongs;
+                    Log($"Showing all songs {Config.DebugPrintAllSongs}");
+                    RefreshSongList();
+                    break;
+                case "cheat":
+                    Config.CheatMode = !Config.CheatMode;
+                    Log($"Cheat Mode Active {Config.CheatMode}");
                     RefreshSongList();
                     break;
                 default:

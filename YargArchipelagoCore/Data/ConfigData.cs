@@ -29,6 +29,8 @@ namespace YargArchipelagoClient.Data
 
         public bool ManualMode = false;
 
+        public bool CheatMode = false;
+
         public int FamePointsNeeded = 0;
 
         [Newtonsoft.Json.JsonIgnore]
