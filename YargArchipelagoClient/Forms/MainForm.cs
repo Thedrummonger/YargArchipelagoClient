@@ -67,7 +67,7 @@ namespace YargArchipelagoClient
         {
             Connection!.clientSyncHelper.OnUpdateCallback -= ClientSyncHelper_OnUpdateCallback;
             Connection!.clientSyncHelper.APServerClosed -= APServerClosed;
-            await ClientInitializationHelper.DisconnectSession(Connection, Config, RemoveConnectionListers);
+            await Connection.DisconnectSession(RemoveConnectionListers);
             Connection = null;
             Config = null;
             if (!ClientInitializationHelper.ConnectSession(NewConnectionCreator, NewConfigCreator, ApplyConnectionListeners, out Connection!, out Config!))
@@ -144,21 +144,7 @@ namespace YargArchipelagoClient
             LogSignal.Release();
         }
 
-        private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink)
-        {
-            if (!Config!.deathLinkEnabled) return;
-            if (Config.ManualMode)
-                MessageBox.Show($"Deathlink {deathLink.Source}", deathLink.Cause, MessageBoxButtons.OK, MessageBoxIcon.Hand);
-            else
-            {
-                _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket
-                {
-                    deathLinkData = new CommonData.DeathLinkData { Source = deathLink.Source, Cause = deathLink.Cause }
-                });
-                WriteToLog($"Deathlink {deathLink.Source}: {deathLink.Cause}");
-            }
-
-        }
+        private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink) => WriteToLog($"Deathlink {deathLink.Source}: {deathLink.Cause}");
 
         public void UpdateClientTitle()
         {

@@ -6,11 +6,12 @@ using TDMUtils;
 using YargArchipelagoClient.Data;
 using YargArchipelagoCommon;
 using YargArchipelagoCore.Data;
+using YargArchipelagoCore.Helpers;
 using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
 
 namespace YargArchipelagoClient.Helpers
 {
-    public class ClientInitializationHelper
+    public static class ClientInitializationHelper
     {
         public static bool ConnectToServer(out ConnectionData? connection, Func<ConnectionData?> CreateNewConnection)
         {
@@ -151,7 +152,7 @@ namespace YargArchipelagoClient.Helpers
             var PacketServer = Connection!.CreatePacketServer(Config);
             _ = PacketServer.StartAsync();
 
-            Connection.clientSyncHelper = new YargArchipelagoCore.Helpers.YargClientSyncHelper(Connection, Config);
+            Connection.clientSyncHelper = new YargClientSyncHelper(Connection, Config);
 
             Connection.eventManager = new CoreEventManager(Config, Connection);
             Connection.eventManager.ApplyEvents();
@@ -162,7 +163,7 @@ namespace YargArchipelagoClient.Helpers
 
             return Config is not null && Connection is not null;
         }
-        public static async Task DisconnectSession(ConnectionData Connection, ConfigData Config, Action<ConnectionData> RemoveUIListeners)
+        public static async Task DisconnectSession(this ConnectionData Connection, Action<ConnectionData> RemoveUIListeners)
         {
             Connection.clientSyncHelper?.StopTimer();
             Connection.eventManager?.RemoveEvents();
@@ -179,6 +180,7 @@ namespace YargArchipelagoClient.Helpers
             connection.GetSession().MessageLog.OnMessageReceived += RelayChatToYARG;
             connection.GetSession().Items.ItemReceived += Items_ItemReceived;
             connection.GetSession().Locations.CheckedLocationsUpdated += Locations_CheckedLocationsUpdated;
+            connection.DeathLinkService!.OnDeathLinkReceived += DeathLinkService_OnDeathLinkReceived;
         }
 
         public void RemoveEvents()
@@ -186,8 +188,10 @@ namespace YargArchipelagoClient.Helpers
             connection.GetSession().MessageLog.OnMessageReceived -= RelayChatToYARG;
             connection.GetSession().Items.ItemReceived -= Items_ItemReceived;
             connection.GetSession().Locations.CheckedLocationsUpdated -= Locations_CheckedLocationsUpdated;
+            connection.DeathLinkService!.OnDeathLinkReceived -= DeathLinkService_OnDeathLinkReceived;
         }
 
+        private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink) => DeathLinkHelper.HandleDeathlinkRecieved(deathLink, connection, config);
         private void Locations_CheckedLocationsUpdated(System.Collections.ObjectModel.ReadOnlyCollection<long> newCheckedLocations) => connection.clientSyncHelper.ShouldUpdate = true;
         private void Items_ItemReceived(Archipelago.MultiClient.Net.Helpers.ReceivedItemsHelper helper) => connection.clientSyncHelper.ShouldUpdate = true;
         private void RelayChatToYARG(LogMessage message)
