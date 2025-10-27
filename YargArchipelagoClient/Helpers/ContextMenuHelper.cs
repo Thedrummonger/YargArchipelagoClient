@@ -3,6 +3,7 @@ using TDMUtils;
 using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Forms;
 using YargArchipelagoCommon;
+using YargArchipelagoCore.Helpers;
 using static YargArchipelagoClient.Helpers.WinFormHelpers;
 using static YargArchipelagoCommon.CommonData;
 
@@ -17,6 +18,7 @@ namespace YargArchipelagoClient.Helpers
     {
         ConfigData config = mainForm.Config!;
         ConnectionData connection = mainForm.Connection;
+        FillerActivationHelper fillerActivationHelper = new(mainForm.Connection, mainForm.Config, song);
         public static ContextMenuStrip BuildSongMenu(MainForm mainForm, SongLocation song) => new ContextMenuBuilder(mainForm, song).BuildSongMenu();
         public ContextMenuStrip BuildSongMenu()
         {
@@ -68,14 +70,14 @@ namespace YargArchipelagoClient.Helpers
                 {
                     menu.Items.AddItem($"Lower Difficulty value: {LowerDiffAvailable}");
                     if (song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Diff > CommonData.SupportedDifficulty.Easy)
-                        menu.Items.AddItem($"-Reward 1 Min Difficulty", LowerReward1Diff);
+                        menu.Items.AddItem($"-Reward 1 Min Difficulty", fillerActivationHelper.LowerReward1Diff);
                     if (song.HasExtraCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Diff > CommonData.SupportedDifficulty.Easy)
-                        menu.Items.AddItem($"-Reward 2 Min Difficulty", LowerReward2Diff);
+                        menu.Items.AddItem($"-Reward 2 Min Difficulty", fillerActivationHelper.LowerReward2Diff);
 
                     if (song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Req > APWorldData.CompletionReq.Clear)
-                        menu.Items.AddItem($"-Reward 1 Min Score Requirement", LowerReward1Req);
+                        menu.Items.AddItem($"-Reward 1 Min Score Requirement", fillerActivationHelper.LowerReward1Req);
                     if (song.HasExtraCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Req > APWorldData.CompletionReq.Clear)
-                        menu.Items.AddItem($"-Reward 2 Min Score Requirement", LowerReward2Req);
+                        menu.Items.AddItem($"-Reward 2 Min Score Requirement", fillerActivationHelper.LowerReward2Req);
                 }
             }
 
@@ -113,64 +115,9 @@ namespace YargArchipelagoClient.Helpers
             return menu;
         }
 
-        public void LowerReward1Diff()
-        {
-            var Req = song.Requirements!.CompletionRequirement.DeepClone();
-            Req.Reward1Diff = (CommonData.SupportedDifficulty)((int)Req.Reward1Diff - 1);
-            song.Requirements!.CompletionRequirement = Req;
-            if (!config.CheatMode)
-            {
-                config.UsedFiller.SetIfEmpty(APWorldData.StaticItems.LowerDifficulty, 0);
-                config.UsedFiller[APWorldData.StaticItems.LowerDifficulty]++;
-            }
-            config.SaveConfigFile(connection);
-        }
-        public void LowerReward2Diff()
-        {
-            var Req = song.Requirements!.CompletionRequirement.DeepClone();
-            Req.Reward2Diff = (CommonData.SupportedDifficulty)((int)Req.Reward2Diff - 1);
-            song.Requirements!.CompletionRequirement = Req;
-            if (!config.CheatMode)
-            {
-                config.UsedFiller.SetIfEmpty(APWorldData.StaticItems.LowerDifficulty, 0);
-                config.UsedFiller[APWorldData.StaticItems.LowerDifficulty]++;
-            }
-            config.SaveConfigFile(connection);
-        }
-        public void LowerReward1Req()
-        {
-            var Req = song.Requirements!.CompletionRequirement.DeepClone();
-            Req.Reward1Req = (APWorldData.CompletionReq)((int)Req.Reward1Req - 1);
-            song.Requirements!.CompletionRequirement = Req;
-            if (!config.CheatMode)
-            {
-                config.UsedFiller.SetIfEmpty(APWorldData.StaticItems.LowerDifficulty, 0);
-                config.UsedFiller[APWorldData.StaticItems.LowerDifficulty]++;
-            }
-            config.SaveConfigFile(connection);
-        }
-        public void LowerReward2Req()
-        {
-            var Req = song.Requirements!.CompletionRequirement.DeepClone();
-            Req.Reward2Req = (APWorldData.CompletionReq)((int)Req.Reward2Req - 1);
-            song.Requirements!.CompletionRequirement = Req;
-            if (!config.CheatMode)
-            {
-                config.UsedFiller.SetIfEmpty(APWorldData.StaticItems.LowerDifficulty, 0);
-                config.UsedFiller[APWorldData.StaticItems.LowerDifficulty]++;
-            }
-            config.SaveConfigFile(connection);
-        }
-
-        public SongData[] GetValidSongReplacements()
-        {
-            var ValidForProfile = song.Requirements!.GetAvailableSongs(config.SongData).Values.ToHashSet();
-            return [.. ValidForProfile.Where(x => !config.ApLocationData.Values.Any(y => y.SongHash == x.SongChecksum))];
-        }
-
         public void SwapSong(bool Random)
         {
-            var SwapCandidates = GetValidSongReplacements();
+            var SwapCandidates = fillerActivationHelper.GetValidSongReplacements();
             var SelectList = ContainerItem.ToContainerList(SwapCandidates.OrderBy(x => x.GetSongDisplayName()), x => x.GetSongDisplayName());
             if (SwapCandidates.Length < 1)
             {

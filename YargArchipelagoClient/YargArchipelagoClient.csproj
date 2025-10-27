@@ -19,8 +19,7 @@
 
   <ItemGroup>
     <Reference Include="TDMUtils">
-      <HintPath>Libraries\TDMUtils.dll</HintPath>
-      <Private></Private>
+      <HintPath>..\Libraries\TDMUtils.dll</HintPath>
     </Reference>
   </ItemGroup>
 

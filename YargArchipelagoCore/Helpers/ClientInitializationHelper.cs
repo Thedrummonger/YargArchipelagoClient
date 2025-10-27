@@ -191,18 +191,29 @@ namespace YargArchipelagoClient.Helpers
             connection.DeathLinkService!.OnDeathLinkReceived -= DeathLinkService_OnDeathLinkReceived;
         }
 
-        private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink) => DeathLinkHelper.HandleDeathlinkRecieved(deathLink, connection, config);
+        private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink) 
+        {
+            if (!config.deathLinkEnabled) return;
+            _ = connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket
+            {
+                deathLinkData = new CommonData.DeathLinkData { Source = deathLink.Source, Cause = deathLink.Cause }
+            });
+        }
         private void Locations_CheckedLocationsUpdated(System.Collections.ObjectModel.ReadOnlyCollection<long> newCheckedLocations) => connection.clientSyncHelper.ShouldUpdate = true;
         private void Items_ItemReceived(Archipelago.MultiClient.Net.Helpers.ReceivedItemsHelper helper) => connection.clientSyncHelper.ShouldUpdate = true;
         private void RelayChatToYARG(LogMessage message)
         {
-            if (message is ItemSendLogMessage ItemLog)
-            {
-                if (config.InGameItemLog == CommonData.ItemLog.All || (config.InGameItemLog == CommonData.ItemLog.ToMe && ItemLog.IsReceiverTheActivePlayer))
-                    _ = connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { Message = message.ToString() });
-            }
-            if (message is ChatLogMessage && config.InGameAPChat)
+            if (message is ItemSendLogMessage ItemLog && ShouldRelay(ItemLog))
                 _ = connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { Message = message.ToString() });
+            else if (message is ChatLogMessage && config.InGameAPChat)
+                _ = connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { Message = message.ToString() });
+
+            bool ShouldRelay(ItemSendLogMessage IL)
+            {
+                if (config.InGameItemLog == CommonData.ItemLog.ToMe) 
+                    return IL.IsReceiverTheActivePlayer;
+                return config.InGameItemLog == CommonData.ItemLog.All;
+            }
         }
     }
 }

@@ -49,6 +49,9 @@ namespace YargArchipelagoClient
             Connection!.clientSyncHelper.APServerClosed += APServerClosed;
 
             Task.Run(ProcessLogQueueAsync);
+
+            UpdateClientTitle();
+            PrintSongs();
         }
 
         private void ClientSyncHelper_OnUpdateCallback()
@@ -77,6 +80,9 @@ namespace YargArchipelagoClient
             }
             Connection!.clientSyncHelper.OnUpdateCallback += ClientSyncHelper_OnUpdateCallback;
             Connection!.clientSyncHelper.APServerClosed += APServerClosed;
+
+            UpdateClientTitle();
+            PrintSongs();
         }
 
         private ConnectionData? NewConnectionCreator()

@@ -11,4 +11,10 @@
     <ProjectReference Include="..\YargArchipelagoCore\YargArchipelagoCore.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="TDMUtils">
+      <HintPath>..\Libraries\TDMUtils.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
