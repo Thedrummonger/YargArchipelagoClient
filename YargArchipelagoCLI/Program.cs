@@ -21,30 +21,27 @@ namespace YargArchipelagoCLI
                 var key = Console.ReadKey();
                 return;
             }
+            Console.Clear();
             bool ConsoleExiting = false;
+            CLIKeyChoiceContainer choiceContainer = new("-YARG AP Client", ConsoleKey.End);
+            choiceContainer.SetCancelText(string.Empty).SetSelectText(string.Empty);
+            choiceContainer.AddOption(ConsoleKey.S, "Print Available Songs", PrintCurrentSongList);
+            choiceContainer.AddOption(ConsoleKey.F, "Use Filler Item", UseFillerItem);
             while (!ConsoleExiting)
             {
+                choiceContainer.GetChoice()?.OnSelect?.Invoke();
                 Console.Clear();
-                Console.WriteLine("S: Print Available Songs\nF: Use Filler Item\nEnd: Exit Program");
-                var key = Console.ReadKey();
-                switch (key.Key)
-                {
-                    case ConsoleKey.End:
-                        ConsoleExiting = true;
-                        break;
-                    case ConsoleKey.S:
-                        var ShowDetails = PrintSongs(true);
-                        if (ShowDetails is null) continue;
-                        Console.Clear();
-                        Console.WriteLine($"Song: {ShowDetails.GetSongDisplayName(config)}\nProfile: {ShowDetails.Requirements.Name}\nInstrument: {ShowDetails.Requirements.Instrument}");
-                        Console.WriteLine(ShowDetails.Requirements.CompletionRequirement.ToFormattedJson());
-                        Console.ReadKey();
-                        break;
-                    case ConsoleKey.F:
-                        UseFillerItem();
-                        break;
-                }
             }
+        }
+
+        private static void PrintCurrentSongList()
+        {
+            var ShowDetails = PrintAvailableSongs($"Select A song to see info..");
+            if (ShowDetails is null) return;
+            Console.Clear();
+            Console.WriteLine($"Song: {ShowDetails.GetSongDisplayName(config)}\nProfile: {ShowDetails.Requirements?.Name}\nInstrument: {ShowDetails.Requirements?.Instrument}");
+            Console.WriteLine(ShowDetails.Requirements?.CompletionRequirement?.ToFormattedJson());
+            Console.ReadKey();
         }
 
         private static void UseFillerItem()
@@ -62,86 +59,53 @@ namespace YargArchipelagoCLI
             int LowerDiffUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.LowerDifficulty, out int lu) ? lu : 0;
             int LowerDiffAvailable = LowerDiffTotal - LowerDiffUsed;
 
-            Console.WriteLine($"P: Use Swap Song (Pick) {SwapsAvailable}");
-            Console.WriteLine($"R: Use Swap Song (Random) {RandomSwapsAvailable}");
-            Console.WriteLine($"D: Lower Minimum Difficulty {LowerDiffAvailable}");
-            Console.WriteLine($"S: Lower Score Requirement {LowerDiffAvailable}");
-            Console.WriteLine("Press escape to cancel");
+            CLIKeyChoiceContainer choiceContainer = new("Select a filler item:");
+            choiceContainer.AddOption(ConsoleKey.P, $"Use Swap Song (Pick) {SwapsAvailable}", () => SwapSong(true), () => SwapsAvailable > 1 || config.CheatMode);
+            choiceContainer.AddOption(ConsoleKey.R, $"Use Swap Song (Random) {RandomSwapsAvailable}", () => SwapSong(false), () => RandomSwapsAvailable > 1 || config.CheatMode);
+            choiceContainer.AddOption(ConsoleKey.L, $"Lower Song requirements {LowerDiffAvailable}", () => LowerScore(), () => LowerDiffAvailable > 1 || config.CheatMode);
 
-        Select:
-            var Key = Console.ReadKey();
-            switch (Key.Key)
-            {
-                case ConsoleKey.Escape:
-                    return;
-                case ConsoleKey.P when SwapsAvailable > 1 || config.CheatMode:
-                    SwapSong(true);
-                    break;
-                case ConsoleKey.R when RandomSwapsAvailable > 1 || config.CheatMode:
-                    SwapSong(false);
-                    break;
-                case ConsoleKey.D when LowerDiffAvailable > 1 || config.CheatMode:
-                    LowerScore(true);
-                    break;
-                case ConsoleKey.S when LowerDiffAvailable > 1 || config.CheatMode:
-                    LowerScore(false);
-                    break;
-                default:
-                    Console.WriteLine("Invalid Selection");
-                    goto Select;
-            }
+            choiceContainer.GetChoice()?.OnSelect?.Invoke();
         }
 
-        private static void LowerScore(bool Difficulty)
+        private static void LowerScore()
         {
             Console.Clear();
-            SongLocation? song = PrintSongs(true);
+            SongLocation? song = PrintAvailableSongs($"Select song to lower score..");
+            Console.Clear();
             if (song is null) return;
             FillerActivationHelper fillerActivationHelper = new(connection, config, song);
 
-            Dictionary<ConsoleKey, (Action, string)> ValidActions = [];
+            CLIKeyChoiceContainer choiceContainer = new($"{song.GetSongDisplayName(config)}\nCurrent Requirements:\n{song.Requirements!.CompletionRequirement.ToFormattedJson()}");
+            choiceContainer.SetSelectText("Select a requirement to change:");
 
-            if (song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Diff > CommonData.SupportedDifficulty.Easy)
-                ValidActions[ConsoleKey.D1] = (fillerActivationHelper.LowerReward1Diff, "Lower Reward 1 min Difficulty");
-            if (song.HasExtraCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Diff > CommonData.SupportedDifficulty.Easy)
-                ValidActions[ConsoleKey.D2] = (fillerActivationHelper.LowerReward1Diff, "Lower Reward 2 min Difficulty");
+            choiceContainer.AddOption(ConsoleKey.D1, "Lower Reward 1 min Difficulty", fillerActivationHelper.LowerReward1Diff, 
+                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Diff > CommonData.SupportedDifficulty.Easy; });
+            choiceContainer.AddOption(ConsoleKey.D2, "Lower Reward 2 min Difficulty", fillerActivationHelper.LowerReward2Diff,
+                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Diff > CommonData.SupportedDifficulty.Easy; });
+            choiceContainer.AddOption(ConsoleKey.D3, "Lower Reward 1 min Score", fillerActivationHelper.LowerReward1Req,
+                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Req > APWorldData.CompletionReq.Clear; });
+            choiceContainer.AddOption(ConsoleKey.D4, "Lower Reward 2 min Score", fillerActivationHelper.LowerReward2Req,
+                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Req > APWorldData.CompletionReq.Clear; });
 
-            if (song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Req > APWorldData.CompletionReq.Clear)
-                ValidActions[ConsoleKey.D3] = (fillerActivationHelper.LowerReward1Req, "Lower Reward 1 min Score");
-            if (song.HasExtraCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Req > APWorldData.CompletionReq.Clear)
-                ValidActions[ConsoleKey.D4] = (fillerActivationHelper.LowerReward2Req, "Lower Reward 2 min Score");
-
-            if (ValidActions.Count < 1)
+            if (!choiceContainer.AreAnyValid())
             {
                 Console.WriteLine("Location difficulty can not be lowered any further!");
                 Console.ReadLine();
                 return;
             }
 
-            Console.WriteLine(song.GetSongDisplayName(config));
-            foreach (var i in ValidActions)
-                Console.WriteLine($"{i.Key}. {i.Value.Item2}");
+            var Choice = choiceContainer.GetChoice();
+            if (Choice is null)
+                return;
 
-            Console.WriteLine("Select a requirement to change. Press escape to cancel");
-            while (true)
-            {
-                var selection = Console.ReadKey();
-                if (selection.Key == ConsoleKey.Escape)
-                    return;
-                if (ValidActions.TryGetValue(selection.Key, out var SelectedSong))
-                {
-                    SelectedSong.Item1();
-                    Console.WriteLine($"Song {song.SongNumber} Difficulty Updated\n{song.Requirements!.CompletionRequirement.ToFormattedJson()}");
-                    Console.ReadLine();
-                    return;
-                }
-                Console.WriteLine("Invalid Selection");
-            }
+            Choice?.OnSelect?.Invoke();
+            Console.WriteLine($"Song {song.SongNumber} Difficulty Updated\n{song.Requirements!.CompletionRequirement.ToFormattedJson()}");
+            Console.ReadLine();
         }
 
         private static void SwapSong(bool AllowPick)
         {
-            SongLocation? song = PrintSongs(true);
+            SongLocation? song = PrintAvailableSongs($"Select A song to swap");
             if (song is null) return;
             FillerActivationHelper fillerActivationHelper = new(connection, config, song);
             var AvailableSongs = fillerActivationHelper.GetValidSongReplacements();
@@ -153,7 +117,7 @@ namespace YargArchipelagoCLI
 
             CommonData.SongData? SelectedSong = null;
             if (AllowPick)
-                SelectedSong = GetReplacementSong(AvailableSongs);
+                SelectedSong = GetReplacementSong(song, AvailableSongs);
             else
                 SelectedSong = AvailableSongs[connection.GetRNG().Next(AvailableSongs.Length)];
 
@@ -176,72 +140,47 @@ namespace YargArchipelagoCLI
             Console.ReadKey();
         }
 
-        public static CommonData.SongData? GetReplacementSong(CommonData.SongData[] validReplacements)
+        public static CommonData.SongData? GetReplacementSong(SongLocation song, CommonData.SongData[] validReplacements)
         {
             Dictionary<int, CommonData.SongData> LocationDict = [];
             Console.Clear();
-            Console.WriteLine("Available replacements");
+            CLITextChoiceContainer choiceContainer = new("Available replacements", string.Empty);
+            choiceContainer.PlaceHeaderAboveValues(false).SetSelectText($"Select A song to replace {song.GetSongDisplayName(config)}");
 
             int Index = 0;
             foreach (var i in validReplacements.OrderBy(x => x.GetSongDisplayName()))
-            {
-                Console.WriteLine($"{Index}. {i.GetSongDisplayName()}");
-                LocationDict[Index] = i;
-                Index++;
-            }
-            Console.WriteLine("Type a song number to select..\nType exit to cancel");
-            while (true)
-            {
-                var Id = Console.ReadLine();
-                if (Id.ToLower() == "exit")
-                    return null;
-                if (int.TryParse(Id, out int IntID) && LocationDict.TryGetValue(IntID, out var selected))
-                    return selected;
-                Console.WriteLine("Invalid Selection");
-            }
+                choiceContainer.AddOption(Index.ToString(), i.GetSongDisplayName(), tag: i);
+            var Selection = choiceContainer.GetChoice()?.tag;
+            if (Selection is CommonData.SongData SongSelection)
+                return SongSelection;
+            return null;
         }
 
-        public static SongLocation? PrintSongs(bool GetSelection = false)
+        public static SongLocation? PrintAvailableSongs(string SelectionText)
         {
             Dictionary<int, SongLocation> LocationDict = [];
             Console.Clear();
-            Console.WriteLine("Available Songs");
+
+            CLITextChoiceContainer choiceContainer = new("Available songs", string.Empty);
+            choiceContainer.SetSelectText(SelectionText);
 
             var GoalSongAvailable = config.GoalSong.SongAvailableToPlay(connection, config);
-            if (GoalSongAvailable || config.DebugPrintAllSongs)
-            {
-                int Num = config.GoalSong.SongNumber;
-                string Debug = config.DebugPrintAllSongs ? !config.GoalSong.HasUncheckedLocations(connection) ? "@ " : (GoalSongAvailable ? "O " : "X ") : "";
-                Console.WriteLine($"{Debug}{Num}. Goal Song: {config.GoalSong.GetSongDisplayName(config!)} [{config.GoalSong.Requirements!.Name}]");
-                LocationDict[Num] = config.GoalSong;
-            }
+            string GoalSongDebugHeader = config.DebugPrintAllSongs ? !config.GoalSong.HasUncheckedLocations(connection) ? "@ " : (GoalSongAvailable ? "O " : "X ") : "";
+            choiceContainer.AddOption(config.GoalSong.SongNumber.ToString(), GoalSongDebugHeader + config.GoalSong.GetSongDisplayName(config), null, 
+                () => GoalSongAvailable || config.DebugPrintAllSongs, config.GoalSong);
+
             foreach (var i in config!.ApLocationData.OrderBy(x => x.Key))
             {
                 int Num = i.Value.SongNumber;
                 var SongAvailable = i.Value.SongAvailableToPlay(connection, config);
-                if (!SongAvailable && !config.DebugPrintAllSongs)
-                    continue;
-
-                string Debug = config.DebugPrintAllSongs ? !i.Value.HasUncheckedLocations(connection) ? "@ " : SongAvailable ? "O " : "X " : "";
-                Console.WriteLine($"{Debug}{Num}. {i.Value.GetSongDisplayName(config!)} [{i.Value.Requirements!.Name}]");
-                LocationDict[Num] = i.Value;
+                string SongDebugHeader = config.DebugPrintAllSongs ? !i.Value.HasUncheckedLocations(connection) ? "@ " : SongAvailable ? "O " : "X " : "";
+                choiceContainer.AddOption(i.Value.SongNumber.ToString(), SongDebugHeader + i.Value.GetSongDisplayName(config), null,
+                    () => SongAvailable || config.DebugPrintAllSongs, i.Value);
             }
-            if (!GetSelection)
-            {
-                Console.WriteLine("Press enter to go back..");
-                Console.ReadLine();
-                return null;
-            }
-            Console.WriteLine("Type a song number to select..\nleave blank and press enter to cancel..");
-            while (true)
-            {
-                var Id = Console.ReadLine();
-                if (Id.ToLower() == string.Empty)
-                    return null;
-                if (int.TryParse(Id, out int IntID) && LocationDict.TryGetValue(IntID, out var selected))
-                    return selected;
-                Console.WriteLine("Invalid Selection");
-            }
+            var Choice = choiceContainer.GetChoice()?.tag;
+            if (Choice is SongLocation SongChoice)
+                return SongChoice;
+            return null;
         }
 
         public static ConfigData? CreateNewConfig()
