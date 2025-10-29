@@ -72,7 +72,8 @@ namespace YargArchipelagoCLI
 
         private static void PrintCurrentSongList()
         {
-            var ShowDetails = PrintAvailableSongs($"Select A song to see info..");
+            var ShowDetails = PrintAvailableSongs(["Select A song to see info..", "This list does not auto update as new songs are found, You must manually refresh!\""], [], 
+                new FlaggedOption<SongLocation>("Cancel", ReturnFlag.Cancel));
             if (ShowDetails is null) return;
             Console.Clear();
             Console.WriteLine($"Song: {ShowDetails.GetSongDisplayName(config)}\nProfile: {ShowDetails.Requirements?.Name}\nInstrument: {ShowDetails.Requirements?.Instrument}");
@@ -110,7 +111,7 @@ namespace YargArchipelagoCLI
         private static void LowerScore()
         {
             Console.Clear();
-            SongLocation? song = PrintAvailableSongs($"Select song to lower score..");
+            SongLocation? song = PrintAvailableSongs([$"Select song to lower score.."], [], new FlaggedOption<SongLocation>("Cancel", ReturnFlag.Cancel));
             Console.Clear();
             if (song is null) return;
             FillerActivationHelper fillerActivationHelper = new(connection, config, song);
@@ -145,7 +146,7 @@ namespace YargArchipelagoCLI
 
         private static void SwapSong(bool AllowPick)
         {
-            SongLocation? song = PrintAvailableSongs($"Select A song to swap");
+            SongLocation? song = PrintAvailableSongs([$"Select song to swap.."], [], new FlaggedOption<SongLocation>("Cancel", ReturnFlag.Cancel));
             if (song is null) return;
             FillerActivationHelper fillerActivationHelper = new(connection, config, song);
             var AvailableSongs = fillerActivationHelper.GetValidSongReplacements();
@@ -186,7 +187,7 @@ namespace YargArchipelagoCLI
             Console.Clear();
 
             ConsoleSelect<CommonData.SongData> consoleSelect = new();
-            consoleSelect.AddText(SectionPlacement.Pre, $"Select A song to replace {song.GetSongDisplayName(config)}").AddSeparator(SectionPlacement.Pre);
+            consoleSelect.AddText(SectionPlacement.Pre, $"Select A song to replace {song.GetSongDisplayName(config)}").AddSeparator(SectionPlacement.Pre).AddCancelOption("Cancel");
 
             int Index = 0;
             foreach (var i in validReplacements.OrderBy(x => x.GetSongDisplayName()))
@@ -197,14 +198,18 @@ namespace YargArchipelagoCLI
             return Selection.Tag;
         }
 
-        public static SongLocation? PrintAvailableSongs(string SelectionText)
+        public static SongLocation? PrintAvailableSongs(string[] preText, string[] postText, params Option<SongLocation>[] StaticOptions)
         {
             Dictionary<int, SongLocation> LocationDict = [];
             Console.Clear();
 
             ConsoleSelect<SongLocation> consoleSelect = new();
 
-            consoleSelect.AddText(SectionPlacement.Pre, "Available songs").AddText(SectionPlacement.Pre, SelectionText).AddSeparator(SectionPlacement.Pre);
+            foreach (var i in preText) consoleSelect.AddText(SectionPlacement.Pre, i);
+            if (preText.Any()) consoleSelect.AddSeparator(SectionPlacement.Pre);
+            if (postText.Any()) consoleSelect.AddSeparator(SectionPlacement.Post);
+            foreach (var i in postText) consoleSelect.AddText(SectionPlacement.Post, i);
+            foreach (var i in StaticOptions) consoleSelect.AddStatic(i);
 
             var GoalSongAvailable = config.GoalSong.SongAvailableToPlay(connection, config);
             string GoalSongDebugHeader = config.DebugPrintAllSongs ? !config.GoalSong.HasUncheckedLocations(connection) ? "@ " : (GoalSongAvailable ? "O " : "X ") : "";
@@ -215,7 +220,7 @@ namespace YargArchipelagoCLI
                 int Num = i.Value.SongNumber;
                 var SongAvailable = i.Value.SongAvailableToPlay(connection, config);
                 string SongDebugHeader = config.DebugPrintAllSongs ? !i.Value.HasUncheckedLocations(connection) ? "@ " : SongAvailable ? "O " : "X " : "";
-                consoleSelect.Add(SongDebugHeader + i.Value.GetSongDisplayName(config), i.Value, () => SongAvailable || config.DebugPrintAllSongs);
+                consoleSelect.Add($"{SongDebugHeader}{i.Value.GetSongDisplayName(config)} [{i.Value.Requirements?.Name}]", i.Value, () => SongAvailable || config.DebugPrintAllSongs);
             }
             var Selection = consoleSelect.GetSelection();
             if (Selection is FlaggedOption<SongLocation> flag && flag.Flag is ReturnFlag.Cancel)

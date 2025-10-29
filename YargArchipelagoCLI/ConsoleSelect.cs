@@ -31,8 +31,7 @@ namespace YargArchipelagoCLI
 
             foreach (string line in lines)
             {
-                List<string> ToAdd = [];
-                ToAdd.AddRange(line.Split('\n'));
+                string[] ToAdd = line.Split('\n');
                 if (where == SectionPlacement.Pre) _pre.AddRange(ToAdd);
                 else _post.AddRange(ToAdd);
 
