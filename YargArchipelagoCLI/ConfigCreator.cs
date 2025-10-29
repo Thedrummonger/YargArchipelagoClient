@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using TDMUtils;
 using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Helpers;
 using YargArchipelagoCommon;
@@ -28,6 +24,8 @@ namespace YargArchipelagoCLI
 
             CreateAndEditPool();
 
+            PlandoManager plandoManager = new(PlandoSongData, SongPoolManager, data, Connection, Pools);
+
             ConsoleSelect<Action> PoolSelector;
             int CurrentSelection = 0, CurrentPage = 0;
             while (true)
@@ -39,10 +37,11 @@ namespace YargArchipelagoCLI
                 foreach (var i in Pools)
                     PoolSelector.Add(i.Name, () => { EditPool(i); });
                 PoolSelector.AddStatic(new string('=', Console.WindowWidth), ReturnFlag.Unselectable);
+                PoolSelector.AddStatic("Edit Plando", plandoManager.EditPladoDate);
                 PoolSelector.AddStatic("New Pool", CreateAndEditPool);
                 PoolSelector.AddStatic("Delete Pool", SelectAndDeletePool);
                 PoolSelector.AddStatic("Confirm", ReturnFlag.Confirm, () => SongPoolManager.GetTotalPotentialSongAmount() == data.TotalAPSongLocations);
-                PoolSelector.AddStatic("ExitProgram", ReturnFlag.Cancel);
+                PoolSelector.AddStatic("Exit Program", ReturnFlag.Cancel);
 
                 var Selection = PoolSelector.GetSelection();
                 if (Selection.WasCancelation())
@@ -153,6 +152,134 @@ namespace YargArchipelagoCLI
                 goto Enter;
             }
             return Number;
+        }
+    }
+
+    public class PlandoManager(Dictionary<int, PlandoData> PlandoSongData, SongPoolManager SongPoolManager, ConfigData data, ConnectionData Connection, List<SongPool> Pools)
+    {
+        private PlandoData? GetPlandoDataForSong(int Song)
+        {
+            if (!PlandoSongData.TryGetValue(Song, out var data)) return null;
+            return data;
+        }
+
+        public void EditPladoDate()
+        {
+            while (true)
+            {
+                var SelectedSongLocation = PickSongLocation();
+                if (SelectedSongLocation == null) return;
+
+                PlandoSongData.SetIfEmpty(SelectedSongLocation.SongNumber, new PlandoData());
+                var SelectedPlandoData = PlandoSongData[SelectedSongLocation.SongNumber];
+
+                ConsoleSelect<Action> EditPladoSelector;
+
+                while (true)
+                {
+                    EditPladoSelector = new();
+                    EditPladoSelector.AddText(SectionPlacement.Pre, $"Song: {SelectedSongLocation.SongNumber}").AddSeparator(SectionPlacement.Pre).AddCancelOption("Go Back")
+                        .Add($"Pool Plando Enabled: {SelectedPlandoData.PoolPlandoEnabled}", 
+                        () => SelectedPlandoData.PoolPlandoEnabled = !SelectedPlandoData.PoolPlandoEnabled, 
+                        () => Pools.Count > 0 && CanPlandoAnyPoolToThisLocation(SelectedPlandoData, out _))
+
+                        .Add($"Assign Plando Pool: {SelectedPlandoData.SongPool}", () => SelectedPlandoData.SongPool = PickNewPool(SelectedPlandoData), () => SelectedPlandoData.PoolPlandoEnabled)
+
+                        .Add($"Song Plando Enabled: {SelectedPlandoData.SongPlandoEnabled}", 
+                        () => SelectedPlandoData.SongPlandoEnabled = !SelectedPlandoData.SongPlandoEnabled,
+                        () => GetValidSongsForAllPools().Count > 0 && CanPlandoSongToThisLocation(SelectedPlandoData))
+
+                        .Add($"Assign Plando Song: {DisplayPlandoSong(data.SongData, SelectedPlandoData)}", () => SelectedPlandoData.SongHash = PickNewSong(), () => SelectedPlandoData.SongPlandoEnabled);
+
+                    if (!EditPladoSelector.HasValidOptions)
+                    {
+                        Console.WriteLine($"Cannot Enable plando for this location");
+                        Console.ReadKey();
+                        break;
+                    }
+
+                    var Selected = EditPladoSelector.GetSelection();
+                    if (Selected.WasCancelation()) break;
+                    Selected.Tag?.Invoke();
+                }
+            }
+
+        }
+
+        private string DisplayPlandoSong(Dictionary<string, CommonData.SongData> SongData, PlandoData Selected)
+        {
+            if (Selected.SongHash is null) return "None";
+            if (!SongData.TryGetValue(Selected.SongHash, out var song)) return "None";
+            return song.GetSongDisplayName();
+        }
+
+        private string? PickNewSong()
+        {
+            HashSet<CommonData.SongData> ValidSongs = GetValidSongsForAllPools();
+            ConsoleSelect<CommonData.SongData> EditPladoSelector = new();
+            foreach(var i in ValidSongs)
+                EditPladoSelector.Add(i.GetSongDisplayName(), i);
+            var Selected = EditPladoSelector.GetSelection();
+            if (Selected.WasCancelation()) return null;
+            return Selected.Tag?.SongChecksum;
+        }
+
+        private string? PickNewPool(PlandoData selectedPlandoData)
+        {
+            CanPlandoAnyPoolToThisLocation(selectedPlandoData, out var validPools);
+            ConsoleSelect<SongPool> EditPladoSelector = new();
+            foreach (var i in validPools)
+                EditPladoSelector.Add(i.Name, i);
+            var Selected = EditPladoSelector.GetSelection();
+            if (Selected.WasCancelation()) return null;
+            return Selected.Tag?.Name;
+        }
+
+        private bool CanPlandoAnyPoolToThisLocation(PlandoData selectedLocation, out IEnumerable<SongPool> validPools)
+        {
+            validPools = Pools.Where(x => SongPoolManager.CanPlandoPoolToThisLocation(x, selectedLocation));
+            return validPools.Any();
+        }
+
+        public bool CanPlandoSongToThisLocation(PlandoData selectedSong)
+        {
+            return SongPoolManager.GetOverallAssignedCount() < data.TotalAPSongLocations || selectedSong.HasValidPlando;
+        }
+
+        private HashSet<CommonData.SongData> GetValidSongsForAllPools()
+        {
+            HashSet<CommonData.SongData> ValidSongs = [];
+            foreach (var p in Pools)
+            {
+                foreach (var s in p.GetAvailableSongs(data.SongData).Values)
+                {
+                    ValidSongs.Add(s);
+                }
+            }
+            return ValidSongs;
+        }
+
+        private SongLocation? PickSongLocation()
+        {
+            ConsoleSelect<SongLocation> Location = new();
+            Location.AddText(SectionPlacement.Pre, "Pick A location to Plando").AddSeparator(SectionPlacement.Pre).AddCancelOption("Go Back");
+            Location.Add($"Song {data.GoalSong.SongNumber}{GetPlandoStateString(PlandoSongData, data.GoalSong)}", data.GoalSong);
+            foreach (var i in data!.ApLocationData.OrderBy(x => x.Key))
+                Location.Add($"Song {i.Value.SongNumber}{GetPlandoStateString(PlandoSongData, i.Value)}", i.Value);
+            var Selected = Location.GetSelection();
+            if (Selected.WasCancelation()) return null;
+            return Selected.Tag;
+        }
+
+        private string GetPlandoStateString(Dictionary<int, PlandoData> PlandoSongData, SongLocation i)
+        {
+            List<string> Tags = [];
+            var Data = GetPlandoDataForSong(i.SongNumber);
+            if (Data is null) return "";
+            if (Data.HasValidPoolPlando) Tags.Add("P");
+            if (Data.HasValidSongPlando) Tags.Add("S");
+            if (Tags.Count > 0) return $" [{string.Join(", ", Tags)}]";
+            return "";
         }
     }
 }

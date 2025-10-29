@@ -204,14 +204,14 @@ namespace YargArchipelagoCLI
 
             var GoalSongAvailable = config.GoalSong.SongAvailableToPlay(connection, config);
             string GoalSongDebugHeader = config.DebugPrintAllSongs ? !config.GoalSong.HasUncheckedLocations(connection) ? "@ " : (GoalSongAvailable ? "O " : "X ") : "";
-            consoleSelect.Add(GoalSongDebugHeader + config.GoalSong.GetSongDisplayName(config), config.GoalSong, () => GoalSongAvailable || config.DebugPrintAllSongs);
+            consoleSelect.Add($"{config.GoalSong.SongNumber}. " + GoalSongDebugHeader + config.GoalSong.GetSongDisplayName(config), config.GoalSong, () => GoalSongAvailable || config.DebugPrintAllSongs);
 
             foreach (var i in config!.ApLocationData.OrderBy(x => x.Key))
             {
                 int Num = i.Value.SongNumber;
                 var SongAvailable = i.Value.SongAvailableToPlay(connection, config);
                 string SongDebugHeader = config.DebugPrintAllSongs ? !i.Value.HasUncheckedLocations(connection) ? "@ " : SongAvailable ? "O " : "X " : "";
-                consoleSelect.Add($"{SongDebugHeader}{i.Value.GetSongDisplayName(config)} [{i.Value.Requirements?.Name}]", i.Value, () => SongAvailable || config.DebugPrintAllSongs);
+                consoleSelect.Add($"{i.Value.SongNumber}. {SongDebugHeader}{i.Value.GetSongDisplayName(config)} [{i.Value.Requirements?.Name}]", i.Value, () => SongAvailable || config.DebugPrintAllSongs);
             }
             var Selection = consoleSelect.GetSelection();
             if (Selection.WasCancelation())
