@@ -10,23 +10,22 @@ using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
 
 namespace YargArchipelagoCLI
 {
-    public class ConfigCreator
+    public class ConfigCreator(ConnectionData connection)
     {
-        public bool HasErrored = true;
-        public ConfigCreator(ConnectionData connection)
+        private ConfigData data = new();
+        private ConnectionData Connection;
+        private readonly List<SongPool> Pools = [];
+        private Dictionary<int, PlandoData> PlandoSongData;
+        private SongPoolManager SongPoolManager;
+
+        public ConfigData? CreateConfig()
         {
-            Connection = connection;
-            data = new ConfigData();
-            data.ParseAPLocations(connection.GetSession());
-            PlandoSongData = data.GetSongIndexes().ToDictionary(x => x, x => new PlandoData { SongNum = x });
-            if (!SongImporter.TryReadSongs(out var SongData)) { HasErrored = true; return; }
+            data.ParseAPLocations(Connection.GetSession());
+            if (!SongImporter.TryReadSongs(out var SongData)) { return null; }
             data.SongData = SongData;
+            PlandoSongData = data.GetSongIndexes().ToDictionary(x => x, x => new PlandoData { SongNum = x });
             SongPoolManager = new(Pools, PlandoSongData, data.TotalAPSongLocations, data.SongData);
+            return null;
         }
-        public ConfigData data;
-        public ConnectionData Connection;
-        public readonly List<SongPool> Pools = [];
-        public readonly Dictionary<int, PlandoData> PlandoSongData;
-        public SongPoolManager SongPoolManager;
     }
 }

@@ -12,7 +12,7 @@ namespace YargArchipelagoCLI
         private static ConfigData config;
         static void Main(string[] args)
         {
-            CliMessageBox.ApplyMessageBoxAction();
+            MultiplatformHelpers.MessageBox.ApplyConsoleTemplate();
             if (!ClientInitializationHelper.ConnectSession(NewConnectionHelper.CreateNewConnection, CreateNewConfig, ApplyUIListeners, out connection, out config))
             {
                 var key = Console.ReadKey();
@@ -20,18 +20,21 @@ namespace YargArchipelagoCLI
             }
             Console.Clear();
             bool ConsoleExiting = false;
-            CLIKeyChoiceContainer choiceContainer = new("-YARG AP Client", ConsoleKey.End);
-            choiceContainer.SetCancelText(string.Empty).SetSelectText(string.Empty).ToggleInvalidFeedback(false);
-            choiceContainer.AddOption(ConsoleKey.A, "Show Available Songs", PrintCurrentSongList);
-            choiceContainer.AddOption(ConsoleKey.F, "Use Filler Item", UseFillerItem);
-            choiceContainer.AddOption(ConsoleKey.C, "Toggle Config", ToggleConfig);
-            choiceContainer.AddOption(ConsoleKey.R, "Rescan Songs", () => SongImporter.RescanSongs(config!, connection!));
-            choiceContainer.AddOption(ConsoleKey.S, "Sync With YARG", connection!.GetPacketServer().SendClientStatusPacket);
+            ConsoleSelect<Action> consoleSelect = new();
+            consoleSelect.IncludeCancel("Exit Program").AddText(SectionPlacement.Pre, "Yarg AP Client").AddSeparator(SectionPlacement.Pre)
+                .Add("Show Available Songs", PrintCurrentSongList)
+                .Add("Use Filler Item", UseFillerItem)
+                .Add("Toggle Config", ToggleConfig)
+                .Add("Rescan Songs", () => SongImporter.RescanSongs(config!, connection!))
+                .Add("Sync With YARG", connection!.GetPacketServer().SendClientStatusPacket);
 
             while (!ConsoleExiting)
             {
-                choiceContainer.GetChoice()?.OnSelect?.Invoke();
                 Console.Clear();
+                var Selection = consoleSelect.GetSelection();
+                if (Selection is null)
+                    break;
+                Selection.Tag();
             }
         }
 
@@ -172,16 +175,16 @@ namespace YargArchipelagoCLI
         {
             Dictionary<int, CommonData.SongData> LocationDict = [];
             Console.Clear();
-            CLITextChoiceContainer choiceContainer = new("Available replacements", string.Empty);
-            choiceContainer.PlaceHeaderAboveValues(false).SetSelectText($"Select A song to replace {song.GetSongDisplayName(config)}");
+
+            ConsoleSelect<CommonData.SongData> consoleSelect = new();
+            consoleSelect.AddText(SectionPlacement.Pre, $"Select A song to replace {song.GetSongDisplayName(config)}").AddSeparator(SectionPlacement.Pre);
 
             int Index = 0;
             foreach (var i in validReplacements.OrderBy(x => x.GetSongDisplayName()))
-                choiceContainer.AddOption(Index.ToString(), i.GetSongDisplayName(), tag: i);
-            var Selection = choiceContainer.GetChoice()?.tag;
-            if (Selection is CommonData.SongData SongSelection)
-                return SongSelection;
-            return null;
+                consoleSelect.Add(i.GetSongDisplayName(), i);
+            var Selection = consoleSelect.GetSelection();
+            if (Selection is null) return null;
+            return Selection.Tag;
         }
 
         public static SongLocation? PrintAvailableSongs(string SelectionText)
@@ -214,8 +217,6 @@ namespace YargArchipelagoCLI
         public static ConfigData? CreateNewConfig()
         {
             ConfigCreator configCreator = new ConfigCreator(connection);
-            if (configCreator.HasErrored)
-                return null;
             return null;
         }
 

@@ -26,7 +26,7 @@ namespace YargArchipelagoClient
         public MainForm()
         {
             InitializeComponent();
-            SetMultiPlatformDialogBoxAction();
+            WinFormsMessageBoxTemplate.Apply();
             lvSongList_Resize(this, new());
 
             settingsToolStripMenuItem.DropDown.Closing += (_, e) =>
