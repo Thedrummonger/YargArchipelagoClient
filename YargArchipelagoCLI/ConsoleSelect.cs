@@ -4,13 +4,21 @@ namespace YargArchipelagoCLI
 {
     public enum ReturnFlag
     {
-        Cancel = 0
+        Cancel = 0,
+        Confirm = 1,
+        Unselectable = 99,
     }
     public enum SectionPlacement { Pre, Post }
 
     public record Option<T>(string Display, T? Tag, Func<bool>? Conditional = null);
 
     public record FlaggedOption<T>(string Display, ReturnFlag Flag, T? Tag = default, Func<bool>? Conditional = null) : Option<T>(Display, Tag, Conditional);
+
+    public static class OptionHelper
+    {
+        public static bool WasCancelation<T>(this Option<T> option) => option is FlaggedOption<T> flaggedOption && flaggedOption.Flag == ReturnFlag.Cancel;
+        public static bool WasConfirmation<T>(this Option<T> option) => option is FlaggedOption<T> flaggedOption && flaggedOption.Flag == ReturnFlag.Confirm;
+    }
 
     public sealed class ConsoleSelect<T>
     {
@@ -48,11 +56,13 @@ namespace YargArchipelagoCLI
 
         public ConsoleSelect<T> Add(string display, T tag, Func<bool>? when = null) { _options.Add(new(display, tag, when)); return this; }
         public ConsoleSelect<T> Add(Option<T> option) { _options.Add(option); return this; }
+        public ConsoleSelect<T> Add(string display, ReturnFlag flag, Func<bool>? when = null) { _options.Add(new FlaggedOption<T>(display, flag, Conditional: when)); return this; }
         public ConsoleSelect<T> AddRange(IEnumerable<Option<T>> options) { _options.AddRange(options); return this; }
         public ConsoleSelect<T> StartIndex(int i) { _startIndex = i; return this; }
         public ConsoleSelect<T> StartPage(int i) { _startPage = i; return this; }
         public ConsoleSelect<T> AddStatic(string display, T tag, Func<bool>? when = null) { _staticOptions.Add(new(display, tag, when)); return this; }
         public ConsoleSelect<T> AddStatic(Option<T> option) { _staticOptions.Add(option); return this; }
+        public ConsoleSelect<T> AddStatic(string display, ReturnFlag flag, Func<bool>? when = null) { _staticOptions.Add(new FlaggedOption<T>(display, flag, Conditional: when)); return this; }
         public ConsoleSelect<T> AddStaticRange(IEnumerable<Option<T>> options) { _staticOptions.AddRange(options); return this; }
         public ConsoleSelect<T> AddCancelOption(string display) { _staticOptions.Add(new FlaggedOption<T>(display, ReturnFlag.Cancel)); return this; }
 
@@ -66,15 +76,16 @@ namespace YargArchipelagoCLI
             Console.CursorVisible = false;
 
             var ValidOptions = _options.Where(x => x.Conditional is null || x.Conditional()).ToArray();
+            var ValidStaticOptions = _staticOptions.Where(x => x.Conditional is null || x.Conditional()).ToArray();
 
-            var MaxOptions = Math.Max(Console.WindowHeight - _pre.Count - _post.Count - _staticOptions.Count - 1, 1);
+            var MaxOptions = Math.Max(Console.WindowHeight - _pre.Count - _post.Count - ValidStaticOptions.Length - 1, 1);
             var NeedsPages = MaxOptions < ValidOptions.Length;
             if (NeedsPages)
                 MaxOptions = Math.Max(MaxOptions - 1, 1); //Make space for the Page Counter
 
             var OptionPages = ValidOptions.Chunk(MaxOptions).ToArray();
             for (int i = 0; i < OptionPages.Length; i++)
-                OptionPages[i] = [.. OptionPages[i], .. _staticOptions];
+                OptionPages[i] = [.. OptionPages[i], .. ValidStaticOptions];
 
             CurrentPage = Math.Clamp(_startPage, 0, OptionPages.Length - 1);
             CurrentSelection = Math.Clamp(_startIndex, 0, OptionPages[CurrentPage].Length - 1);
@@ -114,9 +125,11 @@ namespace YargArchipelagoCLI
                         break;
                     case ConsoleKey.Enter:
                     case ConsoleKey.Spacebar:
+                        var SelectedValue = OptionPages[CurrentPage][CurrentSelection];
+                        if (SelectedValue is FlaggedOption<T> flaggedOption && flaggedOption.Flag == ReturnFlag.Unselectable) continue;
                         Console.CursorVisible = true;
                         Console.Clear();
-                        return OptionPages[CurrentPage][CurrentSelection];
+                        return SelectedValue;
                 }
             }
 

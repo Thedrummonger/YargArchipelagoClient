@@ -4,6 +4,7 @@ using YargArchipelagoCore.Helpers;
 using TDMUtils;
 using YargArchipelagoCommon;
 using System.Diagnostics;
+using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
 
 namespace YargArchipelagoCLI
 {
@@ -15,10 +16,7 @@ namespace YargArchipelagoCLI
         {
             MultiplatformHelpers.MessageBox.ApplyConsoleTemplate();
             if (!ClientInitializationHelper.ConnectSession(NewConnectionHelper.CreateNewConnection, CreateNewConfig, ApplyUIListeners, out connection, out config))
-            {
-                var key = Console.ReadKey();
                 return;
-            }
             Console.Clear();
             bool ConsoleExiting = false;
             ConsoleSelect<Action> consoleSelect = new();
@@ -33,9 +31,10 @@ namespace YargArchipelagoCLI
             {
                 Console.Clear();
                 var Selection = consoleSelect.GetSelection();
-                if (Selection is FlaggedOption<Action> flag && flag.Flag is ReturnFlag.Cancel)
-                    break;
-                Selection.Tag!();
+                if (Selection.WasCancelation())
+                    if (MessageBox.Show("Are you sure you want to exit?", buttons: MessageBoxButtons.YesNo) == DialogResult.Yes)
+                        break;
+                Selection.Tag?.Invoke();
             }
         }
 
@@ -50,24 +49,16 @@ namespace YargArchipelagoCLI
                 consoleSelect.AddCancelOption("Go Back").AddText(SectionPlacement.Pre, "Toggle Config Options..").AddSeparator(SectionPlacement.Pre).StartIndex(CurrentSelection)
                     .Add($"BroadCast Song Names: {config.BroadcastSongName}", () => config.BroadcastSongName = !config.BroadcastSongName)
                     .Add($"DeathLink: {config.deathLinkEnabled}", () => config.deathLinkEnabled = !config.deathLinkEnabled, () => config.ServerDeathLink)
-                    .Add($"Item Notifications: {config.InGameItemLog}", () => config.InGameItemLog = CycleLog(config.InGameItemLog))
+                    .Add($"Item Notifications: {config.InGameItemLog}", () => config.InGameItemLog = CLIHelpers.NextEnumValue(config.InGameItemLog))
                     .Add($"Chat Notifications: {config.InGameAPChat}", () => config.InGameAPChat = !config.InGameAPChat)
                     .Add($"Cheat Mode: {config.CheatMode}", () => config.CheatMode = !config.CheatMode, () => Debugger.IsAttached);
                 Console.Clear();
                 var Selection = consoleSelect.GetSelection();
                 CurrentSelection = consoleSelect.CurrentSelection;
-                if (Selection is FlaggedOption<Action> flag && flag.Flag is ReturnFlag.Cancel)
+                if (Selection.WasCancelation())
                     break;
                 Selection.Tag!();
             }
-
-            CommonData.ItemLog CycleLog(CommonData.ItemLog Cur) => Cur switch
-            {
-                CommonData.ItemLog.None => CommonData.ItemLog.ToMe,
-                CommonData.ItemLog.ToMe => CommonData.ItemLog.All,
-                CommonData.ItemLog.All => CommonData.ItemLog.None,
-                _ => CommonData.ItemLog.None,
-            };
         }
 
         private static void PrintCurrentSongList()
@@ -103,7 +94,7 @@ namespace YargArchipelagoCLI
             .Add($"Lower Song requirements {LowerDiffAvailable}", () => LowerScore(), () => LowerDiffAvailable > 1 || config.CheatMode);
 
             var Selection = consoleSelect.GetSelection();
-            if (Selection is FlaggedOption<Action> flag && flag.Flag is ReturnFlag.Cancel)
+            if (Selection.WasCancelation())
                 return;
             Selection.Tag!();
         }
@@ -136,7 +127,7 @@ namespace YargArchipelagoCLI
             }
 
             var Selection = consoleSelect.GetSelection();
-            if (Selection is FlaggedOption<Action> flag && flag.Flag is ReturnFlag.Cancel)
+            if (Selection.WasCancelation())
                 return;
             Selection.Tag!();
 
@@ -193,7 +184,7 @@ namespace YargArchipelagoCLI
             foreach (var i in validReplacements.OrderBy(x => x.GetSongDisplayName()))
                 consoleSelect.Add(i.GetSongDisplayName(), i);
             var Selection = consoleSelect.GetSelection();
-            if (Selection is FlaggedOption<CommonData.SongData> flag && flag.Flag is ReturnFlag.Cancel)
+            if (Selection.WasCancelation())
                 return null;
             return Selection.Tag;
         }
@@ -223,7 +214,7 @@ namespace YargArchipelagoCLI
                 consoleSelect.Add($"{SongDebugHeader}{i.Value.GetSongDisplayName(config)} [{i.Value.Requirements?.Name}]", i.Value, () => SongAvailable || config.DebugPrintAllSongs);
             }
             var Selection = consoleSelect.GetSelection();
-            if (Selection is FlaggedOption<SongLocation> flag && flag.Flag is ReturnFlag.Cancel)
+            if (Selection.WasCancelation())
                 return null;
             return Selection.Tag;
         }
@@ -231,7 +222,7 @@ namespace YargArchipelagoCLI
         public static ConfigData? CreateNewConfig()
         {
             ConfigCreator configCreator = new ConfigCreator(connection);
-            return null;
+            return configCreator.CreateConfig();
         }
 
         static void ApplyUIListeners(ConnectionData connectionData) { }
