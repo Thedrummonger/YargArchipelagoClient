@@ -3,6 +3,7 @@ using YargArchipelagoClient.Helpers;
 using YargArchipelagoCore.Helpers;
 using TDMUtils;
 using YargArchipelagoCommon;
+using System.Diagnostics;
 
 namespace YargArchipelagoCLI
 {
@@ -49,6 +50,7 @@ namespace YargArchipelagoCLI
                 choiceContainer.AddOption(ConsoleKey.D, $"DeathLink: {config.deathLinkEnabled}", () => config.deathLinkEnabled = !config.deathLinkEnabled);
                 choiceContainer.AddOption(ConsoleKey.I, $"Item Notifications: {config.InGameItemLog}", () => config.InGameItemLog = CycleLog(config.InGameItemLog));
                 choiceContainer.AddOption(ConsoleKey.C, $"Chat Notifications: {config.InGameAPChat}", () => config.InGameAPChat = !config.InGameAPChat);
+                choiceContainer.AddOption(ConsoleKey.M, $"Cheat Mode: {config.CheatMode}", () => config.CheatMode = !config.CheatMode, () => Debugger.IsAttached);
 
                 var Choice = choiceContainer.GetChoice();
                 if (Choice is null) return;

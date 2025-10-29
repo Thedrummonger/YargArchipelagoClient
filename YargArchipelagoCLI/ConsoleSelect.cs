@@ -12,6 +12,7 @@ namespace YargArchipelagoCLI
         readonly List<string> _pre = [];
         readonly List<string> _post = [];
         int _startIndex;
+        int _startPage;
         bool _includeCancel => !string.IsNullOrWhiteSpace(_cancelLabel);
         string? _cancelLabel = "Cancel";
 
@@ -35,92 +36,90 @@ namespace YargArchipelagoCLI
         public ConsoleSelect<T> AddRange(IEnumerable<Option<T>> options) { _options.AddRange(options); return this; }
 
         public ConsoleSelect<T> StartIndex(int i) { _startIndex = i; return this; }
+        public ConsoleSelect<T> StartPage(int i) { _startPage = i; return this; }
 
         public ConsoleSelect<T> IncludeCancel(string? label = null) { _cancelLabel = label; return this; }
+
         public Option<T>? GetSelection()
         {
+            Console.Clear();
             Console.CursorVisible = false;
+
+            var MaxOptions = Math.Max(Console.WindowHeight - _pre.Count - _post.Count - 1, 1);
+            var NeedsPages = MaxOptions < _options.Count;
+            if (NeedsPages)
+                MaxOptions = Math.Max(MaxOptions - 1, 1); //Make space for the Page Counter
+
+            var OptionPages = _options.Chunk(MaxOptions).ToArray();
+
+            int CurrentPage = Math.Clamp(_startPage, 0, OptionPages.Length - 1);
+            int CurrentSelection = Math.Clamp(_startIndex, 0, OptionPages[CurrentPage].Length - 1);
+
+            //Write Lines. Write Empty Space for drawable.
             foreach (var l in _pre) Console.WriteLine(l);
-
-            var ValidOptions = _options.Where(x => x.Conditional?.Invoke() ?? true).ToArray();
-            int ValidOptionsCount = Math.Max(ValidOptions.Length + (_includeCancel ? 1 : 0), 1);
-
-            var (ItemsPerPage, NeedsPages) = Layout(ValidOptionsCount);
-            var top = Console.CursorTop + (NeedsPages ? 1 : 0);
-            if (NeedsPages) Console.WriteLine();
-            for (int i = 0; i < ItemsPerPage; i++) Console.WriteLine();
+            if (NeedsPages) { Console.WriteLine(); }
+            foreach (var _ in OptionPages[CurrentPage]) { Console.WriteLine(); }
             foreach (var l in _post) Console.WriteLine(l);
-
-            int CurrentSelection = Math.Clamp(_startIndex, 0, ValidOptionsCount - 1);
-            if (ValidOptions.Length == 0 && _includeCancel) CurrentSelection = 0;
-
-            Render();
             while (true)
             {
-                var k = Console.ReadKey(true).Key;
-                if (k is ConsoleKey.UpArrow or ConsoleKey.DownArrow) 
-                { 
-                    CurrentSelection = (CurrentSelection + (k == ConsoleKey.UpArrow ? -1 : 1) + ValidOptionsCount) % ValidOptionsCount; 
-                    Render(); 
-                }
-                else if (k is ConsoleKey.Escape && _includeCancel) 
-                { 
-                    Console.CursorVisible = true; 
-                    Console.SetCursorPosition(0, top + ItemsPerPage + _post.Count); 
-                    return null; 
-                }
-                else if (k is ConsoleKey.Enter or ConsoleKey.Spacebar)
+                Render(OptionPages, CurrentSelection, _pre.Count, CurrentPage);
+                switch (Console.ReadKey(true).Key)
                 {
-                    Console.CursorVisible = true; 
-                    Console.SetCursorPosition(0, top + ItemsPerPage + _post.Count);
-                    if (ValidOptions.Length == 0 && !_includeCancel) return null;
-                    if (_includeCancel && CurrentSelection == ValidOptions.Length) return null;
-                    return ValidOptions.Length > CurrentSelection ? ValidOptions[CurrentSelection] : null;
-                }
-                else if (k is ConsoleKey.PageDown or ConsoleKey.PageUp or ConsoleKey.Home or ConsoleKey.End or ConsoleKey.LeftArrow or ConsoleKey.RightArrow)
-                {
-                    (ItemsPerPage, _) = Layout(ValidOptionsCount);
-                    var page = CurrentSelection / ItemsPerPage; var pages = (ValidOptionsCount + ItemsPerPage - 1) / ItemsPerPage;
-                    if (k is ConsoleKey.PageDown or ConsoleKey.RightArrow) page = Math.Min(page + 1, pages - 1);
-                    else if (k is ConsoleKey.PageUp or ConsoleKey.LeftArrow) page = Math.Max(page - 1, 0);
-                    else if (k is ConsoleKey.Home) page = 0; else page = pages - 1;
-                    CurrentSelection = Math.Min(page * ItemsPerPage, ValidOptionsCount - 1); 
-                    Render();
+                    case ConsoleKey.UpArrow:
+                        CurrentSelection = Math.Clamp(CurrentSelection - 1, 0, OptionPages[CurrentPage].Length - 1);
+                        break;
+                    case ConsoleKey.DownArrow:
+                        CurrentSelection = Math.Clamp(CurrentSelection + 1, 0, OptionPages[CurrentPage].Length - 1);
+                        break;
+                    case ConsoleKey.PageDown:
+                    case ConsoleKey.LeftArrow:
+                        CurrentPage = Math.Clamp(CurrentPage - 1, 0, OptionPages.Length - 1);
+                        break;
+                    case ConsoleKey.PageUp:
+                    case ConsoleKey.RightArrow:
+                        CurrentPage = Math.Clamp(CurrentPage + 1, 0, OptionPages.Length - 1);
+                        break;
+                    case ConsoleKey.Escape when _includeCancel:
+                        Console.CursorVisible = true;
+                        Console.Clear();
+                        return null;
+                    case ConsoleKey.Enter:
+                    case ConsoleKey.Spacebar:
+                        Console.CursorVisible = true;
+                        Console.Clear();
+                        return OptionPages[CurrentPage][CurrentSelection];
                 }
             }
 
-            void Render()
-            {
-                (ItemsPerPage, NeedsPages) = Layout(ValidOptionsCount);
-                var CurrentPage = CurrentSelection / ItemsPerPage;
-                var TotalPages = (ValidOptionsCount + ItemsPerPage - 1) / ItemsPerPage;
-                var FirstItemThisPage = CurrentPage * ItemsPerPage;
-                if (NeedsPages) { Console.SetCursorPosition(0, top - 1); var w = Console.WindowWidth; Console.Write(("Page " + (CurrentPage + 1) + "/" + TotalPages).PadRight(w)); }
-                for (int i = 0; i < ItemsPerPage; i++)
-                {
-                    int RederIndex = FirstItemThisPage + i;
-                    bool IsRenderingSelected = RederIndex == CurrentSelection;
-                    string RenderText = RederIndex < ValidOptions.Length ? "> " + ValidOptions[RederIndex].Display :
-                               _includeCancel && RederIndex == ValidOptions.Length ? "> " + _cancelLabel :
-                               ValidOptions.Length == 0 && !_includeCancel && i == 0 ? "> (no options)" : "";
-
-                    Console.SetCursorPosition(0, top + i);
-                    var f = Console.ForegroundColor; var b = Console.BackgroundColor;
-                    if (IsRenderingSelected) { Console.BackgroundColor = ConsoleColor.DarkGray; Console.ForegroundColor = ConsoleColor.Black; }
-                    var w = Console.WindowWidth; Console.Write(RenderText.Length > w ? RenderText[..w] : RenderText.PadRight(w));
-                    Console.ForegroundColor = f; Console.BackgroundColor = b;
-                }
-            }
-
-            (int p, bool g) Layout(int n)
-            {
-                var avail = Console.WindowHeight - _pre.Count - _post.Count - 1;
-                if (n > avail) return (Math.Max(1, avail - 1), true);
-                return (Math.Max(1, avail), false);
-            }
         }
 
-
-
+        private static void Render(Option<T>[][] OptionPages, int CurrentSelection, int OptionStartIndex, int CurrentPage)
+        {
+            int CurrentInd = OptionStartIndex;
+            Console.SetCursorPosition(0, CurrentInd);
+            var Options = OptionPages[CurrentPage];
+            if (OptionPages.Length > 1)
+            {
+                Console.Write($"Page {CurrentPage + 1}/{OptionPages.Length}".PadRight(Console.WindowWidth));
+                CurrentInd++;
+            }
+            int Index = 0;
+            foreach(var i in Options)
+            {
+                Console.SetCursorPosition(0, CurrentInd);
+                var f = Console.ForegroundColor; 
+                var b = Console.BackgroundColor;
+                if (Index == CurrentSelection) 
+                { 
+                    Console.BackgroundColor = ConsoleColor.DarkGray; 
+                    Console.ForegroundColor = ConsoleColor.Black; 
+                }
+                Console.Write(i.Display.PadRight(Console.WindowWidth));
+                Console.ForegroundColor = f; 
+                Console.BackgroundColor = b;
+                CurrentInd++;
+                Index++;
+            }
+        }
     }
 }
