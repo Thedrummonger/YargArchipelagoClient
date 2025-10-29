@@ -22,7 +22,7 @@ namespace YargArchipelagoCLI
             Console.Clear();
             bool ConsoleExiting = false;
             ConsoleSelect<Action> consoleSelect = new();
-            consoleSelect.IncludeCancel("Exit Program").AddText(SectionPlacement.Pre, "Yarg AP Client").AddSeparator(SectionPlacement.Pre)
+            consoleSelect.AddCancelOption("Exit Program").AddText(SectionPlacement.Pre, "Yarg AP Client").AddSeparator(SectionPlacement.Pre)
                 .Add("Show Available Songs", PrintCurrentSongList)
                 .Add("Use Filler Item", UseFillerItem)
                 .Add("Toggle Config", ToggleConfig)
@@ -33,29 +33,32 @@ namespace YargArchipelagoCLI
             {
                 Console.Clear();
                 var Selection = consoleSelect.GetSelection();
-                if (Selection is null)
+                if (Selection is FlaggedOption<Action> flag && flag.Flag is ReturnFlag.Cancel)
                     break;
-                Selection.Tag();
+                Selection.Tag!();
             }
         }
 
         private static void ToggleConfig()
         {
-            CLIKeyChoiceContainer choiceContainer;
+            ConsoleSelect<Action> consoleSelect;
+
+            int CurrentSelection = 0;
             while (true)
             {
+                consoleSelect = new();
+                consoleSelect.AddCancelOption("Go Back").AddText(SectionPlacement.Pre, "Toggle Config Options..").AddSeparator(SectionPlacement.Pre).StartIndex(CurrentSelection)
+                    .Add($"BroadCast Song Names: {config.BroadcastSongName}", () => config.BroadcastSongName = !config.BroadcastSongName)
+                    .Add($"DeathLink: {config.deathLinkEnabled}", () => config.deathLinkEnabled = !config.deathLinkEnabled, () => config.ServerDeathLink)
+                    .Add($"Item Notifications: {config.InGameItemLog}", () => config.InGameItemLog = CycleLog(config.InGameItemLog))
+                    .Add($"Chat Notifications: {config.InGameAPChat}", () => config.InGameAPChat = !config.InGameAPChat)
+                    .Add($"Cheat Mode: {config.CheatMode}", () => config.CheatMode = !config.CheatMode, () => Debugger.IsAttached);
                 Console.Clear();
-                choiceContainer = new("Config", ConsoleKey.Escape);
-                choiceContainer.AddOption(ConsoleKey.B, $"BroadCast Song Names: {config.BroadcastSongName}", () => config.BroadcastSongName = !config.BroadcastSongName);
-                choiceContainer.AddOption(ConsoleKey.D, $"DeathLink: {config.deathLinkEnabled}", () => config.deathLinkEnabled = !config.deathLinkEnabled);
-                choiceContainer.AddOption(ConsoleKey.I, $"Item Notifications: {config.InGameItemLog}", () => config.InGameItemLog = CycleLog(config.InGameItemLog));
-                choiceContainer.AddOption(ConsoleKey.C, $"Chat Notifications: {config.InGameAPChat}", () => config.InGameAPChat = !config.InGameAPChat);
-                choiceContainer.AddOption(ConsoleKey.M, $"Cheat Mode: {config.CheatMode}", () => config.CheatMode = !config.CheatMode, () => Debugger.IsAttached);
-
-                var Choice = choiceContainer.GetChoice();
-                if (Choice is null) return;
-                Choice.OnSelect?.Invoke();
-                config.SaveConfigFile(connection);
+                var Selection = consoleSelect.GetSelection();
+                CurrentSelection = consoleSelect.CurrentSelection;
+                if (Selection is FlaggedOption<Action> flag && flag.Flag is ReturnFlag.Cancel)
+                    break;
+                Selection.Tag!();
             }
 
             CommonData.ItemLog CycleLog(CommonData.ItemLog Cur) => Cur switch
@@ -92,12 +95,16 @@ namespace YargArchipelagoCLI
             int LowerDiffUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.LowerDifficulty, out int lu) ? lu : 0;
             int LowerDiffAvailable = LowerDiffTotal - LowerDiffUsed;
 
-            CLIKeyChoiceContainer choiceContainer = new("Select a filler item:");
-            choiceContainer.AddOption(ConsoleKey.P, $"Use Swap Song (Pick) {SwapsAvailable}", () => SwapSong(true), () => SwapsAvailable > 1 || config.CheatMode);
-            choiceContainer.AddOption(ConsoleKey.R, $"Use Swap Song (Random) {RandomSwapsAvailable}", () => SwapSong(false), () => RandomSwapsAvailable > 1 || config.CheatMode);
-            choiceContainer.AddOption(ConsoleKey.L, $"Lower Song requirements {LowerDiffAvailable}", () => LowerScore(), () => LowerDiffAvailable > 1 || config.CheatMode);
+            ConsoleSelect<Action> consoleSelect = new();
+            consoleSelect.AddCancelOption("Cancel").AddText(SectionPlacement.Pre, "Select an item to use..").AddSeparator(SectionPlacement.Pre)
+            .Add($"Use Swap Song (Pick) {SwapsAvailable}", () => SwapSong(true), () => SwapsAvailable > 1 || config.CheatMode)
+            .Add($"Use Swap Song (Random) {RandomSwapsAvailable}", () => SwapSong(false), () => RandomSwapsAvailable > 1 || config.CheatMode)
+            .Add($"Lower Song requirements {LowerDiffAvailable}", () => LowerScore(), () => LowerDiffAvailable > 1 || config.CheatMode);
 
-            choiceContainer.GetChoice()?.OnSelect?.Invoke();
+            var Selection = consoleSelect.GetSelection();
+            if (Selection is FlaggedOption<Action> flag && flag.Flag is ReturnFlag.Cancel)
+                return;
+            Selection.Tag!();
         }
 
         private static void LowerScore()
@@ -108,30 +115,30 @@ namespace YargArchipelagoCLI
             if (song is null) return;
             FillerActivationHelper fillerActivationHelper = new(connection, config, song);
 
-            CLIKeyChoiceContainer choiceContainer = new($"{song.GetSongDisplayName(config)}\nCurrent Requirements:\n{song.Requirements!.CompletionRequirement.ToFormattedJson()}");
-            choiceContainer.SetSelectText("Select a requirement to change:");
-
-            choiceContainer.AddOption(ConsoleKey.D1, "Lower Reward 1 min Difficulty", fillerActivationHelper.LowerReward1Diff, 
-                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Diff > CommonData.SupportedDifficulty.Easy; });
-            choiceContainer.AddOption(ConsoleKey.D2, "Lower Reward 2 min Difficulty", fillerActivationHelper.LowerReward2Diff,
-                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Diff > CommonData.SupportedDifficulty.Easy; });
-            choiceContainer.AddOption(ConsoleKey.D3, "Lower Reward 1 min Score", fillerActivationHelper.LowerReward1Req,
-                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Req > APWorldData.CompletionReq.Clear; });
-            choiceContainer.AddOption(ConsoleKey.D4, "Lower Reward 2 min Score", fillerActivationHelper.LowerReward2Req,
+            ConsoleSelect<Action> consoleSelect = new();
+            consoleSelect.AddText(SectionPlacement.Pre, $"{song.GetSongDisplayName(config)}\nCurrent Requirements:\n{song.Requirements!.CompletionRequirement.ToFormattedJson()}")
+            .AddSeparator(SectionPlacement.Pre).AddText(SectionPlacement.Pre, "Select a requirement to change:").AddSeparator(SectionPlacement.Pre)
+            .Add("Lower Reward 1 min Difficulty", fillerActivationHelper.LowerReward1Diff,
+                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Diff > CommonData.SupportedDifficulty.Easy; })
+            .Add("Lower Reward 2 min Difficulty", fillerActivationHelper.LowerReward2Diff,
+                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Diff > CommonData.SupportedDifficulty.Easy; })
+            .Add("Lower Reward 1 min Score", fillerActivationHelper.LowerReward1Req,
+                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Req > APWorldData.CompletionReq.Clear; })
+            .Add("Lower Reward 2 min Score", fillerActivationHelper.LowerReward2Req,
                 () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Req > APWorldData.CompletionReq.Clear; });
 
-            if (!choiceContainer.AreAnyValid())
+            if (!consoleSelect.HasValidOptions)
             {
                 Console.WriteLine("Location difficulty can not be lowered any further!");
                 Console.ReadLine();
                 return;
             }
 
-            var Choice = choiceContainer.GetChoice();
-            if (Choice is null)
+            var Selection = consoleSelect.GetSelection();
+            if (Selection is FlaggedOption<Action> flag && flag.Flag is ReturnFlag.Cancel)
                 return;
+            Selection.Tag!();
 
-            Choice?.OnSelect?.Invoke();
             Console.WriteLine($"Song {song.SongNumber} Difficulty Updated\n{song.Requirements!.CompletionRequirement.ToFormattedJson()}");
             Console.ReadLine();
         }
@@ -185,7 +192,8 @@ namespace YargArchipelagoCLI
             foreach (var i in validReplacements.OrderBy(x => x.GetSongDisplayName()))
                 consoleSelect.Add(i.GetSongDisplayName(), i);
             var Selection = consoleSelect.GetSelection();
-            if (Selection is null) return null;
+            if (Selection is FlaggedOption<CommonData.SongData> flag && flag.Flag is ReturnFlag.Cancel)
+                return null;
             return Selection.Tag;
         }
 
@@ -194,26 +202,25 @@ namespace YargArchipelagoCLI
             Dictionary<int, SongLocation> LocationDict = [];
             Console.Clear();
 
-            CLITextChoiceContainer choiceContainer = new("Available songs", string.Empty);
-            choiceContainer.SetSelectText(SelectionText);
+            ConsoleSelect<SongLocation> consoleSelect = new();
+
+            consoleSelect.AddText(SectionPlacement.Pre, "Available songs").AddText(SectionPlacement.Pre, SelectionText).AddSeparator(SectionPlacement.Pre);
 
             var GoalSongAvailable = config.GoalSong.SongAvailableToPlay(connection, config);
             string GoalSongDebugHeader = config.DebugPrintAllSongs ? !config.GoalSong.HasUncheckedLocations(connection) ? "@ " : (GoalSongAvailable ? "O " : "X ") : "";
-            choiceContainer.AddOption(config.GoalSong.SongNumber.ToString(), GoalSongDebugHeader + config.GoalSong.GetSongDisplayName(config), null, 
-                () => GoalSongAvailable || config.DebugPrintAllSongs, config.GoalSong);
+            consoleSelect.Add(GoalSongDebugHeader + config.GoalSong.GetSongDisplayName(config), config.GoalSong, () => GoalSongAvailable || config.DebugPrintAllSongs);
 
             foreach (var i in config!.ApLocationData.OrderBy(x => x.Key))
             {
                 int Num = i.Value.SongNumber;
                 var SongAvailable = i.Value.SongAvailableToPlay(connection, config);
                 string SongDebugHeader = config.DebugPrintAllSongs ? !i.Value.HasUncheckedLocations(connection) ? "@ " : SongAvailable ? "O " : "X " : "";
-                choiceContainer.AddOption(i.Value.SongNumber.ToString(), SongDebugHeader + i.Value.GetSongDisplayName(config), null,
-                    () => SongAvailable || config.DebugPrintAllSongs, i.Value);
+                consoleSelect.Add(SongDebugHeader + i.Value.GetSongDisplayName(config), i.Value, () => SongAvailable || config.DebugPrintAllSongs);
             }
-            var Choice = choiceContainer.GetChoice()?.tag;
-            if (Choice is SongLocation SongChoice)
-                return SongChoice;
-            return null;
+            var Selection = consoleSelect.GetSelection();
+            if (Selection is FlaggedOption<SongLocation> flag && flag.Flag is ReturnFlag.Cancel)
+                return null;
+            return Selection.Tag;
         }
 
         public static ConfigData? CreateNewConfig()
