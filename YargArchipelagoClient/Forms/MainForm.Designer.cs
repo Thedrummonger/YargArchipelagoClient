@@ -246,33 +246,33 @@ namespace YargArchipelagoClient
             // updateAvailableSongsToolStripMenuItem
             // 
             updateAvailableSongsToolStripMenuItem.Name = "updateAvailableSongsToolStripMenuItem";
-            updateAvailableSongsToolStripMenuItem.Size = new Size(198, 22);
-            updateAvailableSongsToolStripMenuItem.Text = "Update Available Songs";
+            updateAvailableSongsToolStripMenuItem.Size = new Size(180, 22);
+            updateAvailableSongsToolStripMenuItem.Text = "Sync with YARG";
             updateAvailableSongsToolStripMenuItem.Click += updateAvailableSongsToolStripMenuItem_Click;
             // 
             // rescanSongListToolStripMenuItem
             // 
             rescanSongListToolStripMenuItem.Name = "rescanSongListToolStripMenuItem";
-            rescanSongListToolStripMenuItem.Size = new Size(198, 22);
+            rescanSongListToolStripMenuItem.Size = new Size(180, 22);
             rescanSongListToolStripMenuItem.Text = "Rescan Song List";
             rescanSongListToolStripMenuItem.Click += rescanSongListToolStripMenuItem_Click;
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(195, 6);
+            toolStripSeparator1.Size = new Size(177, 6);
             // 
             // aPServerToolStripMenuItem
             // 
             aPServerToolStripMenuItem.Enabled = false;
             aPServerToolStripMenuItem.Name = "aPServerToolStripMenuItem";
-            aPServerToolStripMenuItem.Size = new Size(198, 22);
+            aPServerToolStripMenuItem.Size = new Size(180, 22);
             aPServerToolStripMenuItem.Text = "AP Server:";
             // 
             // changeServerToolStripMenuItem
             // 
             changeServerToolStripMenuItem.Name = "changeServerToolStripMenuItem";
-            changeServerToolStripMenuItem.Size = new Size(198, 22);
+            changeServerToolStripMenuItem.Size = new Size(180, 22);
             changeServerToolStripMenuItem.Text = "Disconnect from AP";
             changeServerToolStripMenuItem.Click += ResetConnection;
             // 

@@ -54,6 +54,7 @@ namespace YargArchipelagoClient.Helpers
 
         public static void RescanSongs(ConfigData config, ConnectionData connection)
         {
+            int CurrentCount = config.SongData.Count;
             if (!TryReadSongs(out var data))
                 return;
 
@@ -61,16 +62,19 @@ namespace YargArchipelagoClient.Helpers
             HashSet<SongLocation> CheckedLocations = [.. config.ApLocationData.Values.Where(x => !x.HasUncheckedLocations(connection))];
             HashSet<SongLocation> InvalidUnchecked = [.. UncheckedLocations.Where(x => !data.ContainsKey(x.SongHash!))];
             HashSet<SongLocation> ValidUnchecked = [.. UncheckedLocations.Where(x => data.ContainsKey(x.SongHash!))];
-            HashSet<SongLocation> InvalidChecked = [.. CheckedLocations.Where(x => !data.ContainsKey(x.SongHash!))];
+            HashSet<SongLocation> InvalidChecked = [.. CheckedLocations.Where(x => !data.ContainsKey(x.SongHash!) && x.SongHash != string.Empty)];
             HashSet<SongLocation> ValidChecked = [.. CheckedLocations.Where(x => data.ContainsKey(x.SongHash!))];
 
             if (InvalidChecked.Count != 0)
             {
                 var MAresult = MessageBox.Show($"{InvalidChecked.Count} Songs assigned to checked locations were missing from your new song list!\n\n" +
-                    $"Since these locations were already completed, the operation will continue, but records may be incomplete.\n\nWould you like to continue?\n\n" +
+                    $"Since these locations were already completed the song will not be replaced. The operation will continue, but records may be incomplete.\n\nWould you like to continue?\n\n" +
                     $"{InvalidChecked.Select(x => x.GetSongDisplayName(config)).ToFormattedJson()}", "Missing Songs!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
                 if (MAresult != DialogResult.Yes)
                     return;
+
+                foreach (var i in InvalidChecked)
+                    i.SongHash = string.Empty;
             }
 
             if (InvalidUnchecked.Count != 0)
@@ -112,11 +116,12 @@ namespace YargArchipelagoClient.Helpers
                     i.SongHash = NewCandidate.SongChecksum;
                 }
 
-                MessageBox.Show($"Successfully replaced missing Songs", "Rescan Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
             }
             config.SongData = new(data);
             config.SaveConfigFile(connection);
+
+            string ReplacedMessage = InvalidUnchecked.Count != 0 ? $"Successfully replaced {InvalidUnchecked.Count} missing Songs\n\n" : "";
+            MessageBox.Show($"Song List Rescanned.\n\n{ReplacedMessage}Previous Count: {CurrentCount} | New Count: {config.SongData.Count}", "Rescan Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
 
         }

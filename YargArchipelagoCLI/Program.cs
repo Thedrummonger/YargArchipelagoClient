@@ -1,9 +1,6 @@
-﻿using Archipelago.MultiClient.Net.Enums;
-using Archipelago.MultiClient.Net;
-using YargArchipelagoClient.Data;
+﻿using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Helpers;
 using YargArchipelagoCore.Helpers;
-using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
 using TDMUtils;
 using YargArchipelagoCommon;
 
@@ -24,14 +21,45 @@ namespace YargArchipelagoCLI
             Console.Clear();
             bool ConsoleExiting = false;
             CLIKeyChoiceContainer choiceContainer = new("-YARG AP Client", ConsoleKey.End);
-            choiceContainer.SetCancelText(string.Empty).SetSelectText(string.Empty);
-            choiceContainer.AddOption(ConsoleKey.S, "Print Available Songs", PrintCurrentSongList);
+            choiceContainer.SetCancelText(string.Empty).SetSelectText(string.Empty).ToggleInvalidFeedback(false);
+            choiceContainer.AddOption(ConsoleKey.A, "Show Available Songs", PrintCurrentSongList);
             choiceContainer.AddOption(ConsoleKey.F, "Use Filler Item", UseFillerItem);
+            choiceContainer.AddOption(ConsoleKey.C, "Toggle Config", ToggleConfig);
+            choiceContainer.AddOption(ConsoleKey.R, "Rescan Songs", () => SongImporter.RescanSongs(config!, connection!));
+            choiceContainer.AddOption(ConsoleKey.S, "Sync With YARG", connection!.GetPacketServer().SendClientStatusPacket);
+
             while (!ConsoleExiting)
             {
                 choiceContainer.GetChoice()?.OnSelect?.Invoke();
                 Console.Clear();
             }
+        }
+
+        private static void ToggleConfig()
+        {
+            CLIKeyChoiceContainer choiceContainer;
+            while (true)
+            {
+                Console.Clear();
+                choiceContainer = new("Config", ConsoleKey.Escape);
+                choiceContainer.AddOption(ConsoleKey.B, $"BroadCast Song Names: {config.BroadcastSongName}", () => config.BroadcastSongName = !config.BroadcastSongName);
+                choiceContainer.AddOption(ConsoleKey.D, $"DeathLink: {config.deathLinkEnabled}", () => config.deathLinkEnabled = !config.deathLinkEnabled);
+                choiceContainer.AddOption(ConsoleKey.I, $"Item Notifications: {config.InGameItemLog}", () => config.InGameItemLog = CycleLog(config.InGameItemLog));
+                choiceContainer.AddOption(ConsoleKey.C, $"Chat Notifications: {config.InGameAPChat}", () => config.InGameAPChat = !config.InGameAPChat);
+
+                var Choice = choiceContainer.GetChoice();
+                if (Choice is null) return;
+                Choice.OnSelect?.Invoke();
+                config.SaveConfigFile(connection);
+            }
+
+            CommonData.ItemLog CycleLog(CommonData.ItemLog Cur) => Cur switch
+            {
+                CommonData.ItemLog.None => CommonData.ItemLog.ToMe,
+                CommonData.ItemLog.ToMe => CommonData.ItemLog.All,
+                CommonData.ItemLog.All => CommonData.ItemLog.None,
+                _ => CommonData.ItemLog.None,
+            };
         }
 
         private static void PrintCurrentSongList()

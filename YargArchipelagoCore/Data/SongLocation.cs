@@ -15,7 +15,7 @@ namespace YargArchipelagoClient.Data
         public string GetSongDisplayName(ConfigData config, bool WithArtist = true, bool WithAlbum = false, bool WithSongNum = false)
         {
             var Data = GetSongData(config);
-            if (Data is not CommonData.SongData SongData) return SongNumber.ToString();
+            if (Data is not CommonData.SongData SongData) return $"Unknown Song{(string.IsNullOrWhiteSpace(SongHash) ? "" : " [Error]")}";
             string Display = SongData.Name;
             if (WithArtist)
                 Display += $" by {SongData.Artist}";
