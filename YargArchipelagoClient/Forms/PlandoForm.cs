@@ -12,11 +12,14 @@ namespace YargArchipelagoClient.Forms
         ConfigForm Parent;
         public Dictionary<int, PlandoData> PlandoSongData { get; set; }
 
-        public PlandoForm(ConfigForm parent, Dictionary<int, PlandoData> Plando)
+        SongPoolManager poolManager;
+
+        public PlandoForm(ConfigForm parent, Dictionary<int, PlandoData> Plando, SongPoolManager Manager)
         {
             InitializeComponent();
             Parent = parent;
             PlandoSongData = Plando;
+            poolManager = Manager;
         }
 
         private void PlandoForm_Load(object sender, EventArgs e)
@@ -35,18 +38,12 @@ namespace YargArchipelagoClient.Forms
             LoadSongUIFromSelectedItem();
         }
 
-        private bool CanPlandoAnyPoolToThisLocation(PlandoData selectedLocation, out IEnumerable<SongPool> validPools)
-        {
-            validPools = Parent.Pools.Where(x => Parent.SongPoolManager.CanPlandoPoolToThisLocation(x, selectedLocation));
-            return validPools.Any();
-        }
-
         private void LoadPoolUIFromSelectedItem()
         {
             if (Updating) return;
             Updating = true;
             var selectedSong = GetSelectedSong();
-            if (selectedSong is not null && Parent.Pools.Count > 0 && CanPlandoAnyPoolToThisLocation(selectedSong, out var ValidPools))
+            if (selectedSong is not null && Parent.Pools.Count > 0 && poolManager.CanPlandoAnyPoolToThisLocation(selectedSong, out var ValidPools))
             {
                 groupBox1.Enabled = true;
                 chkEnablePoolPlando.Checked = selectedSong.PoolPlandoEnabled;
@@ -63,17 +60,12 @@ namespace YargArchipelagoClient.Forms
             Updating = false;
         }
 
-        public bool CanPlandoSongToThisLocation(PlandoData selectedSong)
-        {
-            return Parent.SongPoolManager.GetOverallAssignedCount() < Parent.data.TotalAPSongLocations || selectedSong.HasValidPlando;
-        }
-
         private void LoadSongUIFromSelectedItem()
         {
             if (Updating) return;
             Updating = true;
             var selectedSong = GetSelectedSong();
-            if (selectedSong is not null && GetValidSongsForAllPools().Count > 0 && CanPlandoSongToThisLocation(selectedSong))
+            if (selectedSong is not null && poolManager.GetValidSongsForAllPools().Count > 0 && poolManager.CanPlandoSongToThisLocation(selectedSong))
             {
                 groupBox2.Enabled = true;
                 chkEnableSongPlando.Checked = selectedSong.SongPlandoEnabled;
@@ -92,7 +84,7 @@ namespace YargArchipelagoClient.Forms
 
         private void PrintSongsForPlando(PlandoData SelectedSong)
         {
-            HashSet<CommonData.SongData> ValidSongs = GetValidSongsForAllPools();
+            HashSet<CommonData.SongData> ValidSongs = poolManager.GetValidSongsForAllPools();
             if (SelectedSong.PoolPlandoEnabled)
             {
                 var Pool = Parent.Pools.FirstOrDefault(x => x.Name == SelectedSong.SongPool);
@@ -147,28 +139,14 @@ namespace YargArchipelagoClient.Forms
             else if (cmbFilterConfigured.CheckState == CheckState.Indeterminate)
                 songNums = [.. songNums.Where(x => !PlandoSongData[x].HasValidPlando)];
             if (txtFilter.Text.Length > 0)
-                songNums = [.. songNums.Where(i => SongDisplay(i).Contains(txtFilter.Text, StringComparison.CurrentCultureIgnoreCase))];
+                songNums = [.. songNums.Where(i => poolManager.SongDisplay(i).Contains(txtFilter.Text, StringComparison.CurrentCultureIgnoreCase))];
 
-            cmbAPLocation.DataSource = WinFormHelpers.ContainerItem.ToContainerList(songNums, SongDisplay);
+            cmbAPLocation.DataSource = WinFormHelpers.ContainerItem.ToContainerList(songNums, poolManager.SongDisplay);
         }
-        private string SongDisplay(int num) => num > 0 ? $"Song {num}" : "Goal Song";
 
         private void btnApply_Click(object sender, EventArgs e)
         {
             Debug.WriteLine(PlandoSongData.Where(x => x.Value.SongPlandoEnabled || x.Value.PoolPlandoEnabled).ToFormattedJson());
-        }
-
-        private HashSet<CommonData.SongData> GetValidSongsForAllPools()
-        {
-            HashSet<CommonData.SongData> ValidSongs = [];
-            foreach (var p in Parent.Pools)
-            {
-                foreach (var s in p.GetAvailableSongs(Parent.data.SongData).Values)
-                {
-                    ValidSongs.Add(s);
-                }
-            }
-            return ValidSongs;
         }
     }
 }

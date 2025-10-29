@@ -41,7 +41,7 @@ namespace YargArchipelagoClient
                 return;
             }
             data.SongData = SongData;
-            SongPoolManager = new(Pools, PlandoSongData, data.TotalAPSongLocations, data.SongData);
+            SongPoolManager = new(Pools, PlandoSongData, data);
             gbCurrentPool.Enabled = false;
             gbSongPoolSelect.Enabled = Pools.Count > 0;
             cmbAddInstrument.DataSource = Enum.GetValues(typeof(CommonData.SupportedInstrument)).Cast<CommonData.SupportedInstrument>().ToArray();
@@ -199,7 +199,7 @@ namespace YargArchipelagoClient
 
         private void button1_Click(object sender, EventArgs e)
         {
-            var Plando = new PlandoForm(this, PlandoSongData);
+            var Plando = new PlandoForm(this, PlandoSongData, SongPoolManager);
             Plando.ShowDialog();
             Debug.WriteLine(PlandoSongData.Where(x => x.Value.SongPlandoEnabled || x.Value.PoolPlandoEnabled).ToFormattedJson());
             LoadPoolData(sender, e);

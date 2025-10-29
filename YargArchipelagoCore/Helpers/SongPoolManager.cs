@@ -1,11 +1,12 @@
 ﻿using TDMUtils;
 using YargArchipelagoClient.Data;
+using YargArchipelagoCommon;
 using YargArchipelagoCore.Data;
 using static YargArchipelagoCommon.CommonData;
 
 namespace YargArchipelagoClient.Helpers
 {
-    public class SongPoolManager(List<SongPool> allPools, Dictionary<int, PlandoData> plandoSongData, int totalAPSongLocations,Dictionary<string, SongData> allSongData)
+    public class SongPoolManager(List<SongPool> allPools, Dictionary<int, PlandoData> plandoSongData, ConfigData data)
     {
         Dictionary<string, HashSet<string>>? SongToPoolMap = null;
         /// <summary>
@@ -41,15 +42,15 @@ namespace YargArchipelagoClient.Helpers
         /// Gets the amount of songs that could be applied to this pool when selecting it's random amount
         /// </summary>
         public int GetPotentialSongsForRandomPool(SongPool pool) =>
-            pool.RandomAmount ? pool.GetAvailableSongs(allSongData).Count - GetTotalAssignedToThisPool(pool) : 0;
+            pool.RandomAmount ? pool.GetAvailableSongs(data.SongData).Count - GetTotalAssignedToThisPool(pool) : 0;
 
         /// <summary>
         /// Gets the Total number of songs That could be applied to this pool
         /// </summary>
         public int GetTotalAmountAssignableToThisPool(SongPool pool)
         {
-            var AvailablePerRestriction = pool.GetAvailableSongs(allSongData).Count;
-            var AvailablePerMaxSongs = totalAPSongLocations - GetAmountAssignedFromOtherPools(pool);
+            var AvailablePerRestriction = pool.GetAvailableSongs(data.SongData).Count;
+            var AvailablePerMaxSongs = data.TotalAPSongLocations - GetAmountAssignedFromOtherPools(pool);
             return Math.Min(AvailablePerMaxSongs, AvailablePerRestriction);
         }
 
@@ -90,13 +91,13 @@ namespace YargArchipelagoClient.Helpers
             var AmountRandomAssignable = GetOverallRandomAssignedCount();
 
             // If we have manually assigned more location that are needed, return the amount we assigned (invalid)
-            if (AmmountAssigned > totalAPSongLocations)
+            if (AmmountAssigned > data.TotalAPSongLocations)
                 return AmmountAssigned;
 
             // At this point we know that AmmountAssigned <= totalAPSongLocations
             // If AmmountAssigned == totalAPSongLocations or can meet or exceed by adding AmountRandomAssignable, return the requirement amount (valid)
-            if (AmmountAssigned + AmountRandomAssignable >= totalAPSongLocations)
-                return totalAPSongLocations;
+            if (AmmountAssigned + AmountRandomAssignable >= data.TotalAPSongLocations)
+                return data.TotalAPSongLocations;
 
             //At this point we know we can not reach the required amount, return the max amount we can reach (invalid)
             return AmmountAssigned + AmountRandomAssignable;
@@ -118,7 +119,7 @@ namespace YargArchipelagoClient.Helpers
             SongToPoolMap = [];
             foreach (var p in allPools)
             {
-                var AvailableSongs = p.GetAvailableSongs(allSongData).Values;
+                var AvailableSongs = p.GetAvailableSongs(data.SongData).Values;
                 foreach (var i in AvailableSongs)
                 {
                     SongToPoolMap.SetIfEmpty(i.SongChecksum, []);
@@ -143,9 +144,35 @@ namespace YargArchipelagoClient.Helpers
 
         public SongData GetRandomUnusedSong(SongPool pool, Dictionary<string, HashSet<string>> UsedSongs, ConnectionData connection)
         {
-            var availableSongs = pool.GetAvailableSongs(allSongData, UsedSongs).Values.ToArray();
+            var availableSongs = pool.GetAvailableSongs(data.SongData, UsedSongs).Values.ToArray();
             int randomIndex = connection.GetRNG().Next(availableSongs.Length);
             return availableSongs[randomIndex]; ;
         }
+
+        public HashSet<SongData> GetValidSongsForAllPools()
+        {
+            HashSet<CommonData.SongData> ValidSongs = [];
+            foreach (var p in allPools)
+            {
+                foreach (var s in p.GetAvailableSongs(data.SongData).Values)
+                {
+                    ValidSongs.Add(s);
+                }
+            }
+            return ValidSongs;
+        }
+        public bool CanPlandoAnyPoolToThisLocation(PlandoData selectedLocation, out IEnumerable<SongPool> validPools)
+        {
+            validPools = allPools.Where(x => CanPlandoPoolToThisLocation(x, selectedLocation));
+            return validPools.Any();
+        }
+
+        public bool CanPlandoSongToThisLocation(PlandoData selectedSong)
+        {
+            return GetOverallAssignedCount() < data.TotalAPSongLocations || selectedSong.HasValidPlando;
+        }
+
+        public string SongDisplay(int num) => num > 0 ? $"Song {num}" : "Goal Song";
+
     }
 }
