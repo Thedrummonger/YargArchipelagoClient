@@ -10,27 +10,34 @@ namespace YargArchipelagoCLI
 {
     internal static class Program
     {
+        static bool ConsoleExiting = false;
         private static ConnectionData connection;
         private static ConfigData config;
+
+        static AppMonitor? liveMonitor = null;
         static void Main(string[] args)
         {
             MultiplatformHelpers.MessageBox.ApplyConsoleTemplate();
             if (!ClientInitializationHelper.ConnectSession(NewConnectionHelper.CreateNewConnection, CreateNewConfig, ApplyUIListeners, out connection, out config))
                 return;
+            liveMonitor = new(config, connection);
             Console.Clear();
-            bool ConsoleExiting = false;
             ConsoleSelect<Action> consoleSelect = new();
             consoleSelect.AddCancelOption("Exit Program").AddText(SectionPlacement.Pre, "Yarg AP Client").AddSeparator(SectionPlacement.Pre)
+                .Add("Open Live Monitor", liveMonitor.Show)
                 .Add("Show Available Songs", PrintCurrentSongList)
                 .Add("Use Filler Item", UseFillerItem)
                 .Add("Toggle Config", ToggleConfig)
                 .Add("Rescan Songs", () => SongImporter.RescanSongs(config!, connection!))
                 .Add("Sync With YARG", connection!.GetPacketServer().SendClientStatusPacket);
 
+            liveMonitor.Show();
             while (!ConsoleExiting)
             {
                 Console.Clear();
                 var Selection = consoleSelect.GetSelection();
+                if (ConsoleExiting)
+                    break;
                 if (Selection.WasCancelation())
                     if (MessageBox.Show("Are you sure you want to exit?", buttons: MessageBoxButtons.YesNo) == DialogResult.Yes)
                         break;
@@ -63,7 +70,7 @@ namespace YargArchipelagoCLI
 
         private static void PrintCurrentSongList()
         {
-            var ShowDetails = PrintAvailableSongs(["Select A song to see info..", "This list does not auto update as new songs are found, You must manually refresh!\""], [], 
+            var ShowDetails = PrintAvailableSongs(["Select A song to see info..", "This list does not auto update as new songs are found, use the Live Monitor!\""], [], 
                 new FlaggedOption<SongLocation>("Cancel", ReturnFlag.Cancel));
             if (ShowDetails is null) return;
             Console.Clear();
@@ -225,6 +232,12 @@ namespace YargArchipelagoCLI
             return configCreator.CreateConfig();
         }
 
-        static void ApplyUIListeners(ConnectionData connectionData) { }
+        static void ApplyUIListeners(ConnectionData connectionData) 
+        {
+            connection.GetSession().Items.ItemReceived += (_) => liveMonitor?.FlagForUpdate<SongApplet>();
+            connection.GetSession().MessageLog.OnMessageReceived += (M) => { liveMonitor?.LogChat(M.ToString()); liveMonitor?.FlagForUpdate<ChatApplet>(); };
+            connection.GetPacketServer().ConnectionChanged += () => liveMonitor?.FlagForUpdate<StatusApplet>();
+            connection.GetPacketServer().CurrentSongUpdated += () => liveMonitor?.FlagForUpdate<StatusApplet>();
+        }
     }
 }

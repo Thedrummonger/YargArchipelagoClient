@@ -65,5 +65,20 @@ namespace YargArchipelagoClient.Helpers
             Connection.GetPacketServer().SendClientStatusPacket();
         }
 
+        public static SongLocation[] GetAllAvailableSongLocations(this ConnectionData connection, ConfigData config, bool respectCheatMode = true)
+        {
+            if (config.CheatMode && respectCheatMode)
+                return [config.GoalSong, .. config!.ApLocationData.Values.OrderBy(x => x.SongNumber)];
+
+            List<SongLocation> songLocations = [];
+
+            if (config.GoalSong.SongAvailableToPlay(connection, config))
+                songLocations.Add(config.GoalSong);
+            foreach (var i in config!.ApLocationData.OrderBy(x => x.Key))
+                if (i.Value.SongAvailableToPlay(connection, config))
+                    songLocations.Add(i.Value);
+            return [..songLocations];
+        }
+
     }
 }
