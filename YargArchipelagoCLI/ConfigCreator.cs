@@ -1,4 +1,5 @@
 ﻿using TDMUtils;
+using TDMUtils.CLITools;
 using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Helpers;
 using YargArchipelagoCommon;
@@ -122,13 +123,13 @@ namespace YargArchipelagoCLI
                 PoolConfigConsoleSelect.Add($"Min Difficulty: {Pool.MinDifficulty}", () => Pool.MinDifficulty = GetNumber(100));
                 PoolConfigConsoleSelect.Add($"Max Difficulty: {Pool.MaxDifficulty}", () => Pool.MaxDifficulty = GetNumber(100));
                 PoolConfigConsoleSelect.Add($"Reward 1 Score Requirement: {Pool.CompletionRequirement.Reward1Req}", 
-                    () => Pool.CompletionRequirement.Reward1Req = CLIHelpers.NextEnumValue(Pool.CompletionRequirement.Reward1Req));
+                    () => Pool.CompletionRequirement.Reward1Req = EnumerableUtilities.NextValue(Pool.CompletionRequirement.Reward1Req));
                 PoolConfigConsoleSelect.Add($"Reward 1 Minimum Difficulty: {Pool.CompletionRequirement.Reward1Diff}",
-                    () => Pool.CompletionRequirement.Reward1Diff = CLIHelpers.NextEnumValue(Pool.CompletionRequirement.Reward1Diff));
-                PoolConfigConsoleSelect.Add($"Reward 2 Score Requirement: {Pool.CompletionRequirement.Reward1Req}",
-                    () => Pool.CompletionRequirement.Reward1Req = CLIHelpers.NextEnumValue(Pool.CompletionRequirement.Reward1Req));
-                PoolConfigConsoleSelect.Add($"Reward 2 Minimum Difficulty: {Pool.CompletionRequirement.Reward1Diff}",
-                    () => Pool.CompletionRequirement.Reward1Diff = CLIHelpers.NextEnumValue(Pool.CompletionRequirement.Reward1Diff));
+                    () => Pool.CompletionRequirement.Reward1Diff = EnumerableUtilities.NextValue(Pool.CompletionRequirement.Reward1Diff));
+                PoolConfigConsoleSelect.Add($"Reward 2 Score Requirement: {Pool.CompletionRequirement.Reward2Req}",
+                    () => Pool.CompletionRequirement.Reward2Req = EnumerableUtilities.NextValue(Pool.CompletionRequirement.Reward2Req));
+                PoolConfigConsoleSelect.Add($"Reward 2 Minimum Difficulty: {Pool.CompletionRequirement.Reward2Diff}",
+                    () => Pool.CompletionRequirement.Reward2Diff = EnumerableUtilities.NextValue(Pool.CompletionRequirement.Reward2Diff));
                 PoolConfigConsoleSelect.AddStatic("Confirm", ReturnFlag.Confirm);
 
                 var Selection = PoolConfigConsoleSelect.GetSelection();

@@ -5,6 +5,8 @@ using TDMUtils;
 using YargArchipelagoCommon;
 using System.Diagnostics;
 using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
+using TDMUtils.CLITools;
+using System.Data.Common;
 
 namespace YargArchipelagoCLI
 {
@@ -14,13 +16,18 @@ namespace YargArchipelagoCLI
         private static ConnectionData connection;
         private static ConfigData config;
 
-        static AppMonitor? liveMonitor = null;
+        private static List<Applet> applets = [];
+
+        private static Action<string>? LogAPChat = null;
+
+        static AppletScreen? liveMonitor = null;
         static void Main(string[] args)
         {
             MultiplatformHelpers.MessageBox.ApplyConsoleTemplate();
             if (!ClientInitializationHelper.ConnectSession(NewConnectionHelper.CreateNewConnection, CreateNewConfig, ApplyUIListeners, out connection, out config))
                 return;
-            liveMonitor = new(config, connection);
+            CreateApplets();
+            liveMonitor = new([..applets]);
             Console.Clear();
             ConsoleSelect<Action> consoleSelect = new();
             consoleSelect.AddCancelOption("Exit Program").AddText(SectionPlacement.Pre, "Yarg AP Client").AddSeparator(SectionPlacement.Pre)
@@ -45,6 +52,17 @@ namespace YargArchipelagoCLI
             }
         }
 
+        private static void CreateApplets()
+        {
+            applets = [
+                new StatusApplet(connection, config),
+                new SongApplet(connection, config),
+            ];
+            var ChatApplet = new ChatApplet();
+            LogAPChat = ChatApplet.LogChat;
+            applets.Add(ChatApplet);
+        }
+
         private static void ToggleConfig()
         {
             ConsoleSelect<Action> consoleSelect;
@@ -56,7 +74,7 @@ namespace YargArchipelagoCLI
                 consoleSelect.AddCancelOption("Go Back").AddText(SectionPlacement.Pre, "Toggle Config Options..").AddSeparator(SectionPlacement.Pre).StartIndex(CurrentSelection)
                     .Add($"BroadCast Song Names: {config.BroadcastSongName}", () => config.BroadcastSongName = !config.BroadcastSongName)
                     .Add($"DeathLink: {config.deathLinkEnabled}", () => config.deathLinkEnabled = !config.deathLinkEnabled, () => config.ServerDeathLink)
-                    .Add($"Item Notifications: {config.InGameItemLog}", () => config.InGameItemLog = CLIHelpers.NextEnumValue(config.InGameItemLog))
+                    .Add($"Item Notifications: {config.InGameItemLog}", () => config.InGameItemLog = EnumerableUtilities.NextValue(config.InGameItemLog))
                     .Add($"Chat Notifications: {config.InGameAPChat}", () => config.InGameAPChat = !config.InGameAPChat)
                     .Add($"Cheat Mode: {config.CheatMode}", () => config.CheatMode = !config.CheatMode, () => Debugger.IsAttached);
                 Console.Clear();
@@ -235,7 +253,7 @@ namespace YargArchipelagoCLI
         static void ApplyUIListeners(ConnectionData connectionData) 
         {
             connection.GetSession().Items.ItemReceived += (_) => liveMonitor?.FlagForUpdate<SongApplet>();
-            connection.GetSession().MessageLog.OnMessageReceived += (M) => { liveMonitor?.LogChat(M.ToString()); liveMonitor?.FlagForUpdate<ChatApplet>(); };
+            connection.GetSession().MessageLog.OnMessageReceived += (M) => { LogAPChat?.Invoke(M.ToString()); liveMonitor?.FlagForUpdate<ChatApplet>(); };
             connection.GetPacketServer().ConnectionChanged += () => liveMonitor?.FlagForUpdate<StatusApplet>();
             connection.GetPacketServer().CurrentSongUpdated += () => liveMonitor?.FlagForUpdate<StatusApplet>();
         }
