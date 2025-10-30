@@ -16,18 +16,15 @@ namespace YargArchipelagoCLI
         private static ConnectionData connection;
         private static ConfigData config;
 
-        private static List<Applet> applets = [];
-
         private static Action<string>? LogAPChat = null;
 
         static AppletScreen? liveMonitor = null;
         static void Main(string[] args)
         {
             MultiplatformHelpers.MessageBox.ApplyConsoleTemplate();
-            if (!ClientInitializationHelper.ConnectSession(NewConnectionHelper.CreateNewConnection, CreateNewConfig, ApplyUIListeners, out connection, out config))
+            if (!ClientInitializationHelper.ConnectSession(NewConnectionHelper.CreateNewConnection, () => ConfigCreator.CreateConfig(connection), ApplyUIListeners, out connection, out config))
                 return;
-            CreateApplets();
-            liveMonitor = new([..applets]);
+            liveMonitor = new(CreateApplets());
             Console.Clear();
             ConsoleSelect<Action> consoleSelect = new();
             consoleSelect.AddCancelOption("Exit Program").AddText(SectionPlacement.Pre, "Yarg AP Client").AddSeparator(SectionPlacement.Pre)
@@ -52,15 +49,24 @@ namespace YargArchipelagoCLI
             }
         }
 
-        private static void CreateApplets()
+        private static Applet[] CreateApplets()
         {
-            applets = [
+            List<Applet> applets = [
                 new StatusApplet(connection, config),
                 new SongApplet(connection, config),
             ];
             var ChatApplet = new ChatApplet();
             LogAPChat = ChatApplet.LogChat;
             applets.Add(ChatApplet);
+            return [.. applets];
+        }
+
+        static void ApplyUIListeners(ConnectionData connectionData)
+        {
+            connection.GetSession().Items.ItemReceived += (_) => liveMonitor?.FlagForUpdate<SongApplet>();
+            connection.GetSession().MessageLog.OnMessageReceived += (M) => { LogAPChat?.Invoke(M.ToString()); liveMonitor?.FlagForUpdate<ChatApplet>(); };
+            connection.GetPacketServer().ConnectionChanged += () => liveMonitor?.FlagForUpdate<StatusApplet>();
+            connection.GetPacketServer().CurrentSongUpdated += () => liveMonitor?.FlagForUpdate<StatusApplet>();
         }
 
         private static void ToggleConfig()
@@ -205,7 +211,6 @@ namespace YargArchipelagoCLI
             ConsoleSelect<CommonData.SongData> consoleSelect = new();
             consoleSelect.AddText(SectionPlacement.Pre, $"Select A song to replace {song.GetSongDisplayName(config)}").AddSeparator(SectionPlacement.Pre).AddCancelOption("Cancel");
 
-            int Index = 0;
             foreach (var i in validReplacements.OrderBy(x => x.GetSongDisplayName()))
                 consoleSelect.Add(i.GetSongDisplayName(), i);
             var Selection = consoleSelect.GetSelection();
@@ -242,20 +247,6 @@ namespace YargArchipelagoCLI
             if (Selection.WasCancelation())
                 return null;
             return Selection.Tag;
-        }
-
-        public static ConfigData? CreateNewConfig()
-        {
-            ConfigCreator configCreator = new ConfigCreator(connection);
-            return configCreator.CreateConfig();
-        }
-
-        static void ApplyUIListeners(ConnectionData connectionData) 
-        {
-            connection.GetSession().Items.ItemReceived += (_) => liveMonitor?.FlagForUpdate<SongApplet>();
-            connection.GetSession().MessageLog.OnMessageReceived += (M) => { LogAPChat?.Invoke(M.ToString()); liveMonitor?.FlagForUpdate<ChatApplet>(); };
-            connection.GetPacketServer().ConnectionChanged += () => liveMonitor?.FlagForUpdate<StatusApplet>();
-            connection.GetPacketServer().CurrentSongUpdated += () => liveMonitor?.FlagForUpdate<StatusApplet>();
         }
     }
 }

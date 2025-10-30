@@ -14,6 +14,10 @@ namespace YargArchipelagoCLI
         private readonly List<SongPool> Pools = [];
         private Dictionary<int, PlandoData> PlandoSongData;
         private SongPoolManager SongPoolManager;
+        public static ConfigData? CreateConfig(ConnectionData Connection)
+        {
+            return new ConfigCreator(Connection).CreateConfig();
+        }
 
         public ConfigData? CreateConfig()
         {
