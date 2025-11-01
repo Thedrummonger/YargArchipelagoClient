@@ -9,11 +9,10 @@ namespace YargArchipelagoCommon
 {
     public class CommonData
     {
-        public static string ConnectionCachePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "connection.json");
-
-        public static string DataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData", "LocalLow", "YARC", "YARG", "Archipelago");
-        public static string SongExportFile = Path.Combine(DataFolder, "SongExport.json");
-        public static string LastPlayedSong = Path.Combine(DataFolder, "LastPlayed.json");
+        public static string DataFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "YARChipelago");
+        public static string ConnectionCachePath => Path.Combine(DataFolder, "connection.json");
+        public static string SongExportFile => Path.Combine(DataFolder, "SongExport.json");
+        public static string SeedConfigPath => Path.Combine(DataFolder, "seeds");
         public enum SupportedInstrument
         {
             // Instruments are reserved in multiples of 10

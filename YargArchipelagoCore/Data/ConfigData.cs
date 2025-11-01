@@ -63,7 +63,7 @@ namespace YargArchipelagoClient.Data
 
         public void SaveConfigFile(ConnectionData Connection)
         {
-            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "seeds", Connection.getSaveFileName()), this.ToFormattedJson());
+            File.WriteAllText(Path.Combine(SeedConfigPath, Connection.getSaveFileName()), this.ToFormattedJson());
         }
         public void ParseAPLocations(ArchipelagoSession archipelagoSession)
         {

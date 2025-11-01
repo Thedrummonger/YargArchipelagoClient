@@ -24,10 +24,9 @@ namespace YargArchipelagoClient.Helpers
         public static bool GetConfig(ConnectionData Connection, out ConfigData? configData, Func<ConfigData?> CreateNewConfig)
         {
             configData = null;
-            var SeedDir = ConnectionData.GetSeedPath();
-            Directory.CreateDirectory(SeedDir);
+            Directory.CreateDirectory(CommonData.SeedConfigPath);
 
-            var ConfigFile = Directory.GetFiles(SeedDir).FirstOrDefault(file => Path.GetFileName(file) == Connection.getSaveFileName());
+            var ConfigFile = Directory.GetFiles(CommonData.SeedConfigPath).FirstOrDefault(file => Path.GetFileName(file) == Connection.getSaveFileName());
             if (ConfigFile is not null)
             {
                 Debug.WriteLine($"Seed Found {ConfigFile}");
@@ -132,6 +131,7 @@ namespace YargArchipelagoClient.Helpers
 
         public static bool ConnectSession(Func<ConnectionData?> CreateNewConnection, Func<ConfigData?> CreateNewConfig, Action<ConnectionData> ApplyUIListeners, out ConnectionData? Connection, out ConfigData? Config)
         {
+            Directory.CreateDirectory(CommonData.DataFolder);
             Connection = null;
             Config = null;
             if (!ConnectToServer(out var connectResult, CreateNewConnection))

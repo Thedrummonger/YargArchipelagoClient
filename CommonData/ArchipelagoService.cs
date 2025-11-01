@@ -58,6 +58,10 @@ namespace YargArchipelagoPlugin
                 var Target = SongContainer.Songs.FirstOrDefault(x => Convert.ToBase64String(x.Hash.HashBytes) == i.SongHash);
                 if (Target != null)
                     songEntries.Add((Target, i.Profile));
+                else
+                    Logger.LogWarning($"Song Hash {i} was not found in YARG!");
+
+
             }
             Log($"{songEntries.Count} Songs Available");
             return songEntries.ToArray();

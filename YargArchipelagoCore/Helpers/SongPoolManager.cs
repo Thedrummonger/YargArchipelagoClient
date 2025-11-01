@@ -149,22 +149,9 @@ namespace YargArchipelagoClient.Helpers
             return availableSongs[randomIndex]; ;
         }
 
-        public HashSet<SongData> GetValidSongsForAllPools()
+        public bool CanPlandoAnyPoolToThisLocation(PlandoData selectedLocation)
         {
-            HashSet<CommonData.SongData> ValidSongs = [];
-            foreach (var p in allPools)
-            {
-                foreach (var s in p.GetAvailableSongs(data.SongData).Values)
-                {
-                    ValidSongs.Add(s);
-                }
-            }
-            return ValidSongs;
-        }
-        public bool CanPlandoAnyPoolToThisLocation(PlandoData selectedLocation, out IEnumerable<SongPool> validPools)
-        {
-            validPools = allPools.Where(x => CanPlandoPoolToThisLocation(x, selectedLocation));
-            return validPools.Any();
+            return allPools.Any(x => CanPlandoPoolToThisLocation(x, selectedLocation));
         }
 
         public bool CanPlandoSongToThisLocation(PlandoData selectedSong)
@@ -173,6 +160,8 @@ namespace YargArchipelagoClient.Helpers
         }
 
         public string SongDisplay(int num) => num > 0 ? $"Song {num}" : "Goal Song";
+
+        public HashSet<CommonData.SongData> GetValidSongsForAllPools() => allPools.GetValidSongsForAllPools(data);
 
     }
 }

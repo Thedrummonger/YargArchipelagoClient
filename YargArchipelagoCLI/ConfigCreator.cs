@@ -181,15 +181,19 @@ namespace YargArchipelagoCLI
                     EditPladoSelector.AddText(SectionPlacement.Pre, $"Song: {SelectedSongLocation.SongNumber}").AddSeparator(SectionPlacement.Pre).AddCancelOption("Go Back")
                         .Add($"Pool Plando Enabled: {SelectedPlandoData.PoolPlandoEnabled}", 
                         () => SelectedPlandoData.PoolPlandoEnabled = !SelectedPlandoData.PoolPlandoEnabled, 
-                        () => Pools.Count > 0 && SongPoolManager.CanPlandoAnyPoolToThisLocation(SelectedPlandoData, out _))
+                        () => Pools.Count > 0 && SongPoolManager.CanPlandoAnyPoolToThisLocation(SelectedPlandoData))
 
-                        .Add($"Assign Plando Pool: {SelectedPlandoData.SongPool}", () => SelectedPlandoData.SongPool = PickNewPool(SelectedPlandoData), () => SelectedPlandoData.PoolPlandoEnabled)
+                        .Add($"Assign Plando Pool: {SelectedPlandoData.SongPool}", 
+                        () => SelectedPlandoData.SongPool = PickNewPool(SelectedPlandoData), 
+                        () => SelectedPlandoData.PoolPlandoEnabled)
 
                         .Add($"Song Plando Enabled: {SelectedPlandoData.SongPlandoEnabled}", 
                         () => SelectedPlandoData.SongPlandoEnabled = !SelectedPlandoData.SongPlandoEnabled,
                         () => SongPoolManager.GetValidSongsForAllPools().Count > 0 && SongPoolManager.CanPlandoSongToThisLocation(SelectedPlandoData))
 
-                        .Add($"Assign Plando Song: {DisplayPlandoSong(data.SongData, SelectedPlandoData)}", () => SelectedPlandoData.SongHash = PickNewSong(), () => SelectedPlandoData.SongPlandoEnabled);
+                        .Add($"Assign Plando Song: {DisplayPlandoSong(data.SongData, SelectedPlandoData)}", 
+                        () => SelectedPlandoData.SongHash = PickNewSong(SelectedPlandoData), 
+                        () => SelectedPlandoData.SongPlandoEnabled);
 
                     if (!EditPladoSelector.HasValidOptions)
                     {
@@ -213,11 +217,11 @@ namespace YargArchipelagoCLI
             return song.GetSongDisplayName();
         }
 
-        private string? PickNewSong()
+        private string? PickNewSong(PlandoData selectedPlandoData)
         {
-            HashSet<CommonData.SongData> ValidSongs = SongPoolManager.GetValidSongsForAllPools();
+            HashSet<CommonData.SongData> ValidSongs = selectedPlandoData.ValidSongsForThisPlando(Pools, data);
             ConsoleSelect<CommonData.SongData> EditPladoSelector = new();
-            foreach(var i in ValidSongs)
+            foreach(var i in ValidSongs.OrderBy(x => x.GetSongDisplayName()))
                 EditPladoSelector.Add(i.GetSongDisplayName(), i);
             var Selected = EditPladoSelector.GetSelection();
             if (Selected.WasCancelation()) return null;
@@ -226,7 +230,7 @@ namespace YargArchipelagoCLI
 
         private string? PickNewPool(PlandoData selectedPlandoData)
         {
-            SongPoolManager.CanPlandoAnyPoolToThisLocation(selectedPlandoData, out var validPools);
+            HashSet<SongPool> validPools = selectedPlandoData.ValidPoolsForThisPlando(Pools, data);
             ConsoleSelect<SongPool> EditPladoSelector = new();
             foreach (var i in validPools)
                 EditPladoSelector.Add(i.Name, i);

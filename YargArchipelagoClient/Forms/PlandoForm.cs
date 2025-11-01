@@ -43,8 +43,9 @@ namespace YargArchipelagoClient.Forms
             if (Updating) return;
             Updating = true;
             var selectedSong = GetSelectedSong();
-            if (selectedSong is not null && Parent.Pools.Count > 0 && poolManager.CanPlandoAnyPoolToThisLocation(selectedSong, out var ValidPools))
+            if (selectedSong is not null && Parent.Pools.Count > 0 && poolManager.CanPlandoAnyPoolToThisLocation(selectedSong))
             {
+                var ValidPools = selectedSong.ValidPoolsForThisPlando(Parent.Pools, Parent.data);
                 groupBox1.Enabled = true;
                 chkEnablePoolPlando.Checked = selectedSong.PoolPlandoEnabled;
                 cmbPlandoPoolSelect.Enabled = selectedSong.PoolPlandoEnabled;
@@ -67,10 +68,11 @@ namespace YargArchipelagoClient.Forms
             var selectedSong = GetSelectedSong();
             if (selectedSong is not null && poolManager.GetValidSongsForAllPools().Count > 0 && poolManager.CanPlandoSongToThisLocation(selectedSong))
             {
+                var ValidSongs = selectedSong.ValidSongsForThisPlando(Parent.Pools, Parent.data);
                 groupBox2.Enabled = true;
                 chkEnableSongPlando.Checked = selectedSong.SongPlandoEnabled;
                 cmbPlandoSongSelect.Enabled = selectedSong.SongPlandoEnabled;
-                PrintSongsForPlando(selectedSong);
+                cmbPlandoSongSelect.DataSource = WinFormHelpers.ContainerItem.ToContainerList(ValidSongs, x => x.SongChecksum, x => x.GetSongDisplayName()).OrderBy(x => x.Display).ToArray();
                 var songItems = (IEnumerable<WinFormHelpers.ContainerItem>)cmbPlandoSongSelect.DataSource!;
                 var SelectedSongItem = selectedSong.SongHash is null ? null : songItems.FirstOrDefault(x => x.Value is string s && s == selectedSong.SongHash);
                 cmbPlandoSongSelect.SelectedItem = SelectedSongItem is null ? songItems.First() : SelectedSongItem;
@@ -80,18 +82,6 @@ namespace YargArchipelagoClient.Forms
                 groupBox2.Enabled = false;
             }
             Updating = false;
-        }
-
-        private void PrintSongsForPlando(PlandoData SelectedSong)
-        {
-            HashSet<CommonData.SongData> ValidSongs = poolManager.GetValidSongsForAllPools();
-            if (SelectedSong.PoolPlandoEnabled)
-            {
-                var Pool = Parent.Pools.FirstOrDefault(x => x.Name == SelectedSong.SongPool);
-                if (Pool is not null)
-                    ValidSongs = [.. Pool.GetAvailableSongs(Parent.data.SongData).Values];
-            }
-            cmbPlandoSongSelect.DataSource = WinFormHelpers.ContainerItem.ToContainerList(ValidSongs, x => x.SongChecksum, x => $"{x.Name} by {x.Artist}").OrderBy(x => x.Display).ToArray();
         }
 
         private void SongPlandoValueUpdated(object sender, EventArgs e)

@@ -14,8 +14,6 @@ namespace YargArchipelagoClient.Data
 {
     public class ConnectionData
     {
-        public static string GetSeedPath() =>
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "seeds");
 
         public ConnectionData(string? address, string slotname, string password, ArchipelagoSession session)
         {

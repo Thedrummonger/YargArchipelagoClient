@@ -1,4 +1,6 @@
 ﻿using YargArchipelagoCommon;
+using YargArchipelagoCore.Data;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace YargArchipelagoClient.Data
 {
@@ -62,5 +64,17 @@ namespace YargArchipelagoClient.Data
         public APWorldData.CompletionReq Reward2Req = APWorldData.CompletionReq.ThreeStar;
         public CommonData.SupportedDifficulty Reward1Diff = CommonData.SupportedDifficulty.Expert;
         public CommonData.SupportedDifficulty Reward2Diff = CommonData.SupportedDifficulty.Expert;
+    }
+
+    public static class SongPoolHelper
+    {
+        public static HashSet<CommonData.SongData> GetValidSongsForAllPools(this IEnumerable<SongPool> allPools, ConfigData data)
+        {
+            HashSet<CommonData.SongData> ValidSongs = [];
+            foreach (var p in allPools)
+                foreach (var s in p.GetAvailableSongs(data.SongData).Values)
+                    ValidSongs.Add(s);
+            return ValidSongs;
+        }
     }
 }
