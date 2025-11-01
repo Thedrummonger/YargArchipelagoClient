@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using YargArchipelagoClient.Data;
+﻿using YargArchipelagoCore.Data;
 using YargArchipelagoCommon;
 
-namespace YargArchipelagoClient.Helpers
+namespace YargArchipelagoCore.Helpers
 {
     public class LocalCommandProcessor
     {

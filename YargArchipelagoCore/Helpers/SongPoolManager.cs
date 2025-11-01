@@ -1,10 +1,9 @@
 ﻿using TDMUtils;
-using YargArchipelagoClient.Data;
 using YargArchipelagoCommon;
 using YargArchipelagoCore.Data;
 using static YargArchipelagoCommon.CommonData;
 
-namespace YargArchipelagoClient.Helpers
+namespace YargArchipelagoCore.Helpers
 {
     public class SongPoolManager(List<SongPool> allPools, Dictionary<int, PlandoData> plandoSongData, ConfigData data)
     {

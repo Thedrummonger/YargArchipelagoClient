@@ -1,9 +1,8 @@
 ﻿using TDMUtils;
 using TDMUtils.CLITools;
-using YargArchipelagoClient.Data;
-using YargArchipelagoClient.Helpers;
-using YargArchipelagoCommon;
 using YargArchipelagoCore.Data;
+using YargArchipelagoCore.Helpers;
+using YargArchipelagoCommon;
 using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
 
 namespace YargArchipelagoCLI

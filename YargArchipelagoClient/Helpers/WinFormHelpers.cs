@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 using TDMUtils;
-using YargArchipelagoClient.Data;
+using YargArchipelagoCore.Data;
 using YargArchipelagoCore.Helpers;
 
 namespace YargArchipelagoClient.Helpers

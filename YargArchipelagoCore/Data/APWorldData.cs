@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using YargArchipelagoCommon;
 
-namespace YargArchipelagoClient.Data
+namespace YargArchipelagoCore.Data
 {
     public class APWorldData
     {

@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Timers;
-using YargArchipelagoClient.Data;
-using YargArchipelagoClient.Helpers;
+﻿using System.Timers;
+using YargArchipelagoCore.Data;
 
 namespace YargArchipelagoCore.Helpers
 {

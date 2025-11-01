@@ -1,6 +1,4 @@
 ﻿using System.Drawing;
-using System.Text;
-using TDMUtils;
 
 namespace YargArchipelagoCore.Data
 {

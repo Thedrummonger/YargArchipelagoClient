@@ -3,7 +3,7 @@ using TDMUtils;
 using YargArchipelagoCommon;
 using static YargArchipelagoCommon.CommonData;
 
-namespace YargArchipelagoClient.Data
+namespace YargArchipelagoCore.Data
 {
     public class ConfigData()
     {

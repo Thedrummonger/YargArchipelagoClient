@@ -1,6 +1,6 @@
 ﻿using TDMUtils.CLITools;
-using YargArchipelagoClient.Data;
-using YargArchipelagoClient.Helpers;
+using YargArchipelagoCore.Data;
+using YargArchipelagoCore.Helpers;
 
 namespace YargArchipelagoCLI
 {

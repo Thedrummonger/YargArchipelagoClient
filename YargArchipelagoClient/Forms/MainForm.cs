@@ -3,7 +3,7 @@ using Archipelago.MultiClient.Net.MessageLog.Messages;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using TDMUtils;
-using YargArchipelagoClient.Data;
+using YargArchipelagoCore.Data;
 using YargArchipelagoClient.Helpers;
 using YargArchipelagoCommon;
 using YargArchipelagoCore.Helpers;

@@ -1,8 +1,8 @@
 ﻿using TDMUtils;
-using YargArchipelagoClient.Data;
+using YargArchipelagoCore.Data;
 using YargArchipelagoCommon;
 
-namespace YargArchipelagoClient.Helpers
+namespace YargArchipelagoCore.Helpers
 {
     public static class CheckLocationHelpers
     {

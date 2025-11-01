@@ -1,8 +1,8 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.Enums;
 using Newtonsoft.Json;
-using YargArchipelagoClient.Data;
-using YargArchipelagoClient.Helpers;
+using YargArchipelagoCore.Data;
+using YargArchipelagoCore.Helpers;
 using YargArchipelagoCommon;
 
 namespace YargArchipelagoClient

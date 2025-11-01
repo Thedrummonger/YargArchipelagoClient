@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using TDMUtils;
-using YargArchipelagoClient.Data;
+using YargArchipelagoCore.Data;
 using YargArchipelagoClient.Forms;
 using YargArchipelagoCommon;
 using YargArchipelagoCore.Helpers;

@@ -1,4 +1,4 @@
-﻿namespace YargArchipelagoClient.Helpers
+﻿namespace YargArchipelagoCore.Helpers
 {
     public class NetworkHelpers
     {

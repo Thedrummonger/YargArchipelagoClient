@@ -4,10 +4,10 @@ using System.IO;
 using System.IO.Pipes;
 using System.Text;
 using TDMUtils;
-using YargArchipelagoClient.Helpers;
+using YargArchipelagoCore.Helpers;
 using YargArchipelagoCommon;
 
-namespace YargArchipelagoClient.Data
+namespace YargArchipelagoCore.Data
 {
     public class APPipeServer
     {

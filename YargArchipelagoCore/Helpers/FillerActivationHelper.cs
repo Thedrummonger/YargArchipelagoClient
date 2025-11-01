@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TDMUtils;
-using YargArchipelagoClient.Data;
+﻿using TDMUtils;
+using YargArchipelagoCore.Data;
 using YargArchipelagoCommon;
 using static YargArchipelagoCommon.CommonData;
-using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
 
 namespace YargArchipelagoCore.Helpers
 {

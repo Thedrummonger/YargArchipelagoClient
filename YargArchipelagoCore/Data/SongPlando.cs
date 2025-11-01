@@ -1,6 +1,4 @@
-﻿using YargArchipelagoClient.Data;
-using YargArchipelagoClient.Helpers;
-using YargArchipelagoCommon;
+﻿using YargArchipelagoCommon;
 
 namespace YargArchipelagoCore.Data
 {

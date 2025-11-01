@@ -1,16 +1,12 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
-using Archipelago.MultiClient.Net.MessageLog.Messages;
 using Newtonsoft.Json;
-using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using TDMUtils;
-using YargArchipelagoClient.Helpers;
-using YargArchipelagoCommon;
 using YargArchipelagoCore.Helpers;
 
-namespace YargArchipelagoClient.Data
+namespace YargArchipelagoCore.Data
 {
     public class ConnectionData
     {

@@ -3,13 +3,10 @@ using Archipelago.MultiClient.Net.MessageLog.Messages;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using TDMUtils;
-using YargArchipelagoClient.Data;
-using YargArchipelagoCommon;
 using YargArchipelagoCore.Data;
-using YargArchipelagoCore.Helpers;
-using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
+using YargArchipelagoCommon;
 
-namespace YargArchipelagoClient.Helpers
+namespace YargArchipelagoCore.Helpers
 {
     public static class ClientInitializationHelper
     {

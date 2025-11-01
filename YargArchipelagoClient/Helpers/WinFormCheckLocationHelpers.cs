@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TDMUtils;
-using YargArchipelagoClient.Data;
+﻿using TDMUtils;
+using YargArchipelagoCore.Data;
 using YargArchipelagoClient.Forms;
+using static YargArchipelagoCore.Helpers.CheckLocationHelpers;
 
 namespace YargArchipelagoClient.Helpers
 {

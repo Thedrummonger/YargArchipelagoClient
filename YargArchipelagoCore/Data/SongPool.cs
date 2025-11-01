@@ -1,8 +1,6 @@
 ﻿using YargArchipelagoCommon;
-using YargArchipelagoCore.Data;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace YargArchipelagoClient.Data
+namespace YargArchipelagoCore.Data
 {
     public class SongPool(string name, CommonData.SupportedInstrument instrument)
     {

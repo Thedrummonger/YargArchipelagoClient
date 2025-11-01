@@ -1,18 +1,11 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TDMUtils;
-using YargArchipelagoClient.Data;
+using YargArchipelagoCore.Data;
 using YargArchipelagoCommon;
-using YargArchipelagoCore.Helpers;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
 
-namespace YargArchipelagoClient.Helpers
+namespace YargArchipelagoCore.Helpers
 {
     public static class SongImporter
     {

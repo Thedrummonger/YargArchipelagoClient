@@ -1,9 +1,8 @@
 ﻿using System.Diagnostics;
 using TDMUtils;
-using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Helpers;
-using YargArchipelagoCommon;
 using YargArchipelagoCore.Data;
+using YargArchipelagoCore.Helpers;
 
 namespace YargArchipelagoClient.Forms
 {

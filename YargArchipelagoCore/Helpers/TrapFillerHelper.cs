@@ -1,10 +1,10 @@
 ﻿using System.Reflection;
 using TDMUtils;
-using YargArchipelagoClient.Data;
+using YargArchipelagoCore.Data;
 using YargArchipelagoCommon;
-using static YargArchipelagoClient.Data.APWorldData;
+using static YargArchipelagoCore.Data.APWorldData;
 
-namespace YargArchipelagoClient.Helpers
+namespace YargArchipelagoCore.Helpers
 {
     public static class TrapFillerHelper
     {
