@@ -1,7 +1,8 @@
-﻿using System.Text;
+﻿using System.Drawing;
+using System.Text;
 using TDMUtils;
 
-namespace YargArchipelagoClient.Data
+namespace YargArchipelagoCore.Data
 {
     public static class ArchipelagoColorHelper
     {
@@ -42,39 +43,6 @@ namespace YargArchipelagoClient.Data
             public static readonly Archipelago.MultiClient.Net.Models.Color Entrance = Archipelago.MultiClient.Net.Models.Color.Blue;
             public static readonly Archipelago.MultiClient.Net.Models.Color Location = Archipelago.MultiClient.Net.Models.Color.Green;
         }
-
-        /// <summary>
-        /// Builds an RTF snippet for the given colored strings.
-        /// </summary>
-        public static string BuildColoredStringsRtf(RichTextBox rtb, IEnumerable<ColoredString> coloredStrings)
-        {
-            Dictionary<Color, int> colorMap = [];
-            int nextIndex = 1;
-            foreach (var cs in coloredStrings)
-                foreach (var (word, color) in cs.Words)
-                {
-                    var c = color ?? rtb.ForeColor;
-                    if (!colorMap.ContainsKey(c))
-                        colorMap[c] = nextIndex++;
-                }
-            var sb = new StringBuilder(@"{\rtf1\ansi")
-                .Append(@"{\colortbl ;")
-                .Append(string.Join("", colorMap.Select(kv => $@"\red{kv.Key.R}\green{kv.Key.G}\blue{kv.Key.B};")))
-                .Append('}');
-            foreach (var cs in coloredStrings)
-            {
-                foreach (var (word, color) in cs.Words)
-                    sb.Append($@"\cf{colorMap[color ?? rtb.ForeColor]} {EscapeRtf(word)}");
-                sb.Append(@"\line ");
-            }
-            return sb.Append('}').ToString();
-        }
-
-        /// <summary>
-        /// Sanitize the given word so it's not parsed as RTF
-        /// </summary>
-        public static string EscapeRtf(string text) =>
-            text is null ? "" : text.Replace(@"\", @"\\").Replace("{", @"\{").Replace("}", @"\}");
 
     }
 }

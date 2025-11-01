@@ -6,7 +6,8 @@ using YargArchipelagoCommon;
 using System.Diagnostics;
 using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
 using TDMUtils.CLITools;
-using System.Data.Common;
+using Archipelago.MultiClient.Net.MessageLog.Messages;
+using YargArchipelagoCore.Data;
 
 namespace YargArchipelagoCLI
 {
@@ -16,7 +17,7 @@ namespace YargArchipelagoCLI
         private static ConnectionData connection;
         private static ConfigData config;
 
-        private static Action<string>? LogAPChat = null;
+        private static Action<LogMessage>? LogAPChat = null;
 
         static AppletScreen? liveMonitor = null;
         static void Main(string[] args)
@@ -56,7 +57,13 @@ namespace YargArchipelagoCLI
                 new SongApplet(connection, config),
             ];
             var ChatApplet = new ChatApplet();
-            LogAPChat = ChatApplet.LogChat;
+            LogAPChat = (L) => 
+            {
+                ColoredString coloredString = new();
+                foreach (var i in L.Parts)
+                    coloredString.AddText(i.Text, i.Color.ConvertToSystemColor(), false);
+                ChatApplet.LogChat(coloredString.Build());
+            };
             applets.Add(ChatApplet);
             return [.. applets];
         }
@@ -64,7 +71,7 @@ namespace YargArchipelagoCLI
         static void ApplyUIListeners(ConnectionData connectionData)
         {
             connection.GetSession().Items.ItemReceived += (_) => liveMonitor?.FlagForUpdate<SongApplet>();
-            connection.GetSession().MessageLog.OnMessageReceived += (M) => { LogAPChat?.Invoke(M.ToString()); liveMonitor?.FlagForUpdate<ChatApplet>(); };
+            connection.GetSession().MessageLog.OnMessageReceived += (M) => { LogAPChat?.Invoke(M); liveMonitor?.FlagForUpdate<ChatApplet>(); };
             connection.GetPacketServer().ConnectionChanged += () => liveMonitor?.FlagForUpdate<StatusApplet>();
             connection.GetPacketServer().CurrentSongUpdated += () => liveMonitor?.FlagForUpdate<StatusApplet>();
         }

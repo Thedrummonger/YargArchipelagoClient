@@ -65,7 +65,7 @@ namespace YargArchipelagoClient.Helpers
         {
             rtb.AppendString(() =>
             {
-                string rtf = ArchipelagoColorHelper.BuildColoredStringsRtf(rtb, coloredStrings);
+                string rtf = ColoredString.BuildRtf(coloredStrings, rtb.ForeColor);
                 rtb.SelectedRtf = rtf;
             });
         }

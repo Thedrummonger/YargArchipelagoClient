@@ -7,7 +7,7 @@ using YargArchipelagoClient.Data;
 using YargArchipelagoClient.Helpers;
 using YargArchipelagoCommon;
 using YargArchipelagoCore.Helpers;
-using static YargArchipelagoClient.Data.ArchipelagoColorHelper;
+using static YargArchipelagoCore.Data.ArchipelagoColorHelper;
 using static YargArchipelagoClient.Helpers.WinFormHelpers;
 
 namespace YargArchipelagoClient
