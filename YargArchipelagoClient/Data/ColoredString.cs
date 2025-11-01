@@ -1,56 +1,8 @@
 ﻿using System.Text;
+using TDMUtils;
 
 namespace YargArchipelagoClient.Data
 {
-    public class ColoredString
-    {
-        private List<(string Text, Color? Color)> words;
-
-        public ColoredString()
-        {
-            words = [];
-        }
-
-        public ColoredString(string text)
-        {
-            words = [];
-            AddText(text);
-        }
-
-        public ColoredString(string text, Color defaultColor)
-        {
-            words = [];
-            AddText(text, defaultColor);
-        }
-
-        // Adds a word with default color (black), auto-spaces by default
-        public ColoredString AddText(string text, bool addSpace = true)
-        {
-            words.Add((text + (addSpace ? " " : ""), null));
-            return this;
-        }
-
-        // Adds a word with a specific color, auto-spaces by default
-        public ColoredString AddText(string text, Color color, bool addSpace = true)
-        {
-            words.Add((text + (addSpace ? " " : ""), color));
-            return this;
-        }
-
-        // Gets the plain text version without trailing spaces
-        public override string ToString()
-        {
-            StringBuilder sb = new();
-            foreach (var (text, _) in words)
-            {
-                sb.Append(text);
-            }
-            return sb.ToString().TrimEnd(); // Remove final space
-        }
-
-        // Exposes the words for rendering
-        public List<(string Text, Color? Color)> Words => words;
-    }
     public static class ArchipelagoColorHelper
     {
         public static Color ConvertToSystemColor(this Archipelago.MultiClient.Net.Models.Color archipelagoColor)
