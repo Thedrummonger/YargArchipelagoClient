@@ -41,8 +41,7 @@ namespace YargArchipelagoPlugin
                         PipeOptions.Asynchronous);
 
                     await Task.Run(() => pipe.Connect(10000), cts.Token); // 10s timeout
-                    pipe.ReadMode = PipeTransmissionMode.Message;
-
+                    
                     stream = pipe;
                     APHandler.Log("YARG client connected to AP Pipe Server.");
 

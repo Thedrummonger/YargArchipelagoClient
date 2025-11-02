@@ -40,7 +40,7 @@ namespace YargArchipelagoCore.Data
                         CommonData.Networking.PipeName,
                         PipeDirection.InOut,
                         maxNumberOfServerInstances: 1,
-                        transmissionMode: PipeTransmissionMode.Message,
+                        transmissionMode: PipeTransmissionMode.Byte,
                         options: PipeOptions.Asynchronous);
 
                     await server.WaitForConnectionAsync(cts.Token);
@@ -73,7 +73,6 @@ namespace YargArchipelagoCore.Data
             using var writer = new StreamWriter(server, Encoding.UTF8, bufferSize: 8192, leaveOpen: true) { AutoFlush = true };
 
             currentWriter = writer;
-            server.ReadMode = PipeTransmissionMode.Message;
             ConnectionChanged?.Invoke();
 
             SendClientStatusPacket();
