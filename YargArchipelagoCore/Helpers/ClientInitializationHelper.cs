@@ -131,6 +131,9 @@ namespace YargArchipelagoCore.Helpers
             Directory.CreateDirectory(CommonData.DataFolder);
             Connection = null;
             Config = null;
+
+            var UserConfig = DataFileUtilities.LoadObjectFromFileOrDefault(CommonData.userConfigFile, new CommonData.UserConfig(), true);
+
             if (!ConnectToServer(out var connectResult, CreateNewConnection))
                 return false;
             Connection = connectResult!;
@@ -139,6 +142,7 @@ namespace YargArchipelagoCore.Helpers
             if (!GetConfig(Connection, out var configResult, CreateNewConfig))
                 return false;
             Config = configResult!;
+            Config.CurrentUserConfig = UserConfig;
             Config.SaveConfigFile(Connection);
 
             Debug.WriteLine($"The Following Songs were not valid for any profile in this config\n\n{Config.GetUnusableSongs().Select(x => x.GetSongDisplayName()).ToFormattedJson()}");

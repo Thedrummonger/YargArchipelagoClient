@@ -12,6 +12,7 @@ namespace YargArchipelagoCommon
         public static string DataFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "YARChipelago");
         public static string ConnectionCachePath => Path.Combine(DataFolder, "connection.json");
         public static string SongExportFile => Path.Combine(DataFolder, "SongExport.json");
+        public static string userConfigFile => Path.Combine(DataFolder, "UserConfig.json");
         public static string SeedConfigPath => Path.Combine(DataFolder, "seeds");
         public enum SupportedInstrument
         {
@@ -108,10 +109,16 @@ namespace YargArchipelagoCommon
             NonFiller
         }
 
+        public class UserConfig
+        {
+            public string HOST = "127.0.0.1";
+            public int PORT = 26569;
+            public string PipeName = "yarg_ap_pipe";
+            public bool UsePipe = true;
+        }
+
         public static class Networking
         {
-            public const int PORT = 26569;
-            public const string PipeName = "yarg_ap_pipe";
             public class YargAPPacket
             {
                 //YARG PARSED

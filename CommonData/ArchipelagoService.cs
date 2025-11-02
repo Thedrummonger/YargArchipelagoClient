@@ -1,11 +1,14 @@
 ﻿using BepInEx.Logging;
 using HarmonyLib;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using YARG.Core.Song;
 using YARG.Gameplay;
 using YARG.Song;
+using YargArchipelagoCommon;
 
 namespace YargArchipelagoPlugin
 {
@@ -13,10 +16,22 @@ namespace YargArchipelagoPlugin
     {
         public ArchipelagoService(ManualLogSource LogSource)
         {
+            if (!Directory.Exists(CommonData.DataFolder)) Directory.CreateDirectory(CommonData.DataFolder);
             packetClient = new YargPipeClient(this);
             harmony = new Harmony(ArchipelagoPlugin.pluginGuid);
             Logger = LogSource;
+            if (File.Exists(CommonData.userConfigFile))
+            {
+                try { CurrentUserConfig = JsonConvert.DeserializeObject<CommonData.UserConfig>(File.ReadAllText(CommonData.userConfigFile)); }
+                catch { CurrentUserConfig = null; }
+            }
+            if (CurrentUserConfig == null)
+            {
+                CurrentUserConfig = new CommonData.UserConfig();
+                File.WriteAllText(CommonData.userConfigFile, JsonConvert.SerializeObject(CurrentUserConfig, Formatting.Indented));
+            }
         }
+        public CommonData.UserConfig CurrentUserConfig;
         private ManualLogSource Logger;
         private Harmony harmony;
         public Harmony GetPatcher() => harmony;

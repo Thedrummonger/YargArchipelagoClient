@@ -6,6 +6,8 @@ using System.Text;
 using TDMUtils;
 using YargArchipelagoCore.Helpers;
 using YargArchipelagoCommon;
+using System.Net.Sockets;
+using System.Net;
 
 namespace YargArchipelagoCore.Data
 {
@@ -31,13 +33,21 @@ namespace YargArchipelagoCore.Data
 
         public async Task StartAsync()
         {
+            if (Config.CurrentUserConfig!.UsePipe)
+                await StartAsyncPipe();
+            else
+                await StartAsyncPacket();
+        }
+
+        private async Task StartAsyncPipe()
+        {
             try
             {
                 Debug.WriteLine("AP Pipe Server started, waiting for YARG client connection...");
                 while (!cts.Token.IsCancellationRequested)
                 {
                     using var server = new NamedPipeServerStream(
-                        CommonData.Networking.PipeName,
+                        Config.CurrentUserConfig!.PipeName,
                         PipeDirection.InOut,
                         maxNumberOfServerInstances: 1,
                         transmissionMode: PipeTransmissionMode.Byte,
@@ -67,21 +77,62 @@ namespace YargArchipelagoCore.Data
             Debug.WriteLine("AP Pipe Server stopped.");
         }
 
-        private async Task HandleClientAsync(NamedPipeServerStream server, CancellationToken token)
+        private async Task StartAsyncPacket()
+        {
+            var listener = new TcpListener(IPAddress.Parse(Config.CurrentUserConfig!.HOST), Config.CurrentUserConfig!.PORT);
+            try
+            {
+                Debug.WriteLine("AP Packet Server started, waiting for YARG client connection...");
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    listener.Start();
+                    using var client = await listener.AcceptTcpClientAsync(cts.Token);
+                    listener.Stop();
+                    var stream = client.GetStream();
+
+                    try { await HandleClientAsync(stream, cts.Token); }
+                    finally
+                    {
+                        currentWriter = null;
+                        client.Close();
+                        Debug.WriteLine($"YARG game client disconnected. {client.Connected}");
+                        ConnectionChanged?.Invoke();
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine("Connection was canceled");
+            }
+            catch
+            {
+                PacketServerError?.Invoke("Failed To Start Packet Server");
+            }
+            try { listener.Stop(); } catch { }
+
+            Debug.WriteLine("AP Packet Server stopped.");
+        }
+        private async Task HandleClientAsync(Stream server, CancellationToken token)
         {
             using var reader = new StreamReader(server, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 8192, leaveOpen: true);
             using var writer = new StreamWriter(server, Encoding.UTF8, bufferSize: 8192, leaveOpen: true) { AutoFlush = true, NewLine = "\n" };
-
             currentWriter = writer;
-            Debug.WriteLine($"YARG game Client connected. {server.IsConnected}");
+            Debug.WriteLine($"YARG game Client connected. {IsConnected()}");
             ConnectionChanged?.Invoke();
             SendClientStatusPacket();
-            while (!token.IsCancellationRequested && server.IsConnected)
+            while (!token.IsCancellationRequested && IsConnected())
             {
                 var line = await reader.ReadLineAsync(token).ConfigureAwait(false);
                 if (line is null) break;
                 Debug.WriteLine("Received from YARG client: " + line);
                 ParsePacket(line);
+            }
+
+            bool IsConnected()
+            {
+                if (server is NetworkStream n) return n?.Socket.Connected ?? false;
+                else if (server is NamedPipeServerStream p) return p.IsConnected;
+                return false;
             }
         }
 

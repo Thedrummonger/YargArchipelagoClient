@@ -2,6 +2,9 @@
 using System;
 using System.IO;
 using System.IO.Pipes;
+using System.Net;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +16,6 @@ namespace YargArchipelagoPlugin
 {
     public class YargPipeClient
     {
-        private NamedPipeClientStream pipe;
         private Stream stream;
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private readonly ArchipelagoService APHandler;
@@ -22,11 +24,16 @@ namespace YargArchipelagoPlugin
         public event Action<CommonData.ActionItemData> ActionItemReceived;
         public event Action<(string SongHash, string Profile)[]> AvailableSongsReceived;
 
-        public bool IsConnected => pipe != null && pipe.IsConnected;
-
         public YargPipeClient(ArchipelagoService handler) => APHandler = handler;
 
         public async Task ConnectAsync()
+        {
+            if (APHandler.CurrentUserConfig.UsePipe)
+                await ConnectAsyncPipe();
+            else
+                await ConnectAsyncPacket();
+        }
+        private async Task ConnectAsyncPipe()
         {
             while (!cts.IsCancellationRequested)
             {
@@ -34,9 +41,9 @@ namespace YargArchipelagoPlugin
                 {
                     APHandler.Log("Listening for YARG AP pipe server");
 
-                    pipe = new NamedPipeClientStream(
+                    var pipe = new NamedPipeClientStream(
                         ".",
-                        CommonData.Networking.PipeName,
+                        APHandler.CurrentUserConfig.PipeName,
                         PipeDirection.InOut,
                         PipeOptions.Asynchronous);
 
@@ -46,6 +53,36 @@ namespace YargArchipelagoPlugin
                     APHandler.Log("YARG client connected to AP Pipe Server.");
 
                     await ReceiveLoopAsync();
+                    stream = null;
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    APHandler.Log("YARG client failed to connect: " + ex.Message);
+                    await Task.Delay(1000);
+                }
+            }
+        }
+
+        private async Task ConnectAsyncPacket()
+        {
+            while (!cts.IsCancellationRequested)
+            {
+                try
+                {
+                    APHandler.Log("Listening for YARG AP packet server");
+
+                    var client = new System.Net.Sockets.TcpClient();
+                    await client.ConnectAsync(IPAddress.Parse(APHandler.CurrentUserConfig.HOST), APHandler.CurrentUserConfig.PORT);
+
+                    stream = client.GetStream();
+                    APHandler.Log("YARG client connected to AP Packet Server.");
+
+                    await ReceiveLoopAsync();
+                    stream = null;
                 }
                 catch (OperationCanceledException)
                 {
@@ -72,10 +109,10 @@ namespace YargArchipelagoPlugin
                         var line = await reader.ReadLineAsync();
                         if (line == null)
                         {
-                            APHandler.Log("AP Pipe Server disconnected.");
+                            APHandler.Log("AP Client Server disconnected.");
                             break;
                         }
-                        APHandler.Log("Received from AP Pipe Server: ");
+                        APHandler.Log("Received from AP Client: ");
                         ParseClientPacket(line);
                     }
                 }
@@ -88,7 +125,7 @@ namespace YargArchipelagoPlugin
 
         public async Task SendPacketAsync(YargAPPacket packet)
         {
-            if (!IsConnected || stream == null) return;
+            if (stream == null) return;
 
             var json = JsonConvert.SerializeObject(packet, PacketSerializeSettings) + "\n";
             var bytes = Encoding.UTF8.GetBytes(json);
@@ -131,8 +168,8 @@ namespace YargArchipelagoPlugin
         public void Stop()
         {
             cts.Cancel();
-            try { pipe?.Close(); } catch { }
-            try { pipe?.Dispose(); } catch { }
+            try { stream?.Close(); } catch { }
+            try { stream?.Dispose(); } catch { }
         }
     }
 }

@@ -36,6 +36,9 @@ namespace YargArchipelagoCore.Data
         [Newtonsoft.Json.JsonIgnore]
         public bool DebugPrintAllSongs = false;
 
+        [Newtonsoft.Json.JsonIgnore]
+        public UserConfig? CurrentUserConfig;
+
         /// <summary>
         /// This value tracks if deathlink was enabled in the YAML. it will never change
         /// </summary>
