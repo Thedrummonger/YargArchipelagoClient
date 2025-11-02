@@ -19,7 +19,7 @@ namespace YargArchipelagoCore.Data
         public event Action<string>? LogMessage;
         public event Action? CurrentSongUpdated;
         public event Action? ConnectionChanged;
-        public event Action<string>? PacketServerClosed;
+        public event Action<string>? PacketServerError;
 
         public bool IsConnected => currentWriter is not null;
 
@@ -44,53 +44,44 @@ namespace YargArchipelagoCore.Data
                         options: PipeOptions.Asynchronous);
 
                     await server.WaitForConnectionAsync(cts.Token);
-                    LogMessage?.Invoke("YARG game Client connected.");
 
-                    try { await HandleClientAsync(server, cts.Token); }
+                    try { await HandleClientAsync(server, cts.Token); } 
                     finally
                     {
+                        currentWriter = null;
                         if (server.IsConnected) server.Disconnect();
+                        Debug.WriteLine($"YARG game client disconnected. {server.IsConnected}");
+                        ConnectionChanged?.Invoke();
                     }
                 }
             }
             catch (OperationCanceledException)
             {
-                // normal shutdown
+                Debug.WriteLine("Connection was canceled");
             }
             catch
             {
-                PacketServerClosed?.Invoke("Failed To Start Pipe Server");
-                return;
+                PacketServerError?.Invoke("Failed To Start Pipe Server");
             }
 
-            PacketServerClosed?.Invoke("Connection was canceled");
             Debug.WriteLine("AP Pipe Server stopped.");
         }
 
         private async Task HandleClientAsync(NamedPipeServerStream server, CancellationToken token)
         {
             using var reader = new StreamReader(server, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 8192, leaveOpen: true);
-            using var writer = new StreamWriter(server, Encoding.UTF8, bufferSize: 8192, leaveOpen: true) { AutoFlush = true };
+            using var writer = new StreamWriter(server, Encoding.UTF8, bufferSize: 8192, leaveOpen: true) { AutoFlush = true, NewLine = "\n" };
 
             currentWriter = writer;
+            Debug.WriteLine($"YARG game Client connected. {server.IsConnected}");
             ConnectionChanged?.Invoke();
-
             SendClientStatusPacket();
-            try
+            while (!token.IsCancellationRequested && server.IsConnected)
             {
-                while (!token.IsCancellationRequested)
-                {
-                    var line = await reader.ReadLineAsync();
-                    if (line is null) break;
-                    Debug.WriteLine("Received from YARG client: " + line);
-                    ParsePacket(line);
-                }
-            }
-            finally
-            {
-                ConnectionChanged?.Invoke();
-                LogMessage?.Invoke("YARG game client disconnected.");
-                currentWriter = null;
+                var line = await reader.ReadLineAsync(token).ConfigureAwait(false);
+                if (line is null) break;
+                Debug.WriteLine("Received from YARG client: " + line);
+                ParsePacket(line);
             }
         }
 
@@ -135,7 +126,7 @@ namespace YargArchipelagoCore.Data
         public void SendClientStatusPacket()
         {
             if (Connection is null || Config is null) return;
-            _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket
+            _ = SendPacketAsync(new CommonData.Networking.YargAPPacket
             {
                 AvailableSongs = [.. Config.GetAllSongLocations().Where(x =>
                     x.SongHash is not null &&

@@ -108,7 +108,7 @@ namespace YargArchipelagoClient
         {
             var PacketServer = connection.GetPacketServer();
             PacketServer.LogMessage += WriteToLog;
-            PacketServer.PacketServerClosed += PackerServerClosed;
+            PacketServer.PacketServerError += PackerServerClosed;
             PacketServer.CurrentSongUpdated += UpdateClientTitle;
             PacketServer.ConnectionChanged += UpdateClientTitle;
 
@@ -120,7 +120,7 @@ namespace YargArchipelagoClient
         {
             var PacketServer = connection.GetPacketServer();
             PacketServer.LogMessage -= WriteToLog;
-            PacketServer.PacketServerClosed -= PackerServerClosed;
+            PacketServer.PacketServerError -= PackerServerClosed;
             PacketServer.CurrentSongUpdated -= UpdateClientTitle;
             PacketServer.ConnectionChanged -= UpdateClientTitle;
 

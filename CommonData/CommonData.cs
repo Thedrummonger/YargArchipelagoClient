@@ -140,7 +140,7 @@ namespace YargArchipelagoCommon
 
                 //DUAL PARSED
                 /// <summary>
-                /// A log Message. When sent to AP client, prints to the chat log. When sent to Yarg, prints to the Unity Log
+                /// A log Message. When sent to AP client, prints to the chat log. When sent to Yarg, prints to a toast message
                 /// </summary>
                 public string Message = null;
             }
