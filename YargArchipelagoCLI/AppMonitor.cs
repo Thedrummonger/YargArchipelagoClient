@@ -1,4 +1,5 @@
-﻿using TDMUtils.CLITools;
+﻿using TDMUtils;
+using TDMUtils.CLITools;
 using YargArchipelagoCore.Data;
 using YargArchipelagoCore.Helpers;
 
@@ -24,14 +25,14 @@ namespace YargArchipelagoCLI
     }
     public class ChatApplet() : Applet
     {
-        private readonly List<string> ChatLog = [];
+        private readonly List<ColoredString> ChatLog = [];
         public override bool StartAtEnd() => true;
         public override bool StaticSize() => false;
         public override string Title() => "AP Chat";
 
-        public override string[] Values() => [.. ChatLog];
+        public override ColoredString[] Values() => [.. ChatLog];
 
-        public void LogChat(string chat)
+        public void LogChat(ColoredString chat)
         {
             ChatLog.Add(chat);
             if (ChatLog.Count > 500)

@@ -60,7 +60,7 @@ namespace YargArchipelagoCLI
                 ColoredString coloredString = new();
                 foreach (var i in L.Parts)
                     coloredString.AddText(i.Text, i.Color.ConvertToSystemColor(), false);
-                ChatApplet.LogChat(coloredString.Build());
+                ChatApplet.LogChat(coloredString);
             };
             applets.Add(ChatApplet);
             return [.. applets];
