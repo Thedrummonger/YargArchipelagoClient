@@ -57,11 +57,10 @@
             gbAdd = new GroupBox();
             btnRemoveSongPool = new Button();
             btnStartGame = new Button();
-            BtnSaveSongPoolConfig = new Button();
-            btnLoadSongPoolConfig = new Button();
             lblRequiredSongCount = new Label();
             gbSongPoolSelect = new GroupBox();
             button1 = new Button();
+            label8 = new Label();
             gbCurrentPool.SuspendLayout();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)nudPoolAmount).BeginInit();
@@ -280,19 +279,19 @@
             // cmbAddInstrument
             // 
             cmbAddInstrument.FormattingEnabled = true;
-            cmbAddInstrument.Location = new Point(77, 16);
+            cmbAddInstrument.Location = new Point(10, 82);
             cmbAddInstrument.Name = "cmbAddInstrument";
-            cmbAddInstrument.Size = new Size(133, 23);
+            cmbAddInstrument.Size = new Size(200, 23);
             cmbAddInstrument.TabIndex = 8;
             // 
             // label6
             // 
             label6.AutoSize = true;
-            label6.Location = new Point(6, 19);
+            label6.Location = new Point(10, 64);
             label6.Name = "label6";
-            label6.Size = new Size(65, 15);
+            label6.Size = new Size(115, 15);
             label6.TabIndex = 9;
-            label6.Text = "Instrument";
+            label6.Text = "Required Instrument";
             // 
             // label7
             // 
@@ -304,30 +303,31 @@
             // 
             // txtAddSongPoolName
             // 
-            txtAddSongPoolName.Location = new Point(6, 46);
+            txtAddSongPoolName.Location = new Point(10, 38);
             txtAddSongPoolName.Name = "txtAddSongPoolName";
-            txtAddSongPoolName.Size = new Size(146, 23);
+            txtAddSongPoolName.Size = new Size(201, 23);
             txtAddSongPoolName.TabIndex = 11;
             // 
             // btnAddSongPool
             // 
-            btnAddSongPool.Location = new Point(158, 45);
+            btnAddSongPool.Location = new Point(10, 109);
             btnAddSongPool.Name = "btnAddSongPool";
-            btnAddSongPool.Size = new Size(52, 23);
+            btnAddSongPool.Size = new Size(200, 23);
             btnAddSongPool.TabIndex = 12;
-            btnAddSongPool.Text = "Add";
+            btnAddSongPool.Text = "Create Song Pool";
             btnAddSongPool.UseVisualStyleBackColor = true;
             btnAddSongPool.Click += btnAddSongPool_Click;
             // 
             // gbAdd
             // 
+            gbAdd.Controls.Add(label8);
             gbAdd.Controls.Add(label6);
             gbAdd.Controls.Add(btnAddSongPool);
             gbAdd.Controls.Add(cmbAddInstrument);
             gbAdd.Controls.Add(txtAddSongPoolName);
             gbAdd.Location = new Point(12, 76);
             gbAdd.Name = "gbAdd";
-            gbAdd.Size = new Size(216, 81);
+            gbAdd.Size = new Size(216, 142);
             gbAdd.TabIndex = 13;
             gbAdd.TabStop = false;
             gbAdd.Text = "Add Song Pool";
@@ -344,7 +344,7 @@
             // 
             // btnStartGame
             // 
-            btnStartGame.Location = new Point(12, 232);
+            btnStartGame.Location = new Point(18, 246);
             btnStartGame.Name = "btnStartGame";
             btnStartGame.Size = new Size(105, 23);
             btnStartGame.TabIndex = 16;
@@ -352,30 +352,10 @@
             btnStartGame.UseVisualStyleBackColor = true;
             btnStartGame.Click += btnStartGame_Click;
             // 
-            // BtnSaveSongPoolConfig
-            // 
-            BtnSaveSongPoolConfig.Font = new Font("Segoe UI", 8F);
-            BtnSaveSongPoolConfig.Location = new Point(12, 169);
-            BtnSaveSongPoolConfig.Name = "BtnSaveSongPoolConfig";
-            BtnSaveSongPoolConfig.Size = new Size(105, 23);
-            BtnSaveSongPoolConfig.TabIndex = 17;
-            BtnSaveSongPoolConfig.Text = "Save Pool Config";
-            BtnSaveSongPoolConfig.UseVisualStyleBackColor = true;
-            // 
-            // btnLoadSongPoolConfig
-            // 
-            btnLoadSongPoolConfig.Font = new Font("Segoe UI", 8F);
-            btnLoadSongPoolConfig.Location = new Point(123, 169);
-            btnLoadSongPoolConfig.Name = "btnLoadSongPoolConfig";
-            btnLoadSongPoolConfig.Size = new Size(105, 23);
-            btnLoadSongPoolConfig.TabIndex = 18;
-            btnLoadSongPoolConfig.Text = "Load Pool Config";
-            btnLoadSongPoolConfig.UseVisualStyleBackColor = true;
-            // 
             // lblRequiredSongCount
             // 
             lblRequiredSongCount.AutoSize = true;
-            lblRequiredSongCount.Location = new Point(12, 204);
+            lblRequiredSongCount.Location = new Point(18, 228);
             lblRequiredSongCount.Name = "lblRequiredSongCount";
             lblRequiredSongCount.Size = new Size(57, 15);
             lblRequiredSongCount.TabIndex = 19;
@@ -394,13 +374,22 @@
             // 
             // button1
             // 
-            button1.Location = new Point(123, 233);
+            button1.Location = new Point(129, 247);
             button1.Name = "button1";
             button1.Size = new Size(105, 23);
             button1.TabIndex = 21;
-            button1.Text = "Open Plando";
+            button1.Text = "Edit Plando";
             button1.UseVisualStyleBackColor = true;
             button1.Click += button1_Click;
+            // 
+            // label8
+            // 
+            label8.AutoSize = true;
+            label8.Location = new Point(9, 20);
+            label8.Name = "label8";
+            label8.Size = new Size(66, 15);
+            label8.TabIndex = 13;
+            label8.Text = "Pool Name";
             // 
             // ConfigForm
             // 
@@ -410,8 +399,6 @@
             Controls.Add(button1);
             Controls.Add(gbSongPoolSelect);
             Controls.Add(lblRequiredSongCount);
-            Controls.Add(btnLoadSongPoolConfig);
-            Controls.Add(BtnSaveSongPoolConfig);
             Controls.Add(btnStartGame);
             Controls.Add(gbAdd);
             Controls.Add(label7);
@@ -454,8 +441,6 @@
         private GroupBox gbAdd;
         private Button btnRemoveSongPool;
         private Button btnStartGame;
-        private Button BtnSaveSongPoolConfig;
-        private Button btnLoadSongPoolConfig;
         private Label lblRequiredSongCount;
         private GroupBox groupBox2;
         private Label label4;
@@ -471,5 +456,6 @@
         private Button button1;
         private CheckBox chkRandomPoolAmount;
         private Label label1;
+        private Label label8;
     }
 }
