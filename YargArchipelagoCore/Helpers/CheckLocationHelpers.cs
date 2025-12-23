@@ -58,8 +58,8 @@ namespace YargArchipelagoCore.Helpers
         {
             if (Config!.BroadcastSongName)
             {
-                foreach (var i in songLocations)
-                    Connection.GetSession().Say(i.GetSongDisplayName(Config!, true, true, true));
+                //foreach (var i in songLocations)
+                //    Connection.GetSession().Say(i.GetSongDisplayName(Config!, true, true, true));
             }
             Connection!.GetSession().Locations.CompleteLocationChecks([.. Locations]);
             Connection.GetPacketServer().SendClientStatusPacket();

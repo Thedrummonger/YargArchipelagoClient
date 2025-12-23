@@ -199,6 +199,7 @@ namespace YargArchipelagoClient
             broadcastSongNamesToolStripMenuItem.Name = "broadcastSongNamesToolStripMenuItem";
             broadcastSongNamesToolStripMenuItem.Size = new Size(202, 22);
             broadcastSongNamesToolStripMenuItem.Text = "Broadcast Song Names";
+            broadcastSongNamesToolStripMenuItem.Visible = false;
             broadcastSongNamesToolStripMenuItem.Click += broadcastSongNamesToolStripMenuItem_Click;
             // 
             // manualModeToolStripMenuItem
@@ -206,6 +207,7 @@ namespace YargArchipelagoClient
             manualModeToolStripMenuItem.Name = "manualModeToolStripMenuItem";
             manualModeToolStripMenuItem.Size = new Size(202, 22);
             manualModeToolStripMenuItem.Text = "Manual Mode";
+            manualModeToolStripMenuItem.Visible = false;
             manualModeToolStripMenuItem.Click += manualModeToolStripMenuItem_Click;
             // 
             // deathLinkToolStripMenuItem

@@ -184,11 +184,13 @@ namespace YargArchipelagoClient
 
         private void lvSongList_DoubleClick(object sender, EventArgs e)
         {
+            /*
             if (!Config!.ManualMode) return;
             if (lvSongList.SelectedItems == null || lvSongList.SelectedItems.Count == 0) return;
             var songLocations = lvSongList.SelectedItems.Cast<ListViewItem>().Select(x => x.Tag).OfType<SongLocation>();
             if (!songLocations.Any()) return;
             WinFormCheckLocationHelpers.CheckLocations(Config!, Connection, songLocations, ModifierKeys == Keys.Control);
+            */
         }
 
         private async Task ProcessLogQueueAsync()
