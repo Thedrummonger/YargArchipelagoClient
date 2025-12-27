@@ -49,7 +49,7 @@ namespace YargArchipelagoClient
             ArchipelagoSession session = ArchipelagoSessionFactory.CreateSession(ip, port);
             ConnectionData data = new(txtServerAddress.Text, txtSlotName.Text, txtPassword.Text, session);
 
-            var result = session.TryConnectAndLogin("Yarg2", data.SlotName, ItemsHandlingFlags.AllItems, APWorldData.APVersion, ["AP"], null, data.Password);
+            var result = session.TryConnectAndLogin("YAYARG", data.SlotName, ItemsHandlingFlags.AllItems, APWorldData.APVersion, ["AP"], null, data.Password);
 
             if (result is LoginFailure failure)
             {
