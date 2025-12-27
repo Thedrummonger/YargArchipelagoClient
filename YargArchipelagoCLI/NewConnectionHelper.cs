@@ -42,7 +42,7 @@ namespace YargArchipelagoCLI
             Console.WriteLine($"Connecting to {SlotName}@{session.Socket.Uri}");
             ConnectionData data = new(RawIP, SlotName, Password, session);
 
-            var result = session.TryConnectAndLogin("Yarg", data.SlotName, ItemsHandlingFlags.AllItems, APWorldData.APVersion, ["AP"], null, data.Password);
+            var result = session.TryConnectAndLogin("Yarg2", data.SlotName, ItemsHandlingFlags.AllItems, APWorldData.APVersion, ["AP"], null, data.Password);
 
             Console.Clear();
             if (result is LoginFailure failure)

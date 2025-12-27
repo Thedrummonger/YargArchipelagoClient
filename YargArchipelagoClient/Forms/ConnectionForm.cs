@@ -35,17 +35,6 @@ namespace YargArchipelagoClient
                 }
                 catch { }
             }
-
-            if (TestingMode)
-            {
-                // Auto connect to my test instance
-                ArchipelagoSession session = ArchipelagoSessionFactory.CreateSession("localhost");
-                Connection = new("localhost", "Player1", "", session);
-
-                session.TryConnectAndLogin("Yarg", "Player1", ItemsHandlingFlags.AllItems, APWorldData.APVersion, ["AP"], null);
-                DialogResult = DialogResult.OK;
-                Close();
-            }
         }
 
         private void btnConnect_click(object sender, EventArgs e)
@@ -60,7 +49,7 @@ namespace YargArchipelagoClient
             ArchipelagoSession session = ArchipelagoSessionFactory.CreateSession(ip, port);
             ConnectionData data = new(txtServerAddress.Text, txtSlotName.Text, txtPassword.Text, session);
 
-            var result = session.TryConnectAndLogin("Yarg", data.SlotName, ItemsHandlingFlags.AllItems, APWorldData.APVersion, ["AP"], null, data.Password);
+            var result = session.TryConnectAndLogin("Yarg2", data.SlotName, ItemsHandlingFlags.AllItems, APWorldData.APVersion, ["AP"], null, data.Password);
 
             if (result is LoginFailure failure)
             {
