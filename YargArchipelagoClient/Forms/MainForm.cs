@@ -34,6 +34,14 @@ namespace YargArchipelagoClient
                 if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked)
                     e.Cancel = true;
             };
+            deathLinkToolStripMenuItem.DropDown.Closing += (_, e) =>
+            {
+                if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked)
+                    e.Cancel = true;
+            };
+
+            cmbDeathLinkMode.Items.AddRange([.. EnumerableUtilities.EnumAsArray<CommonData.DeathLinkType>().Select(x => x.GetDescription())]);
+            cmbItemNotifMode.Items.AddRange([.. EnumerableUtilities.EnumAsArray<CommonData.ItemLog>().Select(x => x.GetDescription())]);
         }
 
 
@@ -158,12 +166,14 @@ namespace YargArchipelagoClient
 
             yARGConnectedToolStripMenuItem.Text = $"YARG Connected: {Connection.IsConnectedToYarg}";
             currentSongToolStripMenuItem.Text = "Current Song: ";
+            btnDeathLinkSetToYaml.Text = $"Set to YAML Value: {Config.YamlDeathLink.GetDescription()}";
             if (Connection.IsCurrentlyPlayingSong(out var CurSong))
                 currentSongToolStripMenuItem.Text += $" {CurSong!.GetSongDisplayName()}";
             else
                 currentSongToolStripMenuItem.Text += $" None";
 
             aPServerToolStripMenuItem.Text = $"AP Server: {Connection.SlotName}@{Connection.Address}";
+
 
             this.Text = CurrentTitle;
         }
@@ -184,13 +194,11 @@ namespace YargArchipelagoClient
 
         private void lvSongList_DoubleClick(object sender, EventArgs e)
         {
-            /*
             if (!Config!.ManualMode) return;
             if (lvSongList.SelectedItems == null || lvSongList.SelectedItems.Count == 0) return;
             var songLocations = lvSongList.SelectedItems.Cast<ListViewItem>().Select(x => x.Tag).OfType<SongLocation>();
             if (!songLocations.Any()) return;
             WinFormCheckLocationHelpers.CheckLocations(Config!, Connection, songLocations, ModifierKeys == Keys.Control);
-            */
         }
 
         private async Task ProcessLogQueueAsync()
@@ -268,8 +276,8 @@ namespace YargArchipelagoClient
             DropDownUpdating = true;
             broadcastSongNamesToolStripMenuItem.Checked = Config.BroadcastSongName;
             manualModeToolStripMenuItem.Checked = Config.ManualMode;
-            deathLinkToolStripMenuItem.Enabled = Config.ServerDeathLink;
-            deathLinkToolStripMenuItem.Checked = Config.deathLinkEnabled;
+            //deathLinkToolStripMenuItem.Checked = Config.deathLinkEnabled;
+            cmbDeathLinkMode.SelectedIndex = (int)Config.DeathLinkMode;
             cmbItemNotifMode.SelectedIndex = (int)Config.InGameItemLog;
             yARGChatNotificationsToolStripMenuItem.Checked = Config.InGameAPChat;
             DropDownUpdating = false;
@@ -280,10 +288,12 @@ namespace YargArchipelagoClient
             if (DropDownUpdating) return;
             Config.BroadcastSongName = broadcastSongNamesToolStripMenuItem.Checked;
             Config.ManualMode = manualModeToolStripMenuItem.Checked;
-            Config.ServerDeathLink = deathLinkToolStripMenuItem.Checked;
+            //Config.ServerDeathLink = deathLinkToolStripMenuItem.Checked;
+            Config.DeathLinkMode = Sender == btnDeathLinkSetToYaml ? Config.YamlDeathLink : (CommonData.DeathLinkType)cmbDeathLinkMode.SelectedIndex;
             Config.InGameItemLog = (CommonData.ItemLog)cmbItemNotifMode.SelectedIndex;
             Config.InGameAPChat = yARGChatNotificationsToolStripMenuItem.Checked;
             Config.SaveConfigFile(Connection);
+            Connection.UpdateDeathLinkTags(Config);
             UpdatedDropDownChecks(Sender, e);
         }
 
@@ -299,9 +309,13 @@ namespace YargArchipelagoClient
             OptionDropDownItemChanged(sender, e);
         }
 
-        private void deathLinkToolStripMenuItem_Click(object sender, EventArgs e)
+        private void btnDeathLinkSetToYaml_Click(object sender, EventArgs e)
         {
-            deathLinkToolStripMenuItem.Checked = !deathLinkToolStripMenuItem.Checked;
+            OptionDropDownItemChanged(sender, e);
+        }
+
+        private void cmbDeathLinkMode_SelectedIndexChanged(object sender, EventArgs e)
+        {
             OptionDropDownItemChanged(sender, e);
         }
 

@@ -84,8 +84,11 @@ namespace YargArchipelagoCLI
                 consoleSelect = new();
                 consoleSelect.AddCancelOption("Go Back").AddText(SectionPlacement.Pre, "Toggle Config Options..").AddSeparator(SectionPlacement.Pre).StartIndex(CurrentSelection)
                     //.Add($"BroadCast Song Names: {config.BroadcastSongName}", () => config.BroadcastSongName = !config.BroadcastSongName)
-                    .Add($"DeathLink: {config.deathLinkEnabled}", () => config.deathLinkEnabled = !config.deathLinkEnabled, () => config.ServerDeathLink)
-                    .Add($"Item Notifications: {config.InGameItemLog}", () => config.InGameItemLog = EnumerableUtilities.NextValue(config.InGameItemLog))
+                    .Add($"DeathLink [YAML: {config.YamlDeathLink.GetDescription()}]: {config.DeathLinkMode.GetDescription()}", () => { 
+                        config.DeathLinkMode = EnumerableUtilities.NextValue(config.DeathLinkMode); 
+                        connection.UpdateDeathLinkTags(config);
+                        })
+                    .Add($"Item Notifications: {config.InGameItemLog.GetDescription()}", () => config.InGameItemLog = EnumerableUtilities.NextValue(config.InGameItemLog))
                     .Add($"Chat Notifications: {config.InGameAPChat}", () => config.InGameAPChat = !config.InGameAPChat)
                     .Add($"Cheat Mode: {config.CheatMode}", () => config.CheatMode = !config.CheatMode, () => Debugger.IsAttached);
                 Console.Clear();

@@ -45,6 +45,8 @@ namespace YargArchipelagoClient
             broadcastSongNamesToolStripMenuItem = new ToolStripMenuItem();
             manualModeToolStripMenuItem = new ToolStripMenuItem();
             deathLinkToolStripMenuItem = new ToolStripMenuItem();
+            btnDeathLinkSetToYaml = new ToolStripMenuItem();
+            cmbDeathLinkMode = new ToolStripComboBox();
             yARGNotificationsToolStripMenuItem = new ToolStripMenuItem();
             cmbItemNotifMode = new ToolStripComboBox();
             yARGChatNotificationsToolStripMenuItem = new ToolStripMenuItem();
@@ -212,10 +214,23 @@ namespace YargArchipelagoClient
             // 
             // deathLinkToolStripMenuItem
             // 
+            deathLinkToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { btnDeathLinkSetToYaml, cmbDeathLinkMode });
             deathLinkToolStripMenuItem.Name = "deathLinkToolStripMenuItem";
             deathLinkToolStripMenuItem.Size = new Size(202, 22);
             deathLinkToolStripMenuItem.Text = "DeathLink";
-            deathLinkToolStripMenuItem.Click += deathLinkToolStripMenuItem_Click;
+            // 
+            // btnDeathLinkSetToYaml
+            // 
+            btnDeathLinkSetToYaml.Name = "btnDeathLinkSetToYaml";
+            btnDeathLinkSetToYaml.Size = new Size(203, 22);
+            btnDeathLinkSetToYaml.Text = "txtDeathLinkYAMLMode";
+            btnDeathLinkSetToYaml.Click += btnDeathLinkSetToYaml_Click;
+            // 
+            // cmbDeathLinkMode
+            // 
+            cmbDeathLinkMode.Name = "cmbDeathLinkMode";
+            cmbDeathLinkMode.Size = new Size(121, 23);
+            cmbDeathLinkMode.SelectedIndexChanged += cmbDeathLinkMode_SelectedIndexChanged;
             // 
             // yARGNotificationsToolStripMenuItem
             // 
@@ -226,7 +241,6 @@ namespace YargArchipelagoClient
             // 
             // cmbItemNotifMode
             // 
-            cmbItemNotifMode.Items.AddRange(new object[] { "None", "My Items", "All Items" });
             cmbItemNotifMode.Name = "cmbItemNotifMode";
             cmbItemNotifMode.Size = new Size(121, 23);
             cmbItemNotifMode.SelectedIndexChanged += cmbItemNotifMode_SelectedIndexChanged;
@@ -348,5 +362,7 @@ namespace YargArchipelagoClient
         private ToolStripSeparator toolStripSeparator1;
         private ToolStripMenuItem changeServerToolStripMenuItem;
         private ToolStripMenuItem aPServerToolStripMenuItem;
+        private ToolStripMenuItem btnDeathLinkSetToYaml;
+        private ToolStripComboBox cmbDeathLinkMode;
     }
 }

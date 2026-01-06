@@ -2,6 +2,7 @@
 //Don't Let visual studios lie to me these are needed
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 //----------------------------------------------------
 
@@ -79,16 +80,29 @@ namespace YargArchipelagoCommon
 
         public enum ItemLog
         {
+            [Description("No Items")]
             None = 0,
+            [Description("My Items")]
             ToMe = 1,
+            [Description("All Items")]
             All = 2,
+        }
+        public enum DeathLinkType
+        {
+            [Description("Disabled")]
+            None = 0,
+            [Description("Rock Meter")]
+            RockMeter = 1,
+            [Description("Instant Fail")]
+            Fail = 2,
         }
 
         public class DeathLinkData
         {
+            public DeathLinkData(string source, string cause, DeathLinkType type = DeathLinkType.None) { Source = source; Cause = cause; Type = type; }
             public string Source;
-
             public string Cause;
+            public DeathLinkType Type;
         }
         public class ActionItemData
         {

@@ -81,7 +81,7 @@ namespace YargArchipelagoClient.Helpers
                 }
             }
 
-            if (config.deathLinkEnabled && config.ManualMode)
+            if (config.DeathLinkMode > DeathLinkType.None && config.ManualMode)
             {
                 menu.Items.Add(new ToolStripSeparator());
                 menu.Items.AddItem("Send Song Fail Death Link", () =>

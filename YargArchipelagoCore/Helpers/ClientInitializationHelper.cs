@@ -48,10 +48,10 @@ namespace YargArchipelagoCore.Helpers
             else
                 throw new Exception("Could not get Fame Point Goal");
 
-            if (SlotData.TryGetValue("death_link", out var DLO) && DLO is Int64 DLI && DLI > 0)
+            if (SlotData.TryGetValue("death_link", out var DLO) && DLO is Int64 DLI)
             {
-                config.ServerDeathLink = true;
-                config.deathLinkEnabled = true;
+                config.DeathLinkMode = (CommonData.DeathLinkType)DLI;
+                config.YamlDeathLink = (CommonData.DeathLinkType)DLI;
             }
         }
 
@@ -147,8 +147,7 @@ namespace YargArchipelagoCore.Helpers
 
             Debug.WriteLine($"The Following Songs were not valid for any profile in this config\n\n{Config.GetUnusableSongs().Select(x => x.GetSongDisplayName()).ToFormattedJson()}");
 
-            if (Config.ServerDeathLink)
-                Connection.DeathLinkService?.EnableDeathLink();
+            Connection.UpdateDeathLinkTags(Config);
 
             var PacketServer = Connection!.CreatePacketServer(Config);
             _ = PacketServer.StartAsync();
@@ -194,10 +193,10 @@ namespace YargArchipelagoCore.Helpers
 
         private void DeathLinkService_OnDeathLinkReceived(DeathLink deathLink) 
         {
-            if (!config.deathLinkEnabled) return;
+            if (config.DeathLinkMode <= CommonData.DeathLinkType.None) return;
             _ = connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket
             {
-                deathLinkData = new CommonData.DeathLinkData { Source = deathLink.Source, Cause = deathLink.Cause }
+                deathLinkData = new CommonData.DeathLinkData(deathLink.Source, deathLink.Cause, config.DeathLinkMode)
             });
         }
         private void Locations_CheckedLocationsUpdated(System.Collections.ObjectModel.ReadOnlyCollection<long> newCheckedLocations) => connection.clientSyncHelper.ShouldUpdate = true;
@@ -212,7 +211,7 @@ namespace YargArchipelagoCore.Helpers
             bool ShouldRelay(ItemSendLogMessage IL)
             {
                 if (config.InGameItemLog == CommonData.ItemLog.ToMe) 
-                    return IL.IsReceiverTheActivePlayer;
+                    return IL.IsReceiverTheActivePlayer || IL.IsSenderTheActivePlayer;
                 return config.InGameItemLog == CommonData.ItemLog.All;
             }
         }

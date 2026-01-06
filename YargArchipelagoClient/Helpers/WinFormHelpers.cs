@@ -22,10 +22,6 @@ namespace YargArchipelagoClient.Helpers
             else
                 action();
         }
-        public static string GetDescription(this Enum value) =>
-        value.GetType().GetField(value.ToString())?.GetCustomAttributes(typeof(DescriptionAttribute), false)
-             .OfType<DescriptionAttribute>()
-             .FirstOrDefault()?.Description ?? value.ToString();
 
         public class ContainerItem(object? value, string display)
         {

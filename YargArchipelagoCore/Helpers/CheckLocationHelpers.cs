@@ -30,7 +30,7 @@ namespace YargArchipelagoCore.Helpers
                         ToCheck.Add(SL1);
                         AlteredLocations.Add(Target);
                     }
-                    else if (Config.deathLinkEnabled && SL1DL)
+                    else if (Config.DeathLinkMode > CommonData.DeathLinkType.None && SL1DL)
                         Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {Target.GetSongDisplayName(Config!)}"));
                 }
                 if (Target.ExtraCheckAvailable(Connection, out var EL1))
@@ -40,7 +40,7 @@ namespace YargArchipelagoCore.Helpers
                         ToCheck.Add(EL1);
                         AlteredLocations.Add(Target);
                     }
-                    else if (Config.deathLinkEnabled && EL1DL)
+                    else if (Config.DeathLinkMode > CommonData.DeathLinkType.None && EL1DL)
                         Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {Target.GetSongDisplayName(Config!)}"));
                 }
                 if (Target.FameCheckAvailable([.. Connection.CheckedLocations, .. ToCheck], out var FL2))

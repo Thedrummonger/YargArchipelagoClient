@@ -21,7 +21,7 @@ namespace YargArchipelagoCore.Helpers
                     Log($"Simulating Death Link");
                     _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket
                     {
-                        deathLinkData = new CommonData.DeathLinkData { Source = "Self", Cause = "Command" }
+                        deathLinkData = new CommonData.DeathLinkData("Server", "Command")
                     });
                     break;
                 case "songs":

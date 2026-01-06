@@ -84,6 +84,16 @@ namespace YargArchipelagoCore.Data
             return BitConverter.ToInt32(hash, 0);
         }
 
+        public void UpdateDeathLinkTags(ConfigData config)
+        {
+            if (Session is null || !Session.Socket.Connected || DeathLinkService is null)
+                return;
+            if (config.DeathLinkMode > YargArchipelagoCommon.CommonData.DeathLinkType.None)
+                DeathLinkService.EnableDeathLink();
+            else
+                DeathLinkService.DisableDeathLink();
+        }
+
         public void UpdateReceivedItems()
         {
             ReceivedStaticItems.Clear();

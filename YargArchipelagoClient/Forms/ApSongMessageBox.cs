@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel;
-using static YargArchipelagoClient.Helpers.WinFormHelpers;
+using TDMUtils;
 
 namespace YargArchipelagoClient.Forms
 {
