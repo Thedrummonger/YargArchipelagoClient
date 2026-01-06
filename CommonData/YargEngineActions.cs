@@ -1,25 +1,24 @@
-﻿using HarmonyLib;
+﻿using Cysharp.Threading.Tasks;
+using HarmonyLib;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-
+using UnityEngine;
+using YARG.Core.Audio;
 //Don't Let visual studios lie to me these are needed
 using YARG.Core.Engine;
 using YARG.Core.Song;
 using YARG.Core.Song.Cache;
 using YARG.Gameplay;
-using YARG.Core.Audio;
-using YARG.Menu.Persistent;
-
+using YARG.Gameplay.HUD;
 //----------------------------------------------------
 using YARG.Gameplay.Player;
 using YARG.Menu.MusicLibrary;
+using YARG.Menu.Persistent;
 using YargArchipelagoCommon;
-using YARG.Gameplay.HUD;
-using Cysharp.Threading.Tasks;
 
 namespace YargArchipelagoPlugin
 {
@@ -65,7 +64,15 @@ namespace YargArchipelagoPlugin
 #if STABLE
                 ForceExitSong(handler);
 #else
-                ForceFailSong(handler);
+                switch (deathLinkData.Type)
+                {
+                    case CommonData.DeathLinkType.RockMeter:
+                        SetBandHappiness(handler, 0.02f);
+                        break;
+                    case CommonData.DeathLinkType.Fail:
+                        ForceFailSong(handler);
+                        break;
+                }
 #endif
                 ToastManager.ToastInformation($"DeathLink Received!\n\n{deathLinkData.Source} {deathLinkData.Cause}");
                 //DialogManager.Instance.ShowMessage("DeathLink Received!", $"{deathLinkData.Source} {deathLinkData.Cause}");
@@ -107,6 +114,7 @@ namespace YargArchipelagoPlugin
         }
 
 #if NIGHTLY
+
         public static async void ForceFailSong(ArchipelagoService handler)
         {
             var gameManager = handler.GetCurrentSong();
@@ -124,6 +132,53 @@ namespace YargArchipelagoPlugin
             await UniTask.Delay(TimeSpan.FromSeconds(GameManager.SONG_END_DELAY));
             GlobalAudioHandler.PlayVoxSample(VoxSample.FailSound);
             gameManager.Pause(true);
+        }
+        
+        public static void SetBandHappiness(ArchipelagoService handler, float? delta = null)
+        {
+            var gameManager = handler.GetCurrentSong();
+            if (!handler.IsInSong() || gameManager.IsPractice)
+                return;
+            foreach (var player in gameManager.Players)
+            {
+                var EngineContainer = player.GetEngineContainer();
+                EngineContainer.SetHappiness(gameManager.EngineManager, delta ?? EngineContainer.RockMeterPreset.StartingHappiness);
+            }
+        }
+
+        private static MethodInfo _addHappinessMethod;
+        private static PropertyInfo _happinessProperty;
+        private static MethodInfo _updateHappinessMethod;
+        private static FieldInfo _engineContainerField;
+        public static EngineManager.EngineContainer GetEngineContainer(this BasePlayer player)
+        {
+            if (_engineContainerField == null)
+                _engineContainerField = typeof(BasePlayer).GetField("EngineContainer", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            return (EngineManager.EngineContainer)_engineContainerField.GetValue(player);
+        }
+
+        public static void AddHappiness(this EngineManager.EngineContainer container, float delta)
+        {
+            if (_addHappinessMethod == null)
+                _addHappinessMethod = typeof(EngineManager.EngineContainer).GetMethod("AddHappiness", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            _addHappinessMethod?.Invoke(container, new object[] { delta });
+        }
+
+        public static void SetHappiness(this EngineManager.EngineContainer container, EngineManager engineManager, float value)
+        {
+            if (_happinessProperty == null)
+                _happinessProperty = typeof(EngineManager.EngineContainer).GetProperty("Happiness", BindingFlags.Public | BindingFlags.Instance);
+
+            if (_updateHappinessMethod == null)
+                _updateHappinessMethod = typeof(EngineManager).GetMethod("UpdateHappiness", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            value = Mathf.Clamp(value, -3f, 1f);
+
+            _happinessProperty?.SetValue(container, value);
+
+            _updateHappinessMethod?.Invoke(engineManager, null);
         }
 #endif
 

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using Archipelago.MultiClient.Net.Models;
+using System.ComponentModel;
 using YargArchipelagoCommon;
 
 namespace YargArchipelagoCore.Data
@@ -17,6 +18,42 @@ namespace YargArchipelagoCore.Data
             GoldStar,
             FullCombo
         }
+
+
+        public class FillerItem(StaticItems type, ItemInfo itemInfo)
+        {
+            public StaticItems Type => type;
+            public ItemInfo ItemInfo => itemInfo;
+
+            private string FillerHash() => $"{type}|{itemInfo.Player.Slot}|{itemInfo.Player.Team}|{itemInfo.LocationId}|{itemInfo.ItemId}";
+            public override int GetHashCode() => FillerHash().GetHashCode();
+
+            public override bool Equals(object? obj)
+            {
+                if (obj == null || GetType() != obj.GetType()) return false;
+                FillerItem other = (FillerItem)obj;
+                return FillerHash() == other.FillerHash();
+            }
+
+            public static bool operator ==(FillerItem left, FillerItem right)
+            {
+                if (ReferenceEquals(left, right)) return true;
+                if (left is null || right is null) return false;
+                return left.Equals(right);
+            }
+
+            public static bool operator !=(FillerItem left, FillerItem right) => !(left == right);
+        }
+
+        public class TrapFillerItem(StaticItems type, ItemInfo itemInfo) : FillerItem(type, itemInfo)
+        {
+            public bool Used = false;
+        }
+        public class UseableFillerItem(StaticItems type, ItemInfo itemInfo) : FillerItem(type, itemInfo)
+        {
+            public bool Used = false;
+        }
+
         [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
         public sealed class FillerTrapTypeAttribute(CommonData.APActionItem type) : Attribute
         {
