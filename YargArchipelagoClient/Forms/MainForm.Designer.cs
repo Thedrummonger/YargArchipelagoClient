@@ -56,6 +56,8 @@ namespace YargArchipelagoClient
             toolStripSeparator1 = new ToolStripSeparator();
             aPServerToolStripMenuItem = new ToolStripMenuItem();
             changeServerToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator2 = new ToolStripSeparator();
+            openYargAPConfigFolderToolStripMenuItem = new ToolStripMenuItem();
             fame0ToolStripMenuItem = new ToolStripMenuItem();
             yARGConnectedToolStripMenuItem = new ToolStripMenuItem();
             currentSongToolStripMenuItem = new ToolStripMenuItem();
@@ -254,7 +256,7 @@ namespace YargArchipelagoClient
             // 
             // utilityToolStripMenuItem
             // 
-            utilityToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { updateAvailableSongsToolStripMenuItem, rescanSongListToolStripMenuItem, toolStripSeparator1, aPServerToolStripMenuItem, changeServerToolStripMenuItem });
+            utilityToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { updateAvailableSongsToolStripMenuItem, rescanSongListToolStripMenuItem, toolStripSeparator1, aPServerToolStripMenuItem, changeServerToolStripMenuItem, toolStripSeparator2, openYargAPConfigFolderToolStripMenuItem });
             utilityToolStripMenuItem.Name = "utilityToolStripMenuItem";
             utilityToolStripMenuItem.Size = new Size(50, 20);
             utilityToolStripMenuItem.Text = "Utility";
@@ -262,35 +264,47 @@ namespace YargArchipelagoClient
             // updateAvailableSongsToolStripMenuItem
             // 
             updateAvailableSongsToolStripMenuItem.Name = "updateAvailableSongsToolStripMenuItem";
-            updateAvailableSongsToolStripMenuItem.Size = new Size(180, 22);
+            updateAvailableSongsToolStripMenuItem.Size = new Size(222, 22);
             updateAvailableSongsToolStripMenuItem.Text = "Sync with YARG";
             updateAvailableSongsToolStripMenuItem.Click += updateAvailableSongsToolStripMenuItem_Click;
             // 
             // rescanSongListToolStripMenuItem
             // 
             rescanSongListToolStripMenuItem.Name = "rescanSongListToolStripMenuItem";
-            rescanSongListToolStripMenuItem.Size = new Size(180, 22);
+            rescanSongListToolStripMenuItem.Size = new Size(222, 22);
             rescanSongListToolStripMenuItem.Text = "Rescan Song List";
             rescanSongListToolStripMenuItem.Click += rescanSongListToolStripMenuItem_Click;
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(177, 6);
+            toolStripSeparator1.Size = new Size(219, 6);
             // 
             // aPServerToolStripMenuItem
             // 
             aPServerToolStripMenuItem.Enabled = false;
             aPServerToolStripMenuItem.Name = "aPServerToolStripMenuItem";
-            aPServerToolStripMenuItem.Size = new Size(180, 22);
+            aPServerToolStripMenuItem.Size = new Size(222, 22);
             aPServerToolStripMenuItem.Text = "AP Server:";
             // 
             // changeServerToolStripMenuItem
             // 
             changeServerToolStripMenuItem.Name = "changeServerToolStripMenuItem";
-            changeServerToolStripMenuItem.Size = new Size(180, 22);
+            changeServerToolStripMenuItem.Size = new Size(222, 22);
             changeServerToolStripMenuItem.Text = "Disconnect from AP";
             changeServerToolStripMenuItem.Click += ResetConnection;
+            // 
+            // toolStripSeparator2
+            // 
+            toolStripSeparator2.Name = "toolStripSeparator2";
+            toolStripSeparator2.Size = new Size(219, 6);
+            // 
+            // openYargAPConfigFolderToolStripMenuItem
+            // 
+            openYargAPConfigFolderToolStripMenuItem.Name = "openYargAPConfigFolderToolStripMenuItem";
+            openYargAPConfigFolderToolStripMenuItem.Size = new Size(222, 22);
+            openYargAPConfigFolderToolStripMenuItem.Text = "Open Yarg AP Config Folder";
+            openYargAPConfigFolderToolStripMenuItem.Click += openYargAPConfigFolderToolStripMenuItem_Click;
             // 
             // fame0ToolStripMenuItem
             // 
@@ -364,5 +378,7 @@ namespace YargArchipelagoClient
         private ToolStripMenuItem aPServerToolStripMenuItem;
         private ToolStripMenuItem btnDeathLinkSetToYaml;
         private ToolStripComboBox cmbDeathLinkMode;
+        private ToolStripSeparator toolStripSeparator2;
+        private ToolStripMenuItem openYargAPConfigFolderToolStripMenuItem;
     }
 }

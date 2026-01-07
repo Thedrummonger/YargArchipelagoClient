@@ -32,7 +32,8 @@ namespace YargArchipelagoCLI
                 .Add("Use Filler Item", UseFillerItem)
                 .Add("Toggle Config", ToggleConfig)
                 .Add("Rescan Songs", () => SongImporter.RescanSongs(config!, connection!))
-                .Add("Sync With YARG", connection!.GetPacketServer().SendClientStatusPacket);
+                .Add("Sync With YARG", connection!.GetPacketServer().SendClientStatusPacket)
+                .Add("Open Yarg AP Config Folder", () => MultiplatformHelpers.OpenFolder(CommonData.DataFolder));
 
             liveMonitor.Show();
             while (!ConsoleExiting)

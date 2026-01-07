@@ -338,5 +338,9 @@ namespace YargArchipelagoClient
             PrintSongs();
         }
 
+        private void openYargAPConfigFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MultiplatformHelpers.OpenFolder(CommonData.DataFolder);
+        }
     }
 }

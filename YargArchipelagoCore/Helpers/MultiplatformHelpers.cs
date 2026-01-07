@@ -1,4 +1,8 @@
-﻿namespace YargArchipelagoCore.Helpers
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
+using static System.Net.Mime.MediaTypeNames;
+
+namespace YargArchipelagoCore.Helpers
 {
     public class MultiplatformHelpers
     {
@@ -77,6 +81,35 @@
                     Console.WriteLine("Invalid key");
                 }
             };
+        }
+        public static void OpenFolder(string folderPath)
+        {
+            try
+            {
+                if (!Directory.Exists(folderPath))
+                {
+                    Debug.WriteLine($"Folder does not exist: {folderPath}");
+                    return;
+                }
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "explorer.exe",
+                        Arguments = folderPath,
+                        UseShellExecute = true
+                    });
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    Process.Start("open", folderPath);
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    Process.Start("xdg-open", folderPath);
+                else
+                    Console.WriteLine($"Yarg Archipelago Data Path: {folderPath}");
+            }
+            catch
+            {
+                Console.WriteLine($"Yarg Archipelago Data Path: {folderPath}");
+            }
         }
     }
 }

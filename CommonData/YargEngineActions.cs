@@ -36,9 +36,11 @@ namespace YargArchipelagoPlugin
             switch (ActionItem.type)
             {
                 case CommonData.APActionItem.Restart:
-                    ApplyRestartTrap(APHandler);
+                    ForceRestartSong(APHandler);
+                    ToastManager.ToastInformation($"{ActionItem.Sender} sent you a Restart Trap!");
                     break;
                 case CommonData.APActionItem.StarPower:
+                    ToastManager.ToastInformation($"{ActionItem.Sender} sent you a some Star Power!");
                     foreach (var i in APHandler.GetCurrentSong().Players)
                         ApplyStarPowerItem(i, APHandler);
                     break;
@@ -83,13 +85,6 @@ namespace YargArchipelagoPlugin
             }
         }
 
-        public static void ApplyRestartTrap(ArchipelagoService handler)
-        {
-            ForceRestartSong(handler);
-            ToastManager.ToastInformation("A player has sent you a Restart Trap!");
-            //DialogManager.Instance.ShowMessage("Restart Trap","A player has sent you a Restart Trap!");
-        }
-
         private static void ForceRestartSong(ArchipelagoService handler)
         {
             if (!handler.IsInSong()) 
@@ -99,12 +94,13 @@ namespace YargArchipelagoPlugin
                 var gm = handler.GetCurrentSong();
                 var field = AccessTools.Field(typeof(GameManager), "_pauseMenu");
                 object pauseMenuObj = field.GetValue(gm);
-                if (pauseMenuObj is PauseMenuManager pm)
+                if (pauseMenuObj is PauseMenuManager pm && !gm.IsPractice && !MonoSingleton<DialogManager>.Instance.IsDialogShowing)
                 {
                     //TODO: This works but YARG spits out a bunch of errors. I thinks it because I don't give the pause menu enough time to load before restarting.
-                    if (!gm.Paused)
+                    if (!pm.IsOpen)
                         gm.Pause(true);
-                    pm.Restart();
+                    if (pm.IsOpen)
+                        pm.Restart();
                 }
             }
             catch (Exception e)
