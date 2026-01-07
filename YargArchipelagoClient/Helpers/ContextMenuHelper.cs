@@ -1,8 +1,9 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 using TDMUtils;
-using YargArchipelagoCore.Data;
 using YargArchipelagoClient.Forms;
 using YargArchipelagoCommon;
+using YargArchipelagoCore.Data;
 using YargArchipelagoCore.Helpers;
 using static YargArchipelagoClient.Helpers.WinFormHelpers;
 using static YargArchipelagoCommon.CommonData;
@@ -22,17 +23,14 @@ namespace YargArchipelagoClient.Helpers
         public static ContextMenuStrip BuildSongMenu(MainForm mainForm, SongLocation song) => new ContextMenuBuilder(mainForm, song).BuildSongMenu();
         public ContextMenuStrip BuildSongMenu()
         {
-            int RandomSwapsTotal = connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.SwapRandom, out int rst) ? rst : 0;
-            int RandomSwapsUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.SwapRandom, out int rsu) ? rsu : 0;
-            int RandomSwapsAvailable = RandomSwapsTotal - RandomSwapsUsed;
+            var AllRandomSwap = connection!.ApItemsRecieved.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.SwapRandom);
+            var UsableRandomSwap = AllRandomSwap.FirstOrDefault();
 
-            int SwapsTotal = connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.SwapPick, out int st) ? st : 0;
-            int SwapsUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.SwapPick, out int su) ? su : 0;
-            int SwapsAvailable = SwapsTotal - SwapsUsed;
+            var AllPickSwap = connection!.ApItemsRecieved.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.SwapPick);
+            var UsablePickSwap = AllPickSwap.FirstOrDefault();
 
-            int LowerDiffTotal = connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.LowerDifficulty, out int lt) ? lt : 0;
-            int LowerDiffUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.LowerDifficulty, out int lu) ? lu : 0;
-            int LowerDiffAvailable = LowerDiffTotal - LowerDiffUsed;
+            var AllLowerDiff = connection!.ApItemsRecieved.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.LowerDifficulty);
+            var UsableLowerDiff = AllRandomSwap.FirstOrDefault();
 
             var menu = new ContextMenuStrip();
 
@@ -58,26 +56,26 @@ namespace YargArchipelagoClient.Helpers
                     menu.Items.AddItem("Get Fame Point", () => connection.CommitCheckLocations([el], [song], config));
             }
 
-            if ((RandomSwapsAvailable > 0 || SwapsAvailable > 0) || LowerDiffAvailable > 0 || config.CheatMode)
+            if ((UsableRandomSwap is not null || UsablePickSwap is not null) || UsableLowerDiff is not null || config.CheatMode)
             {
                 menu.Items.Add(new ToolStripSeparator());
                 menu.Items.AddItem($"Use Modifier:");
-                if (RandomSwapsAvailable > 0 || config.CheatMode)
-                    menu.Items.AddItem($"{APWorldData.StaticItems.SwapRandom.GetDescription()}: {RandomSwapsAvailable}", () => SwapSong(true));
-                if (SwapsAvailable > 0 || config.CheatMode)
-                    menu.Items.AddItem($"{APWorldData.StaticItems.SwapPick.GetDescription()}: {SwapsAvailable}", () => SwapSong(false));
-                if (LowerDiffAvailable > 0 || config.CheatMode)
+                if (UsableRandomSwap is not null || config.CheatMode)
+                    menu.Items.AddItem($"{APWorldData.StaticItems.SwapRandom.GetDescription()}: {AllRandomSwap.Count()}", () => SwapSong(true, UsableRandomSwap));
+                if (UsablePickSwap is not null || config.CheatMode)
+                    menu.Items.AddItem($"{APWorldData.StaticItems.SwapPick.GetDescription()}: {AllPickSwap.Count()}", () => SwapSong(false, UsablePickSwap));
+                if (UsableLowerDiff is not null || config.CheatMode)
                 {
-                    menu.Items.AddItem($"Lower Difficulty value: {LowerDiffAvailable}");
+                    menu.Items.AddItem($"Lower Difficulty value: {AllLowerDiff.Count()}");
                     if (song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Diff > CommonData.SupportedDifficulty.Easy)
-                        menu.Items.AddItem($"-Reward 1 Min Difficulty", fillerActivationHelper.LowerReward1Diff);
+                        menu.Items.AddItem($"-Reward 1 Min Difficulty", () => fillerActivationHelper.LowerReward1Diff(UsableLowerDiff));
                     if (song.HasExtraCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Diff > CommonData.SupportedDifficulty.Easy)
-                        menu.Items.AddItem($"-Reward 2 Min Difficulty", fillerActivationHelper.LowerReward2Diff);
+                        menu.Items.AddItem($"-Reward 2 Min Difficulty", () => fillerActivationHelper.LowerReward2Diff(UsableLowerDiff));
 
                     if (song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Req > APWorldData.CompletionReq.Clear)
-                        menu.Items.AddItem($"-Reward 1 Min Score Requirement", fillerActivationHelper.LowerReward1Req);
+                        menu.Items.AddItem($"-Reward 1 Min Score Requirement", () => fillerActivationHelper.LowerReward1Req(UsableLowerDiff));
                     if (song.HasExtraCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Req > APWorldData.CompletionReq.Clear)
-                        menu.Items.AddItem($"-Reward 2 Min Score Requirement", fillerActivationHelper.LowerReward2Req);
+                        menu.Items.AddItem($"-Reward 2 Min Score Requirement", () => fillerActivationHelper.LowerReward2Req(UsableLowerDiff));
                 }
             }
 
@@ -112,10 +110,19 @@ namespace YargArchipelagoClient.Helpers
                 menu.Items.AddItem($"-Min Score [{song.Requirements!.CompletionRequirement.Reward2Req.ToString().AddSpacesToCamelCase()}]");
             }
 
+            if (song.SongItemReceived(connection, out var data))
+            {
+                var Player = connection.GetSession().Players.GetPlayerInfo(data.SendingPlayerSlot);
+                var Location = connection.GetSession().Locations.GetLocationNameFromId(data.SendingPlayerSlot, Player.Game);
+                menu.Items.Add(new ToolStripSeparator());
+                menu.Items.AddItem($"From {Player.Name} Playing {data.SendingPlayerGame} at");
+                menu.Items.AddItem(Location);
+            }
+
             return menu;
         }
 
-        public void SwapSong(bool Random)
+        public void SwapSong(bool Random, APWorldData.StaticYargAPItem? UsableSwapItem)
         {
             var SwapCandidates = fillerActivationHelper.GetValidSongReplacements();
             var SelectList = ContainerItem.ToContainerList(SwapCandidates.OrderBy(x => x.GetSongDisplayName()), x => x.GetSongDisplayName());
@@ -134,15 +141,15 @@ namespace YargArchipelagoClient.Helpers
 
             song.SongHash = Target;
             var ItemUsed = Random ? APWorldData.StaticItems.SwapRandom : APWorldData.StaticItems.SwapPick;
-            if (!config.CheatMode)
-            {
-                config!.UsedFiller.SetIfEmpty(ItemUsed, 0);
-                config!.UsedFiller[ItemUsed]++;
-            }
+            if (!config.CheatMode && UsableSwapItem is not null)
+                config.ApItemsUsed.Add(UsableSwapItem);
 
             config.SaveConfigFile(connection);
             mainForm.SafeInvoke(mainForm.PrintSongs);
             connection.GetPacketServer().SendClientStatusPacket();
+
+            Debug.WriteLine(connection.ApItemsRecieved.ToFormattedJson());
+            Debug.WriteLine(config.ApItemsUsed.ToFormattedJson());
         }
     }
     public static class ContextMenuHelper

@@ -108,29 +108,34 @@ namespace YargArchipelagoCLI
             Console.Clear();
             Console.WriteLine($"Song: {ShowDetails.GetSongDisplayName(config)}\nProfile: {ShowDetails.Requirements?.Name}\nInstrument: {ShowDetails.Requirements?.Instrument}");
             Console.WriteLine(ShowDetails.Requirements?.CompletionRequirement?.ToFormattedJson());
+            if (ShowDetails.SongItemReceived(connection, out var data))
+            {
+                var Player = connection.GetSession().Players.GetPlayerInfo(data.SendingPlayerSlot);
+                var Location = connection.GetSession().Locations.GetLocationNameFromId(data.SendingPlayerSlot, Player.Game);
+                Console.WriteLine($"From {Player.Name} Playing {data.SendingPlayerGame} at");
+                Console.WriteLine(Location);
+            }
             Console.ReadKey();
         }
 
         private static void UseFillerItem()
         {
             Console.Clear();
-            int RandomSwapsTotal = connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.SwapRandom, out int rst) ? rst : 0;
-            int RandomSwapsUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.SwapRandom, out int rsu) ? rsu : 0;
-            int RandomSwapsAvailable = RandomSwapsTotal - RandomSwapsUsed;
 
-            int SwapsTotal = connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.SwapPick, out int st) ? st : 0;
-            int SwapsUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.SwapPick, out int su) ? su : 0;
-            int SwapsAvailable = SwapsTotal - SwapsUsed;
+            var AllRandomSwap = connection!.ApItemsRecieved.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.SwapRandom);
+            var UsableRandomSwap = AllRandomSwap.FirstOrDefault();
 
-            int LowerDiffTotal = connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.LowerDifficulty, out int lt) ? lt : 0;
-            int LowerDiffUsed = config!.UsedFiller.TryGetValue(APWorldData.StaticItems.LowerDifficulty, out int lu) ? lu : 0;
-            int LowerDiffAvailable = LowerDiffTotal - LowerDiffUsed;
+            var AllPickSwap = connection!.ApItemsRecieved.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.SwapPick);
+            var UsablePickSwap = AllPickSwap.FirstOrDefault();
+
+            var AllLowerDiff = connection!.ApItemsRecieved.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.LowerDifficulty);
+            var UsableLowerDiff = AllRandomSwap.FirstOrDefault();
 
             ConsoleSelect<Action> consoleSelect = new();
             consoleSelect.AddCancelOption("Cancel").AddText(SectionPlacement.Pre, "Select an item to use..").AddSeparator(SectionPlacement.Pre)
-            .Add($"Use Swap Song (Pick) {SwapsAvailable}", () => SwapSong(true), () => SwapsAvailable > 1 || config.CheatMode)
-            .Add($"Use Swap Song (Random) {RandomSwapsAvailable}", () => SwapSong(false), () => RandomSwapsAvailable > 1 || config.CheatMode)
-            .Add($"Lower Song requirements {LowerDiffAvailable}", () => LowerScore(), () => LowerDiffAvailable > 1 || config.CheatMode);
+            .Add($"Use Swap Song (Pick) {AllRandomSwap.Count()}", () => SwapSong(true, UsableRandomSwap), () => UsableRandomSwap is not null || config.CheatMode)
+            .Add($"Use Swap Song (Random) {AllPickSwap.Count()}", () => SwapSong(false, UsablePickSwap), () => UsablePickSwap is not null || config.CheatMode)
+            .Add($"Lower Song requirements {AllLowerDiff.Count()}", () => LowerScore(UsableLowerDiff), () => UsableLowerDiff is not null || config.CheatMode);
 
             var Selection = consoleSelect.GetSelection();
             if (Selection.WasCancelation())
@@ -138,7 +143,7 @@ namespace YargArchipelagoCLI
             Selection.Tag!();
         }
 
-        private static void LowerScore()
+        private static void LowerScore(APWorldData.StaticYargAPItem? usableItem)
         {
             Console.Clear();
             SongLocation? song = PrintAvailableSongs([$"Select song to lower score.."], [], new FlaggedOption<SongLocation>("Cancel", ReturnFlag.Cancel));
@@ -149,13 +154,13 @@ namespace YargArchipelagoCLI
             ConsoleSelect<Action> consoleSelect = new();
             consoleSelect.AddText(SectionPlacement.Pre, $"{song.GetSongDisplayName(config)}\nCurrent Requirements:\n{song.Requirements!.CompletionRequirement.ToFormattedJson()}")
             .AddSeparator(SectionPlacement.Pre).AddText(SectionPlacement.Pre, "Select a requirement to change:").AddSeparator(SectionPlacement.Pre)
-            .Add("Lower Reward 1 min Difficulty", fillerActivationHelper.LowerReward1Diff,
+            .Add("Lower Reward 1 min Difficulty", () => fillerActivationHelper.LowerReward1Diff(usableItem),
                 () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Diff > CommonData.SupportedDifficulty.Easy; })
-            .Add("Lower Reward 2 min Difficulty", fillerActivationHelper.LowerReward2Diff,
+            .Add("Lower Reward 2 min Difficulty", () => fillerActivationHelper.LowerReward2Diff(usableItem),
                 () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Diff > CommonData.SupportedDifficulty.Easy; })
-            .Add("Lower Reward 1 min Score", fillerActivationHelper.LowerReward1Req,
+            .Add("Lower Reward 1 min Score", () => fillerActivationHelper.LowerReward1Req(usableItem),
                 () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Req > APWorldData.CompletionReq.Clear; })
-            .Add("Lower Reward 2 min Score", fillerActivationHelper.LowerReward2Req,
+            .Add("Lower Reward 2 min Score", () => fillerActivationHelper.LowerReward2Req(usableItem),
                 () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Req > APWorldData.CompletionReq.Clear; });
 
             if (!consoleSelect.HasValidOptions)
@@ -174,7 +179,7 @@ namespace YargArchipelagoCLI
             Console.ReadLine();
         }
 
-        private static void SwapSong(bool AllowPick)
+        private static void SwapSong(bool AllowPick, APWorldData.StaticYargAPItem? usableItem)
         {
             SongLocation? song = PrintAvailableSongs([$"Select song to swap.."], [], new FlaggedOption<SongLocation>("Cancel", ReturnFlag.Cancel));
             if (song is null) return;
@@ -200,11 +205,8 @@ namespace YargArchipelagoCLI
             Console.WriteLine($"[{OldSong}] swapped to [{song.GetSongDisplayName(config)}]");
 
             var ItemUsed = AllowPick ? APWorldData.StaticItems.SwapPick : APWorldData.StaticItems.SwapRandom;
-            if (!config.CheatMode)
-            {
-                config!.UsedFiller.SetIfEmpty(ItemUsed, 0);
-                config!.UsedFiller[ItemUsed]++;
-            }
+            if (!config.CheatMode && usableItem is not null)
+                config!.ApItemsUsed.Add(usableItem);
 
             config.SaveConfigFile(connection);
             connection.GetPacketServer().SendClientStatusPacket();

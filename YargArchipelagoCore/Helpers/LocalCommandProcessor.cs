@@ -11,11 +11,11 @@ namespace YargArchipelagoCore.Helpers
             {
                 case "star":
                     Log($"Simulating start power item");
-                    _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new(CommonData.APActionItem.StarPower) });
+                    _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new(CommonData.APActionItem.StarPower, "Debug") });
                     break;
                 case "restart":
                     Log($"Simulating restart trap");
-                    _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new(CommonData.APActionItem.Restart) });
+                    _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new(CommonData.APActionItem.Restart, "Debug") });
                     break;
                 case "dl":
                     Log($"Simulating Death Link");

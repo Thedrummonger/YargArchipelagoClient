@@ -106,8 +106,13 @@ namespace YargArchipelagoCommon
         }
         public class ActionItemData
         {
-            public ActionItemData(APActionItem t) { type = t; }
+            public ActionItemData(APActionItem t, string sender)
+            {
+                type = t;
+                Sender = sender;
+            }
             public APActionItem type;
+            public string Sender;
         }
         public class CurrentlyPlayingData
         {

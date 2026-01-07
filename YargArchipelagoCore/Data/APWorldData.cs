@@ -1,6 +1,7 @@
 ﻿using Archipelago.MultiClient.Net.Models;
 using System.ComponentModel;
 using YargArchipelagoCommon;
+using static YargArchipelagoCore.Data.ArchipelagoColorHelper;
 
 namespace YargArchipelagoCore.Data
 {
@@ -19,39 +20,37 @@ namespace YargArchipelagoCore.Data
             FullCombo
         }
 
-
-        public class FillerItem(StaticItems type, ItemInfo itemInfo)
+        public class BaseYargAPItem(long itemID, int sendingSlot, long sendingLocationID, string Game)
         {
-            public StaticItems Type => type;
-            public ItemInfo ItemInfo => itemInfo;
+            public long ItemID = itemID;
+            public int SendingPlayerSlot = sendingSlot;
+            public long SendingPlayerLocation = sendingLocationID;
+            public string SendingPlayerGame = Game;
+        }
 
-            private string FillerHash() => $"{type}|{itemInfo.Player.Slot}|{itemInfo.Player.Team}|{itemInfo.LocationId}|{itemInfo.ItemId}";
+        public class StaticYargAPItem(StaticItems type, long itemID, int sendingSlot, long sendingLocationID, string Game) : 
+            BaseYargAPItem(itemID, sendingSlot, sendingLocationID, Game)
+        {
+            public StaticItems Type = type;
+
+            private string FillerHash() => $"{Type}|{ItemID}|{SendingPlayerSlot}|{SendingPlayerLocation}|{SendingPlayerGame}";
             public override int GetHashCode() => FillerHash().GetHashCode();
 
             public override bool Equals(object? obj)
             {
                 if (obj == null || GetType() != obj.GetType()) return false;
-                FillerItem other = (FillerItem)obj;
+                StaticYargAPItem other = (StaticYargAPItem)obj;
                 return FillerHash() == other.FillerHash();
             }
 
-            public static bool operator ==(FillerItem left, FillerItem right)
+            public static bool operator ==(StaticYargAPItem left, StaticYargAPItem right)
             {
                 if (ReferenceEquals(left, right)) return true;
                 if (left is null || right is null) return false;
                 return left.Equals(right);
             }
 
-            public static bool operator !=(FillerItem left, FillerItem right) => !(left == right);
-        }
-
-        public class TrapFillerItem(StaticItems type, ItemInfo itemInfo) : FillerItem(type, itemInfo)
-        {
-            public bool Used = false;
-        }
-        public class UseableFillerItem(StaticItems type, ItemInfo itemInfo) : FillerItem(type, itemInfo)
-        {
-            public bool Used = false;
+            public static bool operator !=(StaticYargAPItem left, StaticYargAPItem right) => !(left == right);
         }
 
         [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]

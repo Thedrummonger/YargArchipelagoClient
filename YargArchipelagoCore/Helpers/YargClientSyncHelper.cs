@@ -41,7 +41,7 @@ namespace YargArchipelagoCore.Helpers
             if (!ShouldUpdate) return;
             ShouldUpdate = false;
             connection.UpdateCheckedLocations();
-            connection.UpdateReceivedItems();
+            connection.UpdateReceivedItems(config);
             TrapFillerHelper.SendPendingTrapOrFiller(connection, config);
             connection.GetPacketServer().SendClientStatusPacket();
             OnUpdateCallback?.Invoke();

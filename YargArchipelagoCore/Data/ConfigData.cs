@@ -2,6 +2,7 @@
 using TDMUtils;
 using YargArchipelagoCommon;
 using static YargArchipelagoCommon.CommonData;
+using static YargArchipelagoCore.Data.APWorldData;
 
 namespace YargArchipelagoCore.Data
 {
@@ -19,8 +20,7 @@ namespace YargArchipelagoCore.Data
         /// The goal song info
         /// </summary>
         public SongLocation GoalSong = new(0);
-
-        public Dictionary<APWorldData.StaticItems, int> UsedFiller = [];
+        public HashSet<StaticYargAPItem> ApItemsUsed { get; } = [];
 
         public bool BroadcastSongName = false;
 

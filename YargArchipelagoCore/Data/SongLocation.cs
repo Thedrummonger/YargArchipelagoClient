@@ -67,8 +67,10 @@ namespace YargArchipelagoCore.Data
             bool Available = IsGoalSong() ? connection.HasFamePointGoal(config) : SongItemReceived(connection);
             return Available && HasUncheckedLocations(connection);
         }
-        public bool SongItemReceived(ConnectionData connection) =>
-            connection.ReceivedSongs.Contains(SongNumber);
+        public bool SongItemReceived(ConnectionData connection) => SongItemReceived(connection, out _);
+
+        public bool SongItemReceived(ConnectionData connection, out APWorldData.BaseYargAPItem Data) => 
+            connection.ReceivedSongs.TryGetValue(SongNumber, out Data);
 
         public bool IsGoalSong() => SongNumber == 0;
     }

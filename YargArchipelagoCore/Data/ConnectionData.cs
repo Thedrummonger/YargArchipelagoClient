@@ -1,10 +1,12 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Newtonsoft.Json;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using TDMUtils;
 using YargArchipelagoCore.Helpers;
+using static YargArchipelagoCore.Data.APWorldData;
 
 namespace YargArchipelagoCore.Data
 {
@@ -47,11 +49,11 @@ namespace YargArchipelagoCore.Data
         }
 
         [JsonIgnore]
-        public HashSet<int> ReceivedSongs { get; } = [];
-        [JsonIgnore]
-        public Dictionary<APWorldData.StaticItems, int> ReceivedStaticItems { get; } = [];
+        public Dictionary<int, BaseYargAPItem> ReceivedSongs { get; } = [];
         [JsonIgnore]
         public HashSet<long> CheckedLocations { get; } = [];
+        [JsonIgnore]
+        public HashSet<StaticYargAPItem> ApItemsRecieved { get; } = [];
         [JsonIgnore]
         public DeathLinkService? DeathLinkService { get; }
         [JsonIgnore]
@@ -94,26 +96,33 @@ namespace YargArchipelagoCore.Data
                 DeathLinkService.DisableDeathLink();
         }
 
-        public void UpdateReceivedItems()
+        public void UpdateReceivedItems(ConfigData configData)
         {
-            ReceivedStaticItems.Clear();
+            Dictionary<StaticItems, int> ServerLocProxy = [];
             foreach (var i in Session.Items.AllItemsReceived)
             {
-                if (APWorldData.APIDs.StaticItemIDs.TryGetValue(i.ItemId, out var item))
+                if (APIDs.StaticItemIDs.TryGetValue(i.ItemId, out var item))
                 {
-                    ReceivedStaticItems.SetIfEmpty(item, 0);
-                    ReceivedStaticItems[item]++;
+                    if (i.Player.Slot == 0)
+                    {
+                        ServerLocProxy.SetIfEmpty(item, 0);
+                        ServerLocProxy[item]++;
+                    }
+                    ApItemsRecieved.Add(new StaticYargAPItem(item, i.ItemId, i.Player.Slot, i.Player.Slot == 0 ? ServerLocProxy[item] : i.LocationId, i.LocationGame));
+                    if (item == StaticItems.Victory)
+                        Session.SetGoalAchieved();
                     continue;
                 }
-                if (APWorldData.APIDs.SongItemIds.TryGetValue(i.ItemId, out var songItem))
+                if (APIDs.SongItemIds.TryGetValue(i.ItemId, out var songItem))
                 {
-                    ReceivedSongs.Add(songItem);
+                    ReceivedSongs[songItem] = new(i.ItemId, i.Player.Slot, i.LocationId, i.LocationGame);
                     continue;
                 }
                 throw new Exception($"Error, received unknown item {i.ItemName} [{i.ItemId}]");
             }
-            if (ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.Victory, out var v) && v > 0)
-                Session.SetGoalAchieved();
+
+            Debug.WriteLine(ApItemsRecieved.ToFormattedJson());
+            Debug.WriteLine(configData.ApItemsUsed.ToFormattedJson());
         }
         public string getSaveFileName() =>
             $"{Session.RoomState.Seed}_{SlotName}_{Session.Players.ActivePlayer.Slot}_{Session.Players.ActivePlayer.GetHashCode()}";

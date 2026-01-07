@@ -9,7 +9,7 @@ namespace YargArchipelagoCore.Helpers
         public static bool HasFamePointGoal(this ConnectionData Connection, ConfigData Config) =>
             GetCurrentFame(Connection) >= Config.FamePointsNeeded;
         public static int GetCurrentFame(this ConnectionData Connection) =>
-            Connection.ReceivedStaticItems.TryGetValue(APWorldData.StaticItems.FamePoint, out var famePoints) ? famePoints : 0;
+            Connection.ApItemsRecieved.Where(x => x.Type == APWorldData.StaticItems.FamePoint).Count();
 
         public static void CheckLocations(ConfigData Config, ConnectionData Connection, CommonData.SongCompletedData passInfo)
         {

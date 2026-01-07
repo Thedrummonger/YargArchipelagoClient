@@ -3,6 +3,7 @@ using TDMUtils;
 using YargArchipelagoCore.Data;
 using YargArchipelagoCommon;
 using static YargArchipelagoCore.Data.APWorldData;
+using System.Diagnostics;
 
 namespace YargArchipelagoCore.Helpers
 {
@@ -10,22 +11,20 @@ namespace YargArchipelagoCore.Helpers
     {
         public static void SendPendingTrapOrFiller(ConnectionData Connection, ConfigData Config)
         {
-            if (Connection.IsCurrentlyPlayingSong(out _)) return;
-            foreach(var Item in Connection.ReceivedStaticItems)
+            if (!Connection.GetPacketServer().IsConnected || !Connection.IsCurrentlyPlayingSong(out _)) return;
+            foreach (var Item in Connection.ApItemsRecieved)
             {
-                if (!Item.Key.IsTrapOrFiller() || Item.Value < 1) continue;
-                var AmountAlreadySent = Config.ProcessedTrapsFiller.TryGetValue(Item.Key, out var R) ? R : 0;
-                if (Item.Value > AmountAlreadySent)
-                    SendOneTrapFiller(Connection, Config, Item.Key);
+                if (!Item.Type.IsTrapOrFiller() || Config.ApItemsUsed.Contains(Item)) continue;
+                SendOneTrapFiller(Connection, Config, Item);
             }
         }
 
-        public static void SendOneTrapFiller(ConnectionData Connection, ConfigData Config, APWorldData.StaticItems item)
+        public static void SendOneTrapFiller(ConnectionData Connection, ConfigData Config, StaticYargAPItem item)
         {
-            var Type = GetFillerTrapType(item);
-            _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new CommonData.ActionItemData(Type) });
-            Config.ProcessedTrapsFiller.SetIfEmpty(item, 0);
-            Config.ProcessedTrapsFiller[item]++;
+            var Type = GetFillerTrapType(item.Type);
+            var Sender = Connection.GetSession().Players.GetPlayerName(item.SendingPlayerSlot)??"Unknown";
+            _ = Connection.GetPacketServer().SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new CommonData.ActionItemData(Type, Sender) });
+            Config.ApItemsUsed.Add(item);
             Config.SaveConfigFile(Connection);
         }
 
