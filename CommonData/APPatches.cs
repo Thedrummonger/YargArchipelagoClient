@@ -39,8 +39,7 @@ namespace YargArchipelagoPlugin
         public static void GameManager_RecordScores_Postfix(GameManager __instance, ReplayInfo replayInfo)
         {
             EventManager?.APHandler?.Log($"Passed Song {__instance.Song.Name}: {__instance.Song.Album} [{__instance.Song.Hash}]");
-            var songPassInfo = new CommonData.SongCompletedData(__instance.Song.ToSongData(), true);
-            songPassInfo.participants = YargAPUtils.CreatePlayerScores(__instance);
+            var songPassInfo = new CommonData.SongCompletedData(__instance.Song.ToSongData(), true, YargAPUtils.CreatePlayerScores(__instance), __instance.BandScore);
             EventManager.SendSongCompletionResults(songPassInfo);
         }
 
@@ -52,8 +51,7 @@ namespace YargArchipelagoPlugin
             if (!SettingsManager.Settings.NoFailMode.Value && !__instance.IsPractice && !__instance.PlayerHasFailed && __instance?.Song != null)
             {
                 EventManager?.APHandler?.Log($"Failed Song {__instance.Song.Name}: {__instance.Song.Album} [{__instance.Song.Hash}]");
-                var songPassInfo = new CommonData.SongCompletedData(__instance.Song.ToSongData(), false);
-                songPassInfo.participants = YargAPUtils.CreatePlayerScores(__instance);
+                var songPassInfo = new CommonData.SongCompletedData(__instance.Song.ToSongData(), false, YargAPUtils.CreatePlayerScores(__instance), __instance.BandScore);
                 EventManager.SendSongCompletionResults(songPassInfo);
             }
         }

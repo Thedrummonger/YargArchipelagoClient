@@ -149,7 +149,7 @@ namespace YargArchipelagoCore.Data
                     if (packet.SongCompletedInfo.SongPassed)
                         CheckLocationHelpers.CheckLocations(Config, Connection, packet.SongCompletedInfo);
                     else if (Config.DeathLinkMode > CommonData.DeathLinkType.None)
-                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {packet.SongCompletedInfo.songData.GetSongDisplayName(true, true)}"));
+                        Connection.DeathLinkService!.SendDeathLink(new(Connection.SlotName, $"{Connection.SlotName} failed song {packet.SongCompletedInfo.SongData.GetSongDisplayName(true, true)}"));
                 }
 
                 if (packet.Message is not null)

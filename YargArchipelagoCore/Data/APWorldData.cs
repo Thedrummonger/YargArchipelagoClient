@@ -73,7 +73,9 @@ namespace YargArchipelagoCore.Data
             [Description("Lower Difficulty")]
             LowerDifficulty,
             [Description("Restart Trap"), FillerTrapType(CommonData.APActionItem.Restart)]
-            TrapRestart
+            TrapRestart,
+            [Description("Rock Meter Trap"), FillerTrapType(CommonData.APActionItem.RockMeterTrap)]
+            TrapRockMeter
         }
         public enum StaticLocations
         {
@@ -90,7 +92,7 @@ namespace YargArchipelagoCore.Data
 
         public static class APIDs
         {
-            public const int MaxSongs = 500;
+            public const int MaxSongs = 1000;
             public const long rootID = 5874530000;
 
             public static Dictionary<long, StaticItems> StaticItemIDs { get; } =

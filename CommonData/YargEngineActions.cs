@@ -35,24 +35,41 @@ namespace YargArchipelagoPlugin
 
             switch (ActionItem.type)
             {
+                case CommonData.APActionItem.RockMeterTrap:
+                    ToastManager.ToastInformation($"{ActionItem.Sender} sent you a Rock Meter Trap!");
+                    ApplyRockMetertrapItem(APHandler);
+                    break;
                 case CommonData.APActionItem.Restart:
-                    ForceRestartSong(APHandler);
                     ToastManager.ToastInformation($"{ActionItem.Sender} sent you a Restart Trap!");
+                    ForceRestartSong(APHandler);
                     break;
                 case CommonData.APActionItem.StarPower:
                     ToastManager.ToastInformation($"{ActionItem.Sender} sent you a some Star Power!");
-                    foreach (var i in APHandler.GetCurrentSong().Players)
-                        ApplyStarPowerItem(i, APHandler);
+                    ApplyStarPowerItem(APHandler);
                     break;
             }
         }
-        public static void ApplyStarPowerItem(BasePlayer player, ArchipelagoService handler)
+        public static void ApplyStarPowerItem(ArchipelagoService handler)
         {
             if (!handler.IsInSong())
                 return;
             handler.Log($"Gaining Star Power");
             MethodInfo method = AccessTools.Method(typeof(BaseEngine), "GainStarPower");
-            method.Invoke(player.BaseEngine, new object[] { player.BaseEngine.TicksPerQuarterSpBar });
+            foreach (var player in handler.GetCurrentSong().Players)
+                method.Invoke(player.BaseEngine, new object[] { player.BaseEngine.TicksPerQuarterSpBar });
+
+        }
+        public static void ApplyRockMetertrapItem(ArchipelagoService handler)
+        {
+            if (!handler.IsInSong())
+                return;
+#if NIGHTLY
+            handler.Log($"Reducing Rock Meter");
+            foreach (var player in handler.GetCurrentSong().Players)
+                AddHappiness(player.GetEngineContainer(), -0.25f);
+#else
+            GlobalAudioHandler.PlaySoundEffect(SfxSample.NoteMiss);
+#endif
 
         }
 

@@ -54,10 +54,16 @@ namespace YargArchipelagoCommon
 
         public class SongCompletedData
         {
-            public SongCompletedData(SongData Song, bool Passed) { songData = Song; SongPassed = Passed; }
-            public SongData songData;
+            public SongCompletedData(SongData Song, bool Passed, SongParticipantInfo[] participants, long bandScore) { 
+                SongData = Song; 
+                SongPassed = Passed;
+                Participants = participants;
+                BandScore = bandScore;
+            }
+            public long BandScore;
+            public SongData SongData;
             public bool SongPassed;
-            public SongParticipantInfo[] participants = Array.Empty<SongParticipantInfo>();
+            public SongParticipantInfo[] Participants;
         }
 
         public class SongParticipantInfo
@@ -123,6 +129,7 @@ namespace YargArchipelagoCommon
         }
         public enum APActionItem
         {
+            RockMeterTrap,
             Restart,
             StarPower,
             NonFiller

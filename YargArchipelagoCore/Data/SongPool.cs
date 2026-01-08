@@ -39,7 +39,7 @@ namespace YargArchipelagoCore.Data
         private bool MetReq(CommonData.SongCompletedData passInfo, out bool DeathLink, APWorldData.CompletionReq req, CommonData.SupportedDifficulty diff)
         {
             DeathLink = false;
-            var ValidParticipants = passInfo.participants.Where(x => x.instrument == Instrument && x.Difficulty >= diff);
+            var ValidParticipants = passInfo.Participants.Where(x => x.instrument == Instrument && x.Difficulty >= diff);
             if (!ValidParticipants.Any())
                 return false;
             bool RequirementMet = false;

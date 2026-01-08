@@ -9,11 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Archipelago.MultiClient.Net" Version="6.6.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\YargArchipelagoCore\YargArchipelagoCore.csproj" />
   </ItemGroup>
 
