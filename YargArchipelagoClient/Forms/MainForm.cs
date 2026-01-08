@@ -41,6 +41,7 @@ namespace YargArchipelagoClient
             };
 
             cmbDeathLinkMode.Items.AddRange([.. EnumerableUtilities.EnumAsArray<CommonData.DeathLinkType>().Select(x => x.GetDescription())]);
+            cmbEnergyLinkMode.Items.AddRange([.. EnumerableUtilities.EnumAsArray<CommonData.EnergyLinkType>().Select(x => x.GetDescription())]);
             cmbItemNotifMode.Items.AddRange([.. EnumerableUtilities.EnumAsArray<CommonData.ItemLog>().Select(x => x.GetDescription())]);
         }
 
@@ -53,6 +54,7 @@ namespace YargArchipelagoClient
                 return;
             }
 
+            Connection!.clientSyncHelper.ConstantCallback += ClientSyncHelper_ConstantCallback;
             Connection!.clientSyncHelper.OnUpdateCallback += ClientSyncHelper_OnUpdateCallback;
             Connection!.clientSyncHelper.APServerClosed += APServerClosed;
 
@@ -60,6 +62,11 @@ namespace YargArchipelagoClient
 
             UpdateClientTitle();
             PrintSongs();
+        }
+
+        private void ClientSyncHelper_ConstantCallback()
+        {
+            txtCurrentEnergyToolStripMenuItem.Text = $"Current Yarg Bucks {CheckLocationHelpers.GetEnergy(Connection, Config)}";
         }
 
         private void ClientSyncHelper_OnUpdateCallback()
@@ -76,6 +83,7 @@ namespace YargArchipelagoClient
 
         private async void ResetConnection(object sender, EventArgs e)
         {
+            Connection!.clientSyncHelper.ConstantCallback -= ClientSyncHelper_ConstantCallback;
             Connection!.clientSyncHelper.OnUpdateCallback -= ClientSyncHelper_OnUpdateCallback;
             Connection!.clientSyncHelper.APServerClosed -= APServerClosed;
             await Connection.DisconnectSession(RemoveConnectionListers);
@@ -167,6 +175,7 @@ namespace YargArchipelagoClient
             yARGConnectedToolStripMenuItem.Text = $"YARG Connected: {Connection.IsConnectedToYarg}";
             currentSongToolStripMenuItem.Text = "Current Song: ";
             btnDeathLinkSetToYaml.Text = $"Set to YAML Value: {Config.YamlDeathLink.GetDescription()}";
+            txtEnergyLinkYamlToolStripMenuItem.Text = $"Set to YAML Value: {Config.YamlEnergyLink.GetDescription()}";
             if (Connection.IsCurrentlyPlayingSong(out var CurSong))
                 currentSongToolStripMenuItem.Text += $" {CurSong!.GetSongDisplayName()}";
             else
@@ -276,8 +285,8 @@ namespace YargArchipelagoClient
             DropDownUpdating = true;
             broadcastSongNamesToolStripMenuItem.Checked = Config.BroadcastSongName;
             manualModeToolStripMenuItem.Checked = Config.ManualMode;
-            //deathLinkToolStripMenuItem.Checked = Config.deathLinkEnabled;
             cmbDeathLinkMode.SelectedIndex = (int)Config.DeathLinkMode;
+            cmbEnergyLinkMode.SelectedIndex = (int)Config.EnergyLinkMode;
             cmbItemNotifMode.SelectedIndex = (int)Config.InGameItemLog;
             yARGChatNotificationsToolStripMenuItem.Checked = Config.InGameAPChat;
             DropDownUpdating = false;
@@ -288,8 +297,8 @@ namespace YargArchipelagoClient
             if (DropDownUpdating) return;
             Config.BroadcastSongName = broadcastSongNamesToolStripMenuItem.Checked;
             Config.ManualMode = manualModeToolStripMenuItem.Checked;
-            //Config.ServerDeathLink = deathLinkToolStripMenuItem.Checked;
             Config.DeathLinkMode = Sender == btnDeathLinkSetToYaml ? Config.YamlDeathLink : (CommonData.DeathLinkType)cmbDeathLinkMode.SelectedIndex;
+            Config.EnergyLinkMode = Sender == txtEnergyLinkYamlToolStripMenuItem ? Config.YamlEnergyLink : (CommonData.EnergyLinkType)cmbEnergyLinkMode.SelectedIndex;
             Config.InGameItemLog = (CommonData.ItemLog)cmbItemNotifMode.SelectedIndex;
             Config.InGameAPChat = yARGChatNotificationsToolStripMenuItem.Checked;
             Config.SaveConfigFile(Connection);
@@ -315,6 +324,16 @@ namespace YargArchipelagoClient
         }
 
         private void cmbDeathLinkMode_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            OptionDropDownItemChanged(sender, e);
+        }
+
+        private void txtEnergyLinkYamlToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OptionDropDownItemChanged(sender, e);
+        }
+
+        private void cmbEnergyLinkMode_SelectedIndexChanged(object sender, EventArgs e)
         {
             OptionDropDownItemChanged(sender, e);
         }

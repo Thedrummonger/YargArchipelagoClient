@@ -47,6 +47,11 @@ namespace YargArchipelagoClient
             deathLinkToolStripMenuItem = new ToolStripMenuItem();
             btnDeathLinkSetToYaml = new ToolStripMenuItem();
             cmbDeathLinkMode = new ToolStripComboBox();
+            energyLinkToolStripMenuItem = new ToolStripMenuItem();
+            txtCurrentEnergyToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator3 = new ToolStripSeparator();
+            txtEnergyLinkYamlToolStripMenuItem = new ToolStripMenuItem();
+            cmbEnergyLinkMode = new ToolStripComboBox();
             yARGNotificationsToolStripMenuItem = new ToolStripMenuItem();
             cmbItemNotifMode = new ToolStripComboBox();
             yARGChatNotificationsToolStripMenuItem = new ToolStripMenuItem();
@@ -192,7 +197,7 @@ namespace YargArchipelagoClient
             // 
             // settingsToolStripMenuItem
             // 
-            settingsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { broadcastSongNamesToolStripMenuItem, manualModeToolStripMenuItem, deathLinkToolStripMenuItem, yARGNotificationsToolStripMenuItem, yARGChatNotificationsToolStripMenuItem });
+            settingsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { broadcastSongNamesToolStripMenuItem, manualModeToolStripMenuItem, deathLinkToolStripMenuItem, energyLinkToolStripMenuItem, yARGNotificationsToolStripMenuItem, yARGChatNotificationsToolStripMenuItem });
             settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
             settingsToolStripMenuItem.Size = new Size(61, 20);
             settingsToolStripMenuItem.Text = "Settings";
@@ -233,6 +238,37 @@ namespace YargArchipelagoClient
             cmbDeathLinkMode.Name = "cmbDeathLinkMode";
             cmbDeathLinkMode.Size = new Size(121, 23);
             cmbDeathLinkMode.SelectedIndexChanged += cmbDeathLinkMode_SelectedIndexChanged;
+            // 
+            // energyLinkToolStripMenuItem
+            // 
+            energyLinkToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { txtCurrentEnergyToolStripMenuItem, toolStripSeparator3, txtEnergyLinkYamlToolStripMenuItem, cmbEnergyLinkMode });
+            energyLinkToolStripMenuItem.Name = "energyLinkToolStripMenuItem";
+            energyLinkToolStripMenuItem.Size = new Size(202, 22);
+            energyLinkToolStripMenuItem.Text = "EnergyLink";
+            // 
+            // txtCurrentEnergyToolStripMenuItem
+            // 
+            txtCurrentEnergyToolStripMenuItem.Name = "txtCurrentEnergyToolStripMenuItem";
+            txtCurrentEnergyToolStripMenuItem.Size = new Size(181, 22);
+            txtCurrentEnergyToolStripMenuItem.Text = "txtCurrentEnergy";
+            // 
+            // toolStripSeparator3
+            // 
+            toolStripSeparator3.Name = "toolStripSeparator3";
+            toolStripSeparator3.Size = new Size(178, 6);
+            // 
+            // txtEnergyLinkYamlToolStripMenuItem
+            // 
+            txtEnergyLinkYamlToolStripMenuItem.Name = "txtEnergyLinkYamlToolStripMenuItem";
+            txtEnergyLinkYamlToolStripMenuItem.Size = new Size(181, 22);
+            txtEnergyLinkYamlToolStripMenuItem.Text = "txtEnergyLinkYaml";
+            txtEnergyLinkYamlToolStripMenuItem.Click += txtEnergyLinkYamlToolStripMenuItem_Click;
+            // 
+            // cmbEnergyLinkMode
+            // 
+            cmbEnergyLinkMode.Name = "cmbEnergyLinkMode";
+            cmbEnergyLinkMode.Size = new Size(121, 23);
+            cmbEnergyLinkMode.SelectedIndexChanged += cmbEnergyLinkMode_SelectedIndexChanged;
             // 
             // yARGNotificationsToolStripMenuItem
             // 
@@ -380,5 +416,10 @@ namespace YargArchipelagoClient
         private ToolStripComboBox cmbDeathLinkMode;
         private ToolStripSeparator toolStripSeparator2;
         private ToolStripMenuItem openYargAPConfigFolderToolStripMenuItem;
+        private ToolStripMenuItem energyLinkToolStripMenuItem;
+        private ToolStripMenuItem txtEnergyLinkYamlToolStripMenuItem;
+        private ToolStripMenuItem txtCurrentEnergyToolStripMenuItem;
+        private ToolStripComboBox cmbEnergyLinkMode;
+        private ToolStripSeparator toolStripSeparator3;
     }
 }

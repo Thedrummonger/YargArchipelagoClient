@@ -53,6 +53,11 @@ namespace YargArchipelagoCore.Helpers
                 config.DeathLinkMode = (CommonData.DeathLinkType)DLI;
                 config.YamlDeathLink = (CommonData.DeathLinkType)DLI;
             }
+            if (SlotData.TryGetValue("energy_link", out var ELO) && ELO is Int64 ELI)
+            {
+                config.EnergyLinkMode = (CommonData.EnergyLinkType)ELI;
+                config.YamlEnergyLink = (CommonData.EnergyLinkType)ELI;
+            }
         }
 
         public static bool AssignSongs(ConfigData data, ConnectionData Connection, List<SongPool> Pools, Dictionary<int, PlandoData> PlandoSongData, SongPoolManager songPoolManager)

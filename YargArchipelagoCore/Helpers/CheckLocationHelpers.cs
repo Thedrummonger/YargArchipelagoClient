@@ -86,7 +86,9 @@ namespace YargArchipelagoCore.Helpers
         const long maxScale = 1000000;
         public static void SendEnergy(ConnectionData connection, ConfigData config, long amount, bool WasLocationChecked)
         {
-            //if (!config.energylink) return //TODO add setting
+            if (config.EnergyLinkMode <= CommonData.EnergyLinkType.None) return;
+            if (config.EnergyLinkMode == CommonData.EnergyLinkType.CheckSong && !WasLocationChecked) return;
+            if (config.EnergyLinkMode == CommonData.EnergyLinkType.OtherSong && WasLocationChecked) return;
 
             var Session = connection.GetSession();
 
@@ -98,32 +100,26 @@ namespace YargArchipelagoCore.Helpers
 
             long Energy = (long)(amount * scale);
 
-            //Save this, if I don't inherit newtonsoft from multiclient everything breaks.
-            //If I ever need to use my own version this is how I will need to initialize datastore values
-            /*
-            dynamic dataStorage = Session.DataStorage[EnergyLinkKey];
-            dynamic token = Newtonsoft.Json.Linq.JToken.FromObject(0);
-            dataStorage.Initialize(token);
-            */
-
             string EnergyLinkKey = $"EnergyLink{Session.Players.ActivePlayer.Team}";
-            Session.DataStorage[EnergyLinkKey].Initialize(0);
+            connection.InitializeDataStore(EnergyLinkKey, 0);
             Session.DataStorage[EnergyLinkKey] += Energy;
         }
 
-        public static long GetEnergy(ConnectionData connection)
+        public static long GetEnergy(ConnectionData connection, ConfigData config)
         {
+            if (config.EnergyLinkMode <= CommonData.EnergyLinkType.None) return 0;
             var Session = connection.GetSession();
             string EnergyLinkKey = $"EnergyLink{Session.Players.ActivePlayer.Team}";
-            Session.DataStorage[EnergyLinkKey].Initialize(0);
+            connection.InitializeDataStore(EnergyLinkKey, 0);
             return Session.DataStorage[EnergyLinkKey];
         }
 
-        public static bool SpendEnergy(ConnectionData connection, long Amount)
+        public static bool SpendEnergy(ConnectionData connection, ConfigData config, long Amount)
         {
+            if (config.EnergyLinkMode <= CommonData.EnergyLinkType.None) return false;
             var Session = connection.GetSession();
             string EnergyLinkKey = $"EnergyLink{Session.Players.ActivePlayer.Team}";
-            Session.DataStorage[EnergyLinkKey].Initialize(0);
+            connection.InitializeDataStore(EnergyLinkKey, 0);
             if (Session.DataStorage[EnergyLinkKey] >= Amount)
             {
                 Session.DataStorage[EnergyLinkKey] -= Amount;
@@ -131,6 +127,13 @@ namespace YargArchipelagoCore.Helpers
             }
             return false;
 
+        }
+
+        public static void InitializeDataStore(this ConnectionData connection, string key, object value)
+        {
+            dynamic dataStorage = connection.GetSession().DataStorage[key];
+            dynamic token = Newtonsoft.Json.Linq.JToken.FromObject(value);
+            dataStorage.Initialize(token);
         }
     }
 }

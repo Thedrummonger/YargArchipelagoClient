@@ -49,6 +49,16 @@ namespace YargArchipelagoCore.Data
         /// </summary>
         public DeathLinkType DeathLinkMode = DeathLinkType.None;
 
+        /// <summary>
+        /// This value tracks if energylink was enabled in the YAML. it will never change
+        /// </summary>
+        public EnergyLinkType YamlEnergyLink = EnergyLinkType.None;
+
+        /// <summary>
+        /// This value tracks the current energylink mode. It can be changed in game independently of the yaml.
+        /// </summary>
+        public EnergyLinkType EnergyLinkMode = EnergyLinkType.None;
+
         public Dictionary<APWorldData.StaticItems, int> ProcessedTrapsFiller = [];
 
         public int TotalAPSongLocations => GetSongIndexes().Length;

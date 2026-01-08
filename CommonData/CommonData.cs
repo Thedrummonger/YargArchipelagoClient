@@ -102,6 +102,17 @@ namespace YargArchipelagoCommon
             [Description("Instant Fail")]
             Fail = 2,
         }
+        public enum EnergyLinkType
+        {
+            [Description("Disabled")]
+            None = 0,
+            [Description("Check Song")]
+            CheckSong = 1,
+            [Description("Other Song")]
+            OtherSong = 2,
+            [Description("Any Song")]
+            AnySong = 3,
+        }
 
         public class DeathLinkData
         {
