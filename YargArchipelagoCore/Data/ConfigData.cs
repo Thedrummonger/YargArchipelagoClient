@@ -1,4 +1,5 @@
-﻿using Archipelago.MultiClient.Net;
+﻿extern alias TDMAP;
+using TDMAP.Archipelago.MultiClient.Net;
 using TDMUtils;
 using YargArchipelagoCommon;
 using static YargArchipelagoCommon.CommonData;

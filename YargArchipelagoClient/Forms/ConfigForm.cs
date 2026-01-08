@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿extern alias TDMAP;
+using System.Data;
 using System.Diagnostics;
 using TDMUtils;
 using YargArchipelagoCore.Data;

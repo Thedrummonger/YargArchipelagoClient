@@ -101,7 +101,7 @@ namespace YargArchipelagoCore.Helpers
             long Energy = (long)(amount * scale);
 
             string EnergyLinkKey = $"EnergyLink{Session.Players.ActivePlayer.Team}";
-            connection.InitializeDataStore(EnergyLinkKey, 0);
+            Session.DataStorage[EnergyLinkKey].Initialize(0);
             Session.DataStorage[EnergyLinkKey] += Energy;
         }
 
@@ -110,7 +110,7 @@ namespace YargArchipelagoCore.Helpers
             if (config.EnergyLinkMode <= CommonData.EnergyLinkType.None) return 0;
             var Session = connection.GetSession();
             string EnergyLinkKey = $"EnergyLink{Session.Players.ActivePlayer.Team}";
-            connection.InitializeDataStore(EnergyLinkKey, 0);
+            Session.DataStorage[EnergyLinkKey].Initialize(0);
             return Session.DataStorage[EnergyLinkKey];
         }
 
@@ -119,7 +119,7 @@ namespace YargArchipelagoCore.Helpers
             if (config.EnergyLinkMode <= CommonData.EnergyLinkType.None) return false;
             var Session = connection.GetSession();
             string EnergyLinkKey = $"EnergyLink{Session.Players.ActivePlayer.Team}";
-            connection.InitializeDataStore(EnergyLinkKey, 0);
+            Session.DataStorage[EnergyLinkKey].Initialize(0);
             if (Session.DataStorage[EnergyLinkKey] >= Amount)
             {
                 Session.DataStorage[EnergyLinkKey] -= Amount;
@@ -127,13 +127,6 @@ namespace YargArchipelagoCore.Helpers
             }
             return false;
 
-        }
-
-        public static void InitializeDataStore(this ConnectionData connection, string key, object value)
-        {
-            dynamic dataStorage = connection.GetSession().DataStorage[key];
-            dynamic token = Newtonsoft.Json.Linq.JToken.FromObject(value);
-            dataStorage.Initialize(token);
         }
     }
 }

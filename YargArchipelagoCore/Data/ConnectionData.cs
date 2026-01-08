@@ -1,5 +1,6 @@
-﻿using Archipelago.MultiClient.Net;
-using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
+﻿extern alias TDMAP;
+using TDMAP.Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
+using TDMAP.Archipelago.MultiClient.Net;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Security.Cryptography;

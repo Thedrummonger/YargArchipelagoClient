@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-//Don't Let visual studios lie to me these are needed
+﻿//Don't Let visual studios lie to me these are needed
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -189,10 +188,10 @@ namespace YargArchipelagoCommon
                 public string Message = null;
             }
 
-            public readonly static JsonSerializerSettings PacketSerializeSettings = new JsonSerializerSettings()
+            public readonly static Newtonsoft.Json.JsonSerializerSettings PacketSerializeSettings = new Newtonsoft.Json.JsonSerializerSettings()
             {
-                Formatting = Formatting.None,
-                NullValueHandling = NullValueHandling.Ignore,
+                Formatting = Newtonsoft.Json.Formatting.None,
+                NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
             };
         }
     }

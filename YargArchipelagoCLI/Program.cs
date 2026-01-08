@@ -1,11 +1,12 @@
-﻿using YargArchipelagoCore.Data;
+﻿extern alias TDMAP;
+using YargArchipelagoCore.Data;
 using YargArchipelagoCore.Helpers;
 using TDMUtils;
 using YargArchipelagoCommon;
 using System.Diagnostics;
 using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
 using TDMUtils.CLITools;
-using Archipelago.MultiClient.Net.MessageLog.Messages;
+using TDMAP.Archipelago.MultiClient.Net.MessageLog.Messages;
 
 namespace YargArchipelagoCLI
 {

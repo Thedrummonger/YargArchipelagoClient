@@ -1,5 +1,6 @@
-using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
-using Archipelago.MultiClient.Net.MessageLog.Messages;
+extern alias TDMAP;
+using TDMAP.Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
+using TDMAP.Archipelago.MultiClient.Net.MessageLog.Messages;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using TDMUtils;

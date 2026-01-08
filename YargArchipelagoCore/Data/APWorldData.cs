@@ -1,4 +1,5 @@
-﻿using Archipelago.MultiClient.Net.Models;
+﻿extern alias TDMAP;
+using TDMAP.Archipelago.MultiClient.Net.Models;
 using System.ComponentModel;
 using YargArchipelagoCommon;
 using static YargArchipelagoCore.Data.ArchipelagoColorHelper;

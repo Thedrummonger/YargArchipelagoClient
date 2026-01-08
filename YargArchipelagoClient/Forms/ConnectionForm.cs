@@ -1,5 +1,6 @@
-﻿using Archipelago.MultiClient.Net;
-using Archipelago.MultiClient.Net.Enums;
+﻿extern alias TDMAP;
+using TDMAP.Archipelago.MultiClient.Net;
+using TDMAP.Archipelago.MultiClient.Net.Enums;
 using Newtonsoft.Json;
 using YargArchipelagoCore.Data;
 using YargArchipelagoCore.Helpers;
