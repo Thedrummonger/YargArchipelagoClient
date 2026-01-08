@@ -1,4 +1,4 @@
-﻿extern alias TDMAP;
+﻿
 using System.Data;
 using System.Diagnostics;
 using TDMUtils;

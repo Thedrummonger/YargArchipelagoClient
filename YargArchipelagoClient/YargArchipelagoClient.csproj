@@ -13,10 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="TDMAPMultiClient">
-      <HintPath>..\YargArchipelagoCore\TDMAPMultiClient.dll</HintPath>
-	  <Aliases>TDMAP</Aliases>
-    </Reference>
     <Reference Include="TDMUtils">
       <HintPath>..\Libraries\TDMUtils.dll</HintPath>
     </Reference>
