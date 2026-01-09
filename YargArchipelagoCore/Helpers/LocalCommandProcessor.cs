@@ -13,6 +13,10 @@ namespace YargArchipelagoCore.Helpers
                     Log($"Simulating start power item");
                     _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new(CommonData.APActionItem.StarPower, "Debug") });
                     break;
+                case "rock":
+                    Log($"Simulating rock meter trap");
+                    _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new(CommonData.APActionItem.RockMeterTrap, "Debug") });
+                    break;
                 case "restart":
                     Log($"Simulating restart trap");
                     _ = Connection.GetPacketServer()?.SendPacketAsync(new CommonData.Networking.YargAPPacket { ActionItem = new(CommonData.APActionItem.Restart, "Debug") });
@@ -33,6 +37,15 @@ namespace YargArchipelagoCore.Helpers
                     Config.CheatMode = !Config.CheatMode;
                     Log($"Cheat Mode Active {Config.CheatMode}");
                     RefreshSongList();
+                    break;
+                case "energy":
+                    var energyToAdd = ExtraAPFunctionalityHelper.ScaleEnergyValue(Connection, Config, 200_000);
+                    var ELKey = ExtraAPFunctionalityHelper.EnergyLinkKey(Connection.GetSession());
+                    Log($"Adding {energyToAdd} energy to key {ELKey}");
+                    var Session = Connection.GetSession();
+                    Session.DataStorage[ELKey].Initialize(0);
+                    Session.DataStorage[ELKey] += energyToAdd;
+                    Log(Session.DataStorage[ELKey]);
                     break;
                 default:
                     Log($"{v} is not a valid command");

@@ -1,11 +1,12 @@
-﻿using YargArchipelagoCore.Data;
-using YargArchipelagoCore.Helpers;
-using TDMUtils;
-using YargArchipelagoCommon;
+﻿using Archipelago.MultiClient.Net.MessageLog.Messages;
 using System.Diagnostics;
-using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
+using System.Text;
+using TDMUtils;
 using TDMUtils.CLITools;
-using Archipelago.MultiClient.Net.MessageLog.Messages;
+using YargArchipelagoCommon;
+using YargArchipelagoCore.Data;
+using YargArchipelagoCore.Helpers;
+using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
 
 namespace YargArchipelagoCLI
 {
@@ -105,6 +106,7 @@ namespace YargArchipelagoCLI
                     break;
                 Selection.Tag!();
             }
+            config.SaveConfigFile(connection);
         }
 
         private static void PrintCurrentSongList()
@@ -118,9 +120,19 @@ namespace YargArchipelagoCLI
             if (ShowDetails.SongItemReceived(connection, out var data))
             {
                 var Player = connection.GetSession().Players.GetPlayerInfo(data.SendingPlayerSlot);
-                var Location = connection.GetSession().Locations.GetLocationNameFromId(data.SendingPlayerSlot, Player.Game);
-                Console.WriteLine($"From {Player.Name} Playing {data.SendingPlayerGame} at");
-                Console.WriteLine(Location);
+                var Location = connection.GetSession().Locations.GetLocationNameFromId(data.SendingPlayerLocation, Player.Game);
+
+                StringBuilder sb = new();
+                sb.Append($"Recieved from {Player.Name}");
+                if (Player != 0)
+                {
+                    sb.Append($" Playing {data.SendingPlayerGame}");
+                    if (!String.IsNullOrWhiteSpace(Location))
+                        sb.Append(" at:");
+                }
+                Console.WriteLine(sb.ToString());
+                if (Player > 0 && !String.IsNullOrWhiteSpace(Location))
+                    Console.WriteLine(Location);
             }
             Console.ReadKey();
         }
@@ -138,13 +150,19 @@ namespace YargArchipelagoCLI
             var UsablePickSwap = AllPickSwap.FirstOrDefault();
 
             var AllLowerDiff = AvailableItems.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.LowerDifficulty);
-            var UsableLowerDiff = AllRandomSwap.FirstOrDefault();
+            var UsableLowerDiff = AllLowerDiff.FirstOrDefault();
 
             ConsoleSelect<Action> consoleSelect = new();
             consoleSelect.AddCancelOption("Cancel").AddText(SectionPlacement.Pre, "Select an item to use..").AddSeparator(SectionPlacement.Pre)
-            .Add($"Use Swap Song (Pick) {AllRandomSwap.Count()}", () => SwapSong(true, UsableRandomSwap), () => UsableRandomSwap is not null || config.CheatMode)
-            .Add($"Use Swap Song (Random) {AllPickSwap.Count()}", () => SwapSong(false, UsablePickSwap), () => UsablePickSwap is not null || config.CheatMode)
-            .Add($"Lower Song requirements {AllLowerDiff.Count()}", () => LowerScore(UsableLowerDiff), () => UsableLowerDiff is not null || config.CheatMode);
+
+            .Add($"Use {APWorldData.StaticItems.SwapRandom.GetDescription()} {AllRandomSwap.Count()}", 
+                () => SwapSong(false, UsableRandomSwap), () => UsableRandomSwap is not null || config.CheatMode)
+
+            .Add($"Use {APWorldData.StaticItems.SwapPick.GetDescription()} {AllPickSwap.Count()}", 
+                () => SwapSong(true, UsablePickSwap), () => UsablePickSwap is not null || config.CheatMode)
+
+            .Add($"Use {APWorldData.StaticItems.LowerDifficulty.GetDescription()} {AllLowerDiff.Count()}", 
+                () => LowerScore(UsableLowerDiff), () => UsableLowerDiff is not null || config.CheatMode);
 
             var Selection = consoleSelect.GetSelection();
             if (Selection.WasCancelation())
@@ -163,14 +181,10 @@ namespace YargArchipelagoCLI
             ConsoleSelect<Action> consoleSelect = new();
             consoleSelect.AddText(SectionPlacement.Pre, $"{song.GetSongDisplayName(config)}\nCurrent Requirements:\n{song.Requirements!.CompletionRequirement.ToFormattedJson()}")
             .AddSeparator(SectionPlacement.Pre).AddText(SectionPlacement.Pre, "Select a requirement to change:").AddSeparator(SectionPlacement.Pre)
-            .Add("Lower Reward 1 min Difficulty", () => fillerActivationHelper.LowerReward1Diff(usableItem),
-                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Diff > CommonData.SupportedDifficulty.Easy; })
-            .Add("Lower Reward 2 min Difficulty", () => fillerActivationHelper.LowerReward2Diff(usableItem),
-                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Diff > CommonData.SupportedDifficulty.Easy; })
-            .Add("Lower Reward 1 min Score", () => fillerActivationHelper.LowerReward1Req(usableItem),
-                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Req > APWorldData.CompletionReq.Clear; })
-            .Add("Lower Reward 2 min Score", () => fillerActivationHelper.LowerReward2Req(usableItem),
-                () => { return song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Req > APWorldData.CompletionReq.Clear; });
+            .Add($"Lower Reward 1 min Difficulty {song.GetLowerDiff1Tag()}", () => fillerActivationHelper.LowerReward1Diff(usableItem), song.CanLowerDiff1)
+            .Add($"Lower Reward 2 min Difficulty {song.GetLowerDiff2Tag()}", () => fillerActivationHelper.LowerReward2Diff(usableItem), song.CanLowerDiff2)
+            .Add($"Lower Reward 1 min Score {song.GetLowerReq1Tag()}", () => fillerActivationHelper.LowerReward1Req(usableItem), song.CanLowerReq1)
+            .Add($"Lower Reward 2 min Score {song.GetLowerReq2Tag()}", () => fillerActivationHelper.LowerReward2Req(usableItem), song.CanLowerReq2);
 
             if (!consoleSelect.HasValidOptions)
             {

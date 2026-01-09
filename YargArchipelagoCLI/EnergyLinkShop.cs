@@ -64,7 +64,7 @@ namespace YargArchipelagoCLI
         {
             long Energy = ExtraAPFunctionalityHelper.GetEnergy(connection, config);
             Console.SetCursorPosition(0, 0);
-            Console.WriteLine($"Current Energy: {Energy}");
+            Console.WriteLine($"Current Energy: {Energy:N0}");
         }
     }
 }

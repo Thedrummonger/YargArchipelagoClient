@@ -86,5 +86,24 @@ namespace YargArchipelagoCore.Data
                 Display += $" from {Data.Album}";
             return Display;
         }
+
+
+        public static bool CanLowerDiff1(this SongLocation Data) => 
+            Data.HasStandardCheck(out var _) && Data.Requirements!.CompletionRequirement.Reward1Diff > CommonData.SupportedDifficulty.Easy;
+        public static bool CanLowerDiff2(this SongLocation Data) =>
+            Data.HasExtraCheck(out var _) && Data.Requirements!.CompletionRequirement.Reward2Diff > CommonData.SupportedDifficulty.Easy;
+        public static bool CanLowerReq1(this SongLocation Data) => 
+            Data.HasStandardCheck(out var _) && Data.Requirements!.CompletionRequirement.Reward1Req > APWorldData.CompletionReq.Clear;
+        public static bool CanLowerReq2(this SongLocation Data) => 
+            Data.HasExtraCheck(out var _) && Data.Requirements!.CompletionRequirement.Reward2Req > APWorldData.CompletionReq.Clear;
+
+        public static string GetLowerDiff1Tag(this SongLocation Data) => 
+            Data.CanLowerDiff1() ?  $"[{Data.Requirements!.CompletionRequirement.Reward1Diff}] > [{Data.Requirements!.CompletionRequirement.Reward1Diff -1}]" : "";
+        public static string GetLowerDiff2Tag(this SongLocation Data) =>
+            Data.CanLowerDiff2() ? $"[{Data.Requirements!.CompletionRequirement.Reward2Diff}] > [{Data.Requirements!.CompletionRequirement.Reward2Diff - 1}]" : "";
+        public static string GetLowerReq1Tag(this SongLocation Data) =>
+            Data.CanLowerReq1() ? $"[{Data.Requirements!.CompletionRequirement.Reward1Req}] > [{Data.Requirements!.CompletionRequirement.Reward1Req - 1}]" : "";
+        public static string GetLowerReq2Tag(this SongLocation Data) =>
+            Data.CanLowerReq2() ? $"[{Data.Requirements!.CompletionRequirement.Reward2Req}] > [{Data.Requirements!.CompletionRequirement.Reward2Req - 1}]" : "";
     }
 }

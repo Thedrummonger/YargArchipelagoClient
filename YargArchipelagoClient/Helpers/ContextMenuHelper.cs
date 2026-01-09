@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 using System.Text.RegularExpressions;
 using TDMUtils;
 using YargArchipelagoClient.Forms;
@@ -32,7 +33,7 @@ namespace YargArchipelagoClient.Helpers
             var UsablePickSwap = AllPickSwap.FirstOrDefault();
 
             var AllLowerDiff = AvailableItems.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.LowerDifficulty);
-            var UsableLowerDiff = AllRandomSwap.FirstOrDefault();
+            var UsableLowerDiff = AllLowerDiff.FirstOrDefault();
 
             var menu = new ContextMenuStrip();
 
@@ -68,16 +69,16 @@ namespace YargArchipelagoClient.Helpers
                     menu.Items.AddItem($"{APWorldData.StaticItems.SwapPick.GetDescription()}: {AllPickSwap.Count()}", () => SwapSong(false, UsablePickSwap));
                 if (UsableLowerDiff is not null || config.CheatMode)
                 {
-                    menu.Items.AddItem($"Lower Difficulty value: {AllLowerDiff.Count()}");
-                    if (song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Diff > CommonData.SupportedDifficulty.Easy)
-                        menu.Items.AddItem($"-Reward 1 Min Difficulty", () => fillerActivationHelper.LowerReward1Diff(UsableLowerDiff));
-                    if (song.HasExtraCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Diff > CommonData.SupportedDifficulty.Easy)
-                        menu.Items.AddItem($"-Reward 2 Min Difficulty", () => fillerActivationHelper.LowerReward2Diff(UsableLowerDiff));
+                    menu.Items.AddItem($"Use {APWorldData.StaticItems.LowerDifficulty.GetDescription()}: {AllLowerDiff.Count()}");
+                    if (song.CanLowerReq1())
+                        menu.Items.AddItem($"-Reward 1 Min Score Requirement {song.GetLowerReq1Tag()}", () => fillerActivationHelper.LowerReward1Req(UsableLowerDiff));
+                    if (song.CanLowerReq2())
+                        menu.Items.AddItem($"-Reward 2 Min Score Requirement {song.GetLowerReq2Tag()}", () => fillerActivationHelper.LowerReward2Req(UsableLowerDiff));
+                    if (song.CanLowerDiff1())
+                        menu.Items.AddItem($"-Reward 1 Min Difficulty {song.GetLowerDiff1Tag()}", () => fillerActivationHelper.LowerReward1Diff(UsableLowerDiff));
+                    if (song.CanLowerDiff2())
+                        menu.Items.AddItem($"-Reward 2 Min Difficulty {song.GetLowerDiff2Tag()}", () => fillerActivationHelper.LowerReward2Diff(UsableLowerDiff));
 
-                    if (song.HasStandardCheck(out _) && song.Requirements!.CompletionRequirement.Reward1Req > APWorldData.CompletionReq.Clear)
-                        menu.Items.AddItem($"-Reward 1 Min Score Requirement", () => fillerActivationHelper.LowerReward1Req(UsableLowerDiff));
-                    if (song.HasExtraCheck(out _) && song.Requirements!.CompletionRequirement.Reward2Req > APWorldData.CompletionReq.Clear)
-                        menu.Items.AddItem($"-Reward 2 Min Score Requirement", () => fillerActivationHelper.LowerReward2Req(UsableLowerDiff));
                 }
             }
 
@@ -115,10 +116,19 @@ namespace YargArchipelagoClient.Helpers
             if (song.SongItemReceived(connection, out var data))
             {
                 var Player = connection.GetSession().Players.GetPlayerInfo(data.SendingPlayerSlot);
-                var Location = connection.GetSession().Locations.GetLocationNameFromId(data.SendingPlayerSlot, Player.Game);
+                var Location = connection.GetSession().Locations.GetLocationNameFromId(data.SendingPlayerLocation, Player.Game);
                 menu.Items.Add(new ToolStripSeparator());
-                menu.Items.AddItem($"From {Player.Name} Playing {data.SendingPlayerGame} at");
-                menu.Items.AddItem(Location);
+                StringBuilder sb = new();
+                sb.Append($"Recieved from {Player.Name}");
+                if (Player != 0)
+                {
+                    sb.Append($" Playing {data.SendingPlayerGame}");
+                    if (!String.IsNullOrWhiteSpace(Location))
+                        sb.Append(" at:");
+                }
+                menu.Items.AddItem(sb.ToString());
+                if (Player > 0 && !String.IsNullOrWhiteSpace(Location))
+                    menu.Items.AddItem(Location);
             }
 
             return menu;

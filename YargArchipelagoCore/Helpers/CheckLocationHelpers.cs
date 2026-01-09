@@ -53,7 +53,7 @@ namespace YargArchipelagoCore.Helpers
             if (ToCheck.Count > 0)
                 Connection.CommitCheckLocations(ToCheck, AlteredLocations, Config);
 
-            ExtraAPFunctionalityHelper.SendEnergy(Connection, Config, passInfo.BandScore, ToCheck.Count > 0);
+            ExtraAPFunctionalityHelper.SendScoreAsEnergy(Connection, Config, passInfo.BandScore, ToCheck.Count > 0);
         }
 
         public static void CommitCheckLocations(this ConnectionData Connection, IEnumerable<long> Locations, IEnumerable<SongLocation> songLocations, ConfigData Config)

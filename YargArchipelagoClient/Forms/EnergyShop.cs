@@ -76,6 +76,7 @@ namespace YargArchipelagoClient.Forms
         {
             if (!ExtraAPFunctionalityHelper.TryPurchaseItem(connection, config, item, Price))
                 MessageBox.Show("Not enough energy!");
+            ClientSyncHelper_ConstantCallback();
         }
 
     }

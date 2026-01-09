@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿extern alias TDMAP;
+using TDMAP::Archipelago.MultiClient.Net;
 using YargArchipelagoCommon;
 using YargArchipelagoCore.Data;
-using static YargArchipelagoCore.Helpers.MultiplatformHelpers;
 
 namespace YargArchipelagoCore.Helpers
 {
@@ -17,6 +13,8 @@ namespace YargArchipelagoCore.Helpers
         public const long SwapSongRandomPrice = 17_000_000_000;
         public const long SwapSongPickPrice = 20_000_000_000;
         public const long LowerDifficultyPrice = 15_000_000_000;
+
+        public static string EnergyLinkKey(ArchipelagoSession session) => $"EnergyLink{session.Players.ActivePlayer.Team}";
         public static bool TryPurchaseItem(ConnectionData connection, ConfigData config, APWorldData.StaticItems Type, long Price)
         {
             var CurrentEnergy = GetEnergy(connection, config);
@@ -24,6 +22,7 @@ namespace YargArchipelagoCore.Helpers
                 return false;
             var CurCount = config.ApItemsPurchased.Where(x => x.Type == Type).Count();
             config.ApItemsPurchased.Add(new(Type, APWorldData.APIDs.IDFromStaticItem[Type], -99, CurCount, "YARGAPSHOP"));
+            config.SaveConfigFile(connection);
             return true;
         }
 
@@ -40,16 +39,15 @@ namespace YargArchipelagoCore.Helpers
 
             return number.ToString("N0");
         }
-        public static void SendEnergy(ConnectionData connection, ConfigData config, long amount, bool WasLocationChecked)
+        public static void SendScoreAsEnergy(ConnectionData connection, ConfigData config, long BaseScore, bool WasLocationChecked)
         {
             if (config.EnergyLinkMode <= CommonData.EnergyLinkType.None) return;
             if (config.EnergyLinkMode == CommonData.EnergyLinkType.CheckSong && !WasLocationChecked) return;
             if (config.EnergyLinkMode == CommonData.EnergyLinkType.OtherSong && WasLocationChecked) return;
 
             var Session = connection.GetSession();
-            string EnergyLinkKey = $"EnergyLink{Session.Players.ActivePlayer.Team}";
-            Session.DataStorage[EnergyLinkKey].Initialize(0);
-            Session.DataStorage[EnergyLinkKey] += ScaleEnergyValue(connection, config, amount);
+            Session.DataStorage[EnergyLinkKey(Session)].Initialize(0);
+            Session.DataStorage[EnergyLinkKey(Session)] += ScaleEnergyValue(connection, config, BaseScore);
         }
 
         public static long ScaleEnergyValue(ConnectionData connection, ConfigData config, long baseAmount)
@@ -66,20 +64,18 @@ namespace YargArchipelagoCore.Helpers
         {
             if (config.EnergyLinkMode <= CommonData.EnergyLinkType.None) return 0;
             var Session = connection.GetSession();
-            string EnergyLinkKey = $"EnergyLink{Session.Players.ActivePlayer.Team}";
-            Session.DataStorage[EnergyLinkKey].Initialize(0);
-            return Session.DataStorage[EnergyLinkKey];
+            Session.DataStorage[EnergyLinkKey(Session)].Initialize(0);
+            return Session.DataStorage[EnergyLinkKey(Session)];
         }
 
         public static bool TryUseEnergy(ConnectionData connection, ConfigData config, long Amount)
         {
             if (config.EnergyLinkMode <= CommonData.EnergyLinkType.None) return false;
             var Session = connection.GetSession();
-            string EnergyLinkKey = $"EnergyLink{Session.Players.ActivePlayer.Team}";
-            Session.DataStorage[EnergyLinkKey].Initialize(0);
-            if (Session.DataStorage[EnergyLinkKey] >= Amount)
+            Session.DataStorage[EnergyLinkKey(Session)].Initialize(0);
+            if (Session.DataStorage[EnergyLinkKey(Session)] >= Amount)
             {
-                Session.DataStorage[EnergyLinkKey] -= Amount;
+                Session.DataStorage[EnergyLinkKey(Session)] -= Amount;
                 return true;
             }
             return false;
