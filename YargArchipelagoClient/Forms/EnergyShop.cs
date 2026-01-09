@@ -14,19 +14,16 @@ namespace YargArchipelagoClient.Forms
 {
     public partial class EnergyShop : Form
     {
-        private const long SwapSongRandomPrice = 17_000_000_000;
-        private const long SwapSongPickPrice = 20_000_000_000;
-        private const long LowerDifficultyPrice = 15_000_000_000;
-        private MainForm ParentForm;
-        private ConnectionData connection;
-        private ConfigData config;
+        private new readonly MainForm ParentForm;
+        private readonly ConnectionData connection;
+        private readonly ConfigData config;
         public EnergyShop(MainForm Parent)
         {
             InitializeComponent();
             ParentForm = Parent;
-            lblLowerDiffPrice.Text = $"Price: {FormatLargeNumber(LowerDifficultyPrice)}";
-            lblSwapSongPickPrice.Text = $"Price: {FormatLargeNumber(SwapSongPickPrice)}";
-            lblSwapSongRandPrice.Text = $"Price: {FormatLargeNumber(SwapSongRandomPrice)}";
+            lblLowerDiffPrice.Text = $"Price: {ExtraAPFunctionalityHelper.FormatLargeNumber(ExtraAPFunctionalityHelper.LowerDifficultyPrice)}";
+            lblSwapSongPickPrice.Text = $"Price: {ExtraAPFunctionalityHelper.FormatLargeNumber(ExtraAPFunctionalityHelper.SwapSongPickPrice)}";
+            lblSwapSongRandPrice.Text = $"Price: {ExtraAPFunctionalityHelper.FormatLargeNumber(ExtraAPFunctionalityHelper.SwapSongRandomPrice)}";
             connection = ParentForm.Connection;
             config = ParentForm.Config;
             ParentForm.energyShop = this;
@@ -47,13 +44,13 @@ namespace YargArchipelagoClient.Forms
                 BeginInvoke(ClientSyncHelper_ConstantCallback);
             else
             {
-                long Energy = CheckLocationHelpers.GetEnergy(connection, config);
+                long Energy = ExtraAPFunctionalityHelper.GetEnergy(connection, config);
                 HashSet<APWorldData.StaticYargAPItem> AvailableItems = [.. connection!.ApItemsRecieved, .. config!.ApItemsPurchased];
                 lblCurEnergyVal.Text = Energy.ToString("N0");
 
-                btnPurchaseLowerDif.Enabled = Energy >= LowerDifficultyPrice;
-                btnPurchaseSwapPick.Enabled = Energy >= SwapSongPickPrice;
-                btnPurchaseSwapRand.Enabled = Energy >= SwapSongRandomPrice;
+                btnPurchaseLowerDif.Enabled = Energy >= ExtraAPFunctionalityHelper.LowerDifficultyPrice;
+                btnPurchaseSwapPick.Enabled = Energy >= ExtraAPFunctionalityHelper.SwapSongPickPrice;
+                btnPurchaseSwapRand.Enabled = Energy >= ExtraAPFunctionalityHelper.SwapSongRandomPrice;
 
                 AvailableItems = [.. AvailableItems.Where(x => !config.ApItemsUsed.Contains(x))];
                 lblAvailableSSR.Text = "Available: " + 
@@ -65,39 +62,21 @@ namespace YargArchipelagoClient.Forms
             }
         }
 
-        public static string FormatLargeNumber(long number)
-        {
-            if (number >= 1_000_000_000_000)
-                return (number / 1_000_000_000_000.0).ToString("0.##") + " Trillion";
-            if (number >= 1_000_000_000)
-                return (number / 1_000_000_000.0).ToString("0.##") + " Billion";
-            if (number >= 1_000_000)
-                return (number / 1_000_000.0).ToString("0.##") + " Million";
-            if (number >= 1_000)
-                return (number / 1_000.0).ToString("0.##") + " Thousand";
-
-            return number.ToString("N0");
-        }
-
-        private void tryPurchaseItem(APWorldData.StaticItems Type, long Price)
-        {
-            var CurrentEnergy = CheckLocationHelpers.GetEnergy(connection, config);
-            if (!CheckLocationHelpers.SpendEnergy(connection, config, Price))
-            {
-                MessageBox.Show($"Not Enough Energy!");
-                return;
-            }
-            var CurCount = config.ApItemsPurchased.Where(x => x.Type == Type).Count();
-            config.ApItemsPurchased.Add(new(Type, APWorldData.APIDs.IDFromStaticItem[Type], -99, CurCount, "YARGAPSHOP"));
-        }
 
         private void btnPurchaseSwapRand_Click(object sender, EventArgs e) =>
-            tryPurchaseItem(APWorldData.StaticItems.SwapRandom, SwapSongRandomPrice);
+            Purchase(APWorldData.StaticItems.SwapRandom, ExtraAPFunctionalityHelper.SwapSongRandomPrice);
 
         private void btnPurchaseSwapPick_Click(object sender, EventArgs e) =>
-            tryPurchaseItem(APWorldData.StaticItems.SwapPick, SwapSongPickPrice);
+            Purchase(APWorldData.StaticItems.SwapPick, ExtraAPFunctionalityHelper.SwapSongPickPrice);
 
-        private void btnPurchaseLowerDif_Click(object sender, EventArgs e) =>
-            tryPurchaseItem(APWorldData.StaticItems.LowerDifficulty, LowerDifficultyPrice);
+        private void btnPurchaseLowerDif_Click(object sender, EventArgs e) => 
+            Purchase(APWorldData.StaticItems.LowerDifficulty, ExtraAPFunctionalityHelper.LowerDifficultyPrice);
+
+        private void Purchase(APWorldData.StaticItems item, long Price)
+        {
+            if (!ExtraAPFunctionalityHelper.TryPurchaseItem(connection, config, item, Price))
+                MessageBox.Show("Not enough energy!");
+        }
+
     }
 }

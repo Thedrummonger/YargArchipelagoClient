@@ -14,22 +14,25 @@ namespace YargArchipelagoCLI
         static bool ConsoleExiting = false;
         private static ConnectionData connection;
         private static ConfigData config;
+        private static EnergyLinkShop? energyLinkShop = null;
 
         private static Action<LogMessage>? LogAPChat = null;
 
         static AppletScreen? liveMonitor = null;
         static void Main(string[] args)
         {
-            MultiplatformHelpers.MessageBox.ApplyConsoleTemplate();
+            MessageBox.ApplyConsoleTemplate();
             if (!ClientInitializationHelper.ConnectSession(NewConnectionHelper.CreateNewConnection, () => ConfigCreator.CreateConfig(connection), ApplyUIListeners, out connection, out config))
                 return;
             liveMonitor = new(CreateApplets());
+            energyLinkShop = new(connection!, config!);
             Console.Clear();
             ConsoleSelect<Action> consoleSelect = new();
             consoleSelect.AddCancelOption("Exit Program").AddText(SectionPlacement.Pre, "Yarg AP Client").AddSeparator(SectionPlacement.Pre)
                 .Add("Open Live Monitor", liveMonitor.Show)
                 .Add("Show Available Songs", PrintCurrentSongList)
                 .Add("Use Filler Item", UseFillerItem)
+                .Add("Open Energy Link Shop", energyLinkShop.ShowEnergyLinkShop)
                 .Add("Toggle Config", ToggleConfig)
                 .Add("Rescan Songs", () => SongImporter.RescanSongs(config!, connection!))
                 .Add("Sync With YARG", connection!.GetPacketServer().SendClientStatusPacket)

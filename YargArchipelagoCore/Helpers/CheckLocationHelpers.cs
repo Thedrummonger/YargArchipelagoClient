@@ -53,7 +53,7 @@ namespace YargArchipelagoCore.Helpers
             if (ToCheck.Count > 0)
                 Connection.CommitCheckLocations(ToCheck, AlteredLocations, Config);
 
-            SendEnergy(Connection, Config, passInfo.BandScore, ToCheck.Count > 0);
+            ExtraAPFunctionalityHelper.SendEnergy(Connection, Config, passInfo.BandScore, ToCheck.Count > 0);
         }
 
         public static void CommitCheckLocations(this ConnectionData Connection, IEnumerable<long> Locations, IEnumerable<SongLocation> songLocations, ConfigData Config)
@@ -80,53 +80,6 @@ namespace YargArchipelagoCore.Helpers
                 if (i.Value.SongAvailableToPlay(connection, config))
                     songLocations.Add(i.Value);
             return [..songLocations];
-        }
-
-        const long minScale = 20000;
-        const long maxScale = 1000000;
-        public static void SendEnergy(ConnectionData connection, ConfigData config, long amount, bool WasLocationChecked)
-        {
-            if (config.EnergyLinkMode <= CommonData.EnergyLinkType.None) return;
-            if (config.EnergyLinkMode == CommonData.EnergyLinkType.CheckSong && !WasLocationChecked) return;
-            if (config.EnergyLinkMode == CommonData.EnergyLinkType.OtherSong && WasLocationChecked) return;
-
-            var Session = connection.GetSession();
-
-            int AmountOfLocationsTotal = connection.GetSession().Locations.AllLocations.Count;
-            int AmountOfLocationsChecked = connection.GetSession().Locations.AllLocationsChecked.Count;
-            double completionPercentage = AmountOfLocationsChecked / AmountOfLocationsTotal;
-
-            double scale = minScale + (completionPercentage * (maxScale - minScale));
-
-            long Energy = (long)(amount * scale);
-
-            string EnergyLinkKey = $"EnergyLink{Session.Players.ActivePlayer.Team}";
-            Session.DataStorage[EnergyLinkKey].Initialize(0);
-            Session.DataStorage[EnergyLinkKey] += Energy;
-        }
-
-        public static long GetEnergy(ConnectionData connection, ConfigData config)
-        {
-            if (config.EnergyLinkMode <= CommonData.EnergyLinkType.None) return 0;
-            var Session = connection.GetSession();
-            string EnergyLinkKey = $"EnergyLink{Session.Players.ActivePlayer.Team}";
-            Session.DataStorage[EnergyLinkKey].Initialize(0);
-            return Session.DataStorage[EnergyLinkKey];
-        }
-
-        public static bool SpendEnergy(ConnectionData connection, ConfigData config, long Amount)
-        {
-            if (config.EnergyLinkMode <= CommonData.EnergyLinkType.None) return false;
-            var Session = connection.GetSession();
-            string EnergyLinkKey = $"EnergyLink{Session.Players.ActivePlayer.Team}";
-            Session.DataStorage[EnergyLinkKey].Initialize(0);
-            if (Session.DataStorage[EnergyLinkKey] >= Amount)
-            {
-                Session.DataStorage[EnergyLinkKey] -= Amount;
-                return true;
-            }
-            return false;
-
         }
     }
 }
