@@ -23,13 +23,15 @@ namespace YargArchipelagoClient.Helpers
         public static ContextMenuStrip BuildSongMenu(MainForm mainForm, SongLocation song) => new ContextMenuBuilder(mainForm, song).BuildSongMenu();
         public ContextMenuStrip BuildSongMenu()
         {
-            var AllRandomSwap = connection!.ApItemsRecieved.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.SwapRandom);
+            HashSet<APWorldData.StaticYargAPItem> AvailableItems = [.. connection!.ApItemsRecieved, .. config!.ApItemsPurchased];
+
+            var AllRandomSwap = AvailableItems.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.SwapRandom);
             var UsableRandomSwap = AllRandomSwap.FirstOrDefault();
 
-            var AllPickSwap = connection!.ApItemsRecieved.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.SwapPick);
+            var AllPickSwap = AvailableItems.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.SwapPick);
             var UsablePickSwap = AllPickSwap.FirstOrDefault();
 
-            var AllLowerDiff = connection!.ApItemsRecieved.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.LowerDifficulty);
+            var AllLowerDiff = AvailableItems.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.LowerDifficulty);
             var UsableLowerDiff = AllRandomSwap.FirstOrDefault();
 
             var menu = new ContextMenuStrip();
@@ -147,9 +149,6 @@ namespace YargArchipelagoClient.Helpers
             config.SaveConfigFile(connection);
             mainForm.SafeInvoke(mainForm.PrintSongs);
             connection.GetPacketServer().SendClientStatusPacket();
-
-            Debug.WriteLine(connection.ApItemsRecieved.ToFormattedJson());
-            Debug.WriteLine(config.ApItemsUsed.ToFormattedJson());
         }
     }
     public static class ContextMenuHelper

@@ -9,6 +9,7 @@ using YargArchipelagoCommon;
 using YargArchipelagoCore.Helpers;
 using static YargArchipelagoCore.Data.ArchipelagoColorHelper;
 using static YargArchipelagoClient.Helpers.WinFormHelpers;
+using YargArchipelagoClient.Forms;
 
 namespace YargArchipelagoClient
 {
@@ -21,6 +22,8 @@ namespace YargArchipelagoClient
         private readonly SemaphoreSlim LogSignal = new(0);
         private readonly CancellationTokenSource LogCancellation = new();
 
+        public EnergyShop? energyShop = null;
+
         public const string Title = "Yarg Archipelago Client";
 
         public MainForm()
@@ -29,20 +32,20 @@ namespace YargArchipelagoClient
             WinFormsMessageBoxTemplate.Apply();
             lvSongList_Resize(this, new());
 
-            settingsToolStripMenuItem.DropDown.Closing += (_, e) =>
-            {
-                if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked)
-                    e.Cancel = true;
-            };
-            deathLinkToolStripMenuItem.DropDown.Closing += (_, e) =>
-            {
-                if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked)
-                    e.Cancel = true;
-            };
-
             cmbDeathLinkMode.Items.AddRange([.. EnumerableUtilities.EnumAsArray<CommonData.DeathLinkType>().Select(x => x.GetDescription())]);
             cmbEnergyLinkMode.Items.AddRange([.. EnumerableUtilities.EnumAsArray<CommonData.EnergyLinkType>().Select(x => x.GetDescription())]);
             cmbItemNotifMode.Items.AddRange([.. EnumerableUtilities.EnumAsArray<CommonData.ItemLog>().Select(x => x.GetDescription())]);
+
+            PreventDropDownCloseOnClick(settingsToolStripMenuItem, deathLinkToolStripMenuItem, energyLinkToolStripMenuItem);
+        }
+
+        private void PreventDropDownCloseOnClick(params ToolStripMenuItem[] items)
+        {
+            energyLinkToolStripMenuItem.DropDown.Closing += (_, e) =>
+            {
+                if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked)
+                    e.Cancel = true;
+            };
         }
 
 
@@ -66,7 +69,7 @@ namespace YargArchipelagoClient
 
         private void ClientSyncHelper_ConstantCallback()
         {
-            txtCurrentEnergyToolStripMenuItem.Text = $"Current Yarg Bucks {CheckLocationHelpers.GetEnergy(Connection, Config)}";
+            //txtCurrentEnergyToolStripMenuItem.Text = $"Current Energy: {CheckLocationHelpers.GetEnergy(Connection, Config)}";
         }
 
         private void ClientSyncHelper_OnUpdateCallback()
@@ -175,7 +178,7 @@ namespace YargArchipelagoClient
             yARGConnectedToolStripMenuItem.Text = $"YARG Connected: {Connection.IsConnectedToYarg}";
             currentSongToolStripMenuItem.Text = "Current Song: ";
             btnDeathLinkSetToYaml.Text = $"Set to YAML Value: {Config.YamlDeathLink.GetDescription()}";
-            txtEnergyLinkYamlToolStripMenuItem.Text = $"Set to YAML Value: {Config.YamlEnergyLink.GetDescription()}";
+            btnEnergyLinkSetToYaml.Text = $"Set to YAML Value: {Config.YamlEnergyLink.GetDescription()}";
             if (Connection.IsCurrentlyPlayingSong(out var CurSong))
                 currentSongToolStripMenuItem.Text += $" {CurSong!.GetSongDisplayName()}";
             else
@@ -298,7 +301,7 @@ namespace YargArchipelagoClient
             Config.BroadcastSongName = broadcastSongNamesToolStripMenuItem.Checked;
             Config.ManualMode = manualModeToolStripMenuItem.Checked;
             Config.DeathLinkMode = Sender == btnDeathLinkSetToYaml ? Config.YamlDeathLink : (CommonData.DeathLinkType)cmbDeathLinkMode.SelectedIndex;
-            Config.EnergyLinkMode = Sender == txtEnergyLinkYamlToolStripMenuItem ? Config.YamlEnergyLink : (CommonData.EnergyLinkType)cmbEnergyLinkMode.SelectedIndex;
+            Config.EnergyLinkMode = Sender == btnEnergyLinkSetToYaml ? Config.YamlEnergyLink : (CommonData.EnergyLinkType)cmbEnergyLinkMode.SelectedIndex;
             Config.InGameItemLog = (CommonData.ItemLog)cmbItemNotifMode.SelectedIndex;
             Config.InGameAPChat = yARGChatNotificationsToolStripMenuItem.Checked;
             Config.SaveConfigFile(Connection);
@@ -360,6 +363,14 @@ namespace YargArchipelagoClient
         private void openYargAPConfigFolderToolStripMenuItem_Click(object sender, EventArgs e)
         {
             MultiplatformHelpers.OpenFolder(CommonData.DataFolder);
+        }
+
+        private void openEnergyLinkShopToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (energyShop is null)
+                new EnergyShop(this).Show();
+            else
+                energyShop.Focus();
         }
     }
 }

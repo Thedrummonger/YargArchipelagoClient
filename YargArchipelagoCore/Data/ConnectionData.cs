@@ -121,9 +121,6 @@ namespace YargArchipelagoCore.Data
                 }
                 throw new Exception($"Error, received unknown item {i.ItemName} [{i.ItemId}]");
             }
-
-            Debug.WriteLine(ApItemsRecieved.ToFormattedJson());
-            Debug.WriteLine(configData.ApItemsUsed.ToFormattedJson());
         }
         public string getSaveFileName() =>
             $"{Session.RoomState.Seed}_{SlotName}_{Session.Players.ActivePlayer.Slot}_{Session.Players.ActivePlayer.GetHashCode()}";

@@ -89,6 +89,9 @@ namespace YargArchipelagoCLI
                         config.DeathLinkMode = EnumerableUtilities.NextValue(config.DeathLinkMode); 
                         connection.UpdateDeathLinkTags(config);
                         })
+                    .Add($"Energylink [YAML: {config.YamlEnergyLink.GetDescription()}]: {config.EnergyLinkMode.GetDescription()}", () => {
+                        config.EnergyLinkMode = EnumerableUtilities.NextValue(config.EnergyLinkMode);
+                    })
                     .Add($"Item Notifications: {config.InGameItemLog.GetDescription()}", () => config.InGameItemLog = EnumerableUtilities.NextValue(config.InGameItemLog))
                     .Add($"Chat Notifications: {config.InGameAPChat}", () => config.InGameAPChat = !config.InGameAPChat)
                     .Add($"Cheat Mode: {config.CheatMode}", () => config.CheatMode = !config.CheatMode, () => Debugger.IsAttached);
@@ -123,13 +126,15 @@ namespace YargArchipelagoCLI
         {
             Console.Clear();
 
-            var AllRandomSwap = connection!.ApItemsRecieved.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.SwapRandom);
+            HashSet<APWorldData.StaticYargAPItem> AvailableItems = [.. connection!.ApItemsRecieved, .. config!.ApItemsPurchased];
+
+            var AllRandomSwap = AvailableItems.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.SwapRandom);
             var UsableRandomSwap = AllRandomSwap.FirstOrDefault();
 
-            var AllPickSwap = connection!.ApItemsRecieved.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.SwapPick);
+            var AllPickSwap = AvailableItems.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.SwapPick);
             var UsablePickSwap = AllPickSwap.FirstOrDefault();
 
-            var AllLowerDiff = connection!.ApItemsRecieved.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.LowerDifficulty);
+            var AllLowerDiff = AvailableItems.Where(x => !config.ApItemsUsed.Contains(x) && x.Type == APWorldData.StaticItems.LowerDifficulty);
             var UsableLowerDiff = AllRandomSwap.FirstOrDefault();
 
             ConsoleSelect<Action> consoleSelect = new();

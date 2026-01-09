@@ -48,16 +48,16 @@ namespace YargArchipelagoClient
             btnDeathLinkSetToYaml = new ToolStripMenuItem();
             cmbDeathLinkMode = new ToolStripComboBox();
             energyLinkToolStripMenuItem = new ToolStripMenuItem();
-            txtCurrentEnergyToolStripMenuItem = new ToolStripMenuItem();
-            toolStripSeparator3 = new ToolStripSeparator();
-            txtEnergyLinkYamlToolStripMenuItem = new ToolStripMenuItem();
+            btnEnergyLinkSetToYaml = new ToolStripMenuItem();
             cmbEnergyLinkMode = new ToolStripComboBox();
+            toolStripSeparator3 = new ToolStripSeparator();
             yARGNotificationsToolStripMenuItem = new ToolStripMenuItem();
             cmbItemNotifMode = new ToolStripComboBox();
             yARGChatNotificationsToolStripMenuItem = new ToolStripMenuItem();
             utilityToolStripMenuItem = new ToolStripMenuItem();
             updateAvailableSongsToolStripMenuItem = new ToolStripMenuItem();
             rescanSongListToolStripMenuItem = new ToolStripMenuItem();
+            openEnergyLinkShopToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator1 = new ToolStripSeparator();
             aPServerToolStripMenuItem = new ToolStripMenuItem();
             changeServerToolStripMenuItem = new ToolStripMenuItem();
@@ -229,8 +229,8 @@ namespace YargArchipelagoClient
             // btnDeathLinkSetToYaml
             // 
             btnDeathLinkSetToYaml.Name = "btnDeathLinkSetToYaml";
-            btnDeathLinkSetToYaml.Size = new Size(203, 22);
-            btnDeathLinkSetToYaml.Text = "txtDeathLinkYAMLMode";
+            btnDeathLinkSetToYaml.Size = new Size(181, 22);
+            btnDeathLinkSetToYaml.Text = "Set To Yaml Value";
             btnDeathLinkSetToYaml.Click += btnDeathLinkSetToYaml_Click;
             // 
             // cmbDeathLinkMode
@@ -241,34 +241,28 @@ namespace YargArchipelagoClient
             // 
             // energyLinkToolStripMenuItem
             // 
-            energyLinkToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { txtCurrentEnergyToolStripMenuItem, toolStripSeparator3, txtEnergyLinkYamlToolStripMenuItem, cmbEnergyLinkMode });
+            energyLinkToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { btnEnergyLinkSetToYaml, cmbEnergyLinkMode, toolStripSeparator3 });
             energyLinkToolStripMenuItem.Name = "energyLinkToolStripMenuItem";
             energyLinkToolStripMenuItem.Size = new Size(202, 22);
             energyLinkToolStripMenuItem.Text = "EnergyLink";
             // 
-            // txtCurrentEnergyToolStripMenuItem
+            // btnEnergyLinkSetToYaml
             // 
-            txtCurrentEnergyToolStripMenuItem.Name = "txtCurrentEnergyToolStripMenuItem";
-            txtCurrentEnergyToolStripMenuItem.Size = new Size(181, 22);
-            txtCurrentEnergyToolStripMenuItem.Text = "txtCurrentEnergy";
-            // 
-            // toolStripSeparator3
-            // 
-            toolStripSeparator3.Name = "toolStripSeparator3";
-            toolStripSeparator3.Size = new Size(178, 6);
-            // 
-            // txtEnergyLinkYamlToolStripMenuItem
-            // 
-            txtEnergyLinkYamlToolStripMenuItem.Name = "txtEnergyLinkYamlToolStripMenuItem";
-            txtEnergyLinkYamlToolStripMenuItem.Size = new Size(181, 22);
-            txtEnergyLinkYamlToolStripMenuItem.Text = "txtEnergyLinkYaml";
-            txtEnergyLinkYamlToolStripMenuItem.Click += txtEnergyLinkYamlToolStripMenuItem_Click;
+            btnEnergyLinkSetToYaml.Name = "btnEnergyLinkSetToYaml";
+            btnEnergyLinkSetToYaml.Size = new Size(181, 22);
+            btnEnergyLinkSetToYaml.Text = "Set To Yaml Value";
+            btnEnergyLinkSetToYaml.Click += txtEnergyLinkYamlToolStripMenuItem_Click;
             // 
             // cmbEnergyLinkMode
             // 
             cmbEnergyLinkMode.Name = "cmbEnergyLinkMode";
             cmbEnergyLinkMode.Size = new Size(121, 23);
             cmbEnergyLinkMode.SelectedIndexChanged += cmbEnergyLinkMode_SelectedIndexChanged;
+            // 
+            // toolStripSeparator3
+            // 
+            toolStripSeparator3.Name = "toolStripSeparator3";
+            toolStripSeparator3.Size = new Size(178, 6);
             // 
             // yARGNotificationsToolStripMenuItem
             // 
@@ -292,7 +286,7 @@ namespace YargArchipelagoClient
             // 
             // utilityToolStripMenuItem
             // 
-            utilityToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { updateAvailableSongsToolStripMenuItem, rescanSongListToolStripMenuItem, toolStripSeparator1, aPServerToolStripMenuItem, changeServerToolStripMenuItem, toolStripSeparator2, openYargAPConfigFolderToolStripMenuItem });
+            utilityToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { updateAvailableSongsToolStripMenuItem, rescanSongListToolStripMenuItem, openEnergyLinkShopToolStripMenuItem, toolStripSeparator1, aPServerToolStripMenuItem, changeServerToolStripMenuItem, toolStripSeparator2, openYargAPConfigFolderToolStripMenuItem });
             utilityToolStripMenuItem.Name = "utilityToolStripMenuItem";
             utilityToolStripMenuItem.Size = new Size(50, 20);
             utilityToolStripMenuItem.Text = "Utility";
@@ -310,6 +304,13 @@ namespace YargArchipelagoClient
             rescanSongListToolStripMenuItem.Size = new Size(222, 22);
             rescanSongListToolStripMenuItem.Text = "Rescan Song List";
             rescanSongListToolStripMenuItem.Click += rescanSongListToolStripMenuItem_Click;
+            // 
+            // openEnergyLinkShopToolStripMenuItem
+            // 
+            openEnergyLinkShopToolStripMenuItem.Name = "openEnergyLinkShopToolStripMenuItem";
+            openEnergyLinkShopToolStripMenuItem.Size = new Size(222, 22);
+            openEnergyLinkShopToolStripMenuItem.Text = "Open Energy Link Shop";
+            openEnergyLinkShopToolStripMenuItem.Click += openEnergyLinkShopToolStripMenuItem_Click;
             // 
             // toolStripSeparator1
             // 
@@ -417,9 +418,9 @@ namespace YargArchipelagoClient
         private ToolStripSeparator toolStripSeparator2;
         private ToolStripMenuItem openYargAPConfigFolderToolStripMenuItem;
         private ToolStripMenuItem energyLinkToolStripMenuItem;
-        private ToolStripMenuItem txtEnergyLinkYamlToolStripMenuItem;
-        private ToolStripMenuItem txtCurrentEnergyToolStripMenuItem;
+        private ToolStripMenuItem btnEnergyLinkSetToYaml;
         private ToolStripComboBox cmbEnergyLinkMode;
         private ToolStripSeparator toolStripSeparator3;
+        private ToolStripMenuItem openEnergyLinkShopToolStripMenuItem;
     }
 }

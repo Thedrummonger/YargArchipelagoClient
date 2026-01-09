@@ -102,6 +102,12 @@ namespace YargArchipelagoCore.Data
                     .Select((item, index) => new { Key = rootID + index, Value = item })
                     .ToDictionary(x => x.Key, x => x.Value);
 
+            public static Dictionary<StaticItems, long> IDFromStaticItem { get; } =
+                Enum.GetValues(typeof(StaticItems))
+                    .Cast<StaticItems>()
+                    .Select((item, index) => new { Key = rootID + index, Value = item })
+                    .ToDictionary(x => x.Value, x => x.Key);
+
             public static Dictionary<long, int> SongItemIds =>
                 Enumerable.Range(1, MaxSongs)
                           .ToDictionary(x => StaticItemIDs.Keys.Max() + x, x => x);

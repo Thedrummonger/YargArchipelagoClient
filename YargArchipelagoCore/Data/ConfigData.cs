@@ -22,6 +22,7 @@ namespace YargArchipelagoCore.Data
         /// </summary>
         public SongLocation GoalSong = new(0);
         public HashSet<StaticYargAPItem> ApItemsUsed { get; } = [];
+        public HashSet<StaticYargAPItem> ApItemsPurchased { get; } = [];
 
         public bool BroadcastSongName = false;
 
