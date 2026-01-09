@@ -43,7 +43,7 @@ namespace YargArchipelagoCLI
             string ItemName = APWorldData.StaticItems.SwapRandom.GetDescription();
             string ItemPrice = ExtraAPFunctionalityHelper.FormatLargeNumber(Price);
             string CurrentItems = AvailableItems.Where(x => x.Type == item).Count().ToString();
-            string MenuText = $"Purchase {ItemName}: {ItemPrice} [Current {CurrentItems}]";
+            string MenuText = $"Purchase {ItemName} [Current {CurrentItems}]: {ItemPrice}";
             menu.Add(MenuText, () => Purchase(item, Price));
         }
 
