@@ -9,14 +9,16 @@ namespace YargArchipelagoCore.Helpers
 {
     public static class TrapFillerHelper
     {
-        public static void SendPendingTrapOrFiller(ConnectionData Connection, ConfigData Config)
+        public static bool SendPendingTrapOrFiller(ConnectionData Connection, ConfigData Config)
         {
-            if (!Connection.GetPacketServer().IsConnected || !Connection.IsCurrentlyPlayingSong(out _)) return;
+            if (!Connection.GetPacketServer().IsConnected || !Connection.IsCurrentlyPlayingSong(out _)) return false;
             foreach (var Item in Connection.ApItemsRecieved)
             {
                 if (!Item.Type.IsTrapOrFiller() || Config.ApItemsUsed.Contains(Item)) continue;
+                Debug.WriteLine($"Sending Filler {Item.Type}");
                 SendOneTrapFiller(Connection, Config, Item);
             }
+            return true;
         }
 
         public static void SendOneTrapFiller(ConnectionData Connection, ConfigData Config, StaticYargAPItem item)

@@ -18,6 +18,7 @@ namespace YargArchipelagoCore.Helpers
 
         public event Action<string>? APServerClosed;
         public bool ShouldUpdate = true; //Start true so we do an update when it initializes
+        private bool TrapFillerInQueue = false;
         public event Action ConstantCallback;
         public event Action OnUpdateCallback;
 
@@ -37,12 +38,14 @@ namespace YargArchipelagoCore.Helpers
                 return;
             if (!connection.GetSession().Socket.Connected)
                 APServerClosed?.Invoke("AP server connection lost");
+            if (TrapFillerInQueue)
+                TrapFillerInQueue = !TrapFillerHelper.SendPendingTrapOrFiller(connection, config);
             ConstantCallback?.Invoke();
             if (!ShouldUpdate) return;
             ShouldUpdate = false;
             connection.UpdateCheckedLocations();
             connection.UpdateReceivedItems(config);
-            TrapFillerHelper.SendPendingTrapOrFiller(connection, config);
+            TrapFillerInQueue = !TrapFillerHelper.SendPendingTrapOrFiller(connection, config);
             connection.GetPacketServer().SendClientStatusPacket();
             OnUpdateCallback?.Invoke();
 
