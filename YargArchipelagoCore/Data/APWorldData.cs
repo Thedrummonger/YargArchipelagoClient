@@ -108,9 +108,16 @@ namespace YargArchipelagoCore.Data
                     .Select((item, index) => new { Key = rootID + index, Value = item })
                     .ToDictionary(x => x.Value, x => x.Key);
 
-            public static Dictionary<long, int> SongItemIds =>
-                Enumerable.Range(1, MaxSongs)
-                          .ToDictionary(x => StaticItemIDs.Keys.Max() + x, x => x);
+            private static readonly long _maxStaticItemId = StaticItemIDs.Keys.Max();
+
+            public static Dictionary<long, int> SongItemIds { get; } =
+                Enumerable.Range(1, MaxSongs).ToDictionary(x => _maxStaticItemId + x, x => x);
+
+            private static readonly long _maxSongItemId = SongItemIds.Keys.Max();
+
+            public static Dictionary<long, int> SongPackItemIds { get; } =
+                Enumerable.Range(1, MaxSongs / 2).ToDictionary(x => _maxSongItemId + x, x => x);
+
 
             public static Dictionary<long, StaticLocations> StaticLocationIDs { get; } =
                 Enum.GetValues(typeof(StaticLocations))
@@ -118,12 +125,14 @@ namespace YargArchipelagoCore.Data
                     .Select((item, index) => new { Key = rootID + index, Value = item })
                     .ToDictionary(x => x.Key, x => x.Value);
 
-            public static Dictionary<long, (int songnum, LocationType locType)> SongLocationIDs =>
+            private static readonly long _maxStaticLocationId = StaticLocationIDs.Keys.Max();
+
+            public static Dictionary<long, (int songnum, LocationType locType)> SongLocationIDs { get; } =
                 Enumerable.Range(1, MaxSongs).SelectMany(songnum => new[]
                 {
-                    (Key: StaticLocationIDs.Keys.Max() + (songnum - 1) * 3 + 1, Value: (songnum, LocationType.standard)),
-                    (Key: StaticLocationIDs.Keys.Max() + (songnum - 1) * 3 + 2, Value: (songnum, LocationType.extra)),
-                    (Key: StaticLocationIDs.Keys.Max() + (songnum - 1) * 3 + 3, Value: (songnum, LocationType.fame))
+                    (Key: _maxStaticLocationId + (songnum - 1) * 3 + 1, Value: (songnum, LocationType.standard)),
+                    (Key: _maxStaticLocationId + (songnum - 1) * 3 + 2, Value: (songnum, LocationType.extra)),
+                    (Key: _maxStaticLocationId + (songnum - 1) * 3 + 3, Value: (songnum, LocationType.fame))
                 }).ToDictionary(x => x.Key, x => x.Value);
         }
     }

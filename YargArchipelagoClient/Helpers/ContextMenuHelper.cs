@@ -113,7 +113,7 @@ namespace YargArchipelagoClient.Helpers
                 menu.Items.AddItem($"-Min Score [{song.Requirements!.CompletionRequirement.Reward2Req.ToString().AddSpacesToCamelCase()}]");
             }
 
-            if (song.SongItemReceived(connection, out var data))
+            if (song.SongItemReceived(connection, config, out var data))
             {
                 var Player = connection.GetSession().Players.GetPlayerInfo(data.SendingPlayerSlot);
                 var Location = connection.GetSession().Locations.GetLocationNameFromId(data.SendingPlayerLocation, Player.Game);

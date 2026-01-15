@@ -35,6 +35,8 @@ namespace YargArchipelagoCore.Data
 
         public int FamePointsNeeded = 0;
 
+        public int SongPackAmount = 2;
+
         [Newtonsoft.Json.JsonIgnore]
         public bool DebugPrintAllSongs = false;
 

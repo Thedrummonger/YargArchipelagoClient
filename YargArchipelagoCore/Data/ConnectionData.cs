@@ -52,6 +52,8 @@ namespace YargArchipelagoCore.Data
         [JsonIgnore]
         public Dictionary<int, BaseYargAPItem> ReceivedSongs { get; } = [];
         [JsonIgnore]
+        public Dictionary<int, BaseYargAPItem> ReceivedSongPacks { get; } = [];
+        [JsonIgnore]
         public HashSet<long> CheckedLocations { get; } = [];
         [JsonIgnore]
         public HashSet<StaticYargAPItem> ApItemsRecieved { get; } = [];
@@ -117,6 +119,11 @@ namespace YargArchipelagoCore.Data
                 if (APIDs.SongItemIds.TryGetValue(i.ItemId, out var songItem))
                 {
                     ReceivedSongs[songItem] = new(i.ItemId, i.Player.Slot, i.LocationId, i.LocationGame);
+                    continue;
+                }
+                if (APIDs.SongPackItemIds.TryGetValue(i.ItemId, out var songPackItem))
+                {
+                    ReceivedSongPacks[songPackItem] = new(i.ItemId, i.Player.Slot, i.LocationId, i.LocationGame);
                     continue;
                 }
                 throw new Exception($"Error, received unknown item {i.ItemName} [{i.ItemId}]");

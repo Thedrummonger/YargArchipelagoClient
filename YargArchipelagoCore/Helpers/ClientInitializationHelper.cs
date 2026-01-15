@@ -44,17 +44,22 @@ namespace YargArchipelagoCore.Helpers
         {
             var SlotData = Connection!.GetSession().DataStorage.GetSlotData();
 
-            if (SlotData["fame_points_for_goal"] is Int64 FPSlotDataVal)
+            if (SlotData["fame_points_for_goal"] is long FPSlotDataVal)
                 config.FamePointsNeeded = (int)FPSlotDataVal;
             else
                 throw new Exception("Could not get Fame Point Goal");
 
-            if (SlotData.TryGetValue("death_link", out var DLO) && DLO is Int64 DLI)
+            if (SlotData["song_pack_size"] is long SPSlotDataVal)
+                config.SongPackAmount = (int)SPSlotDataVal;
+            else
+                throw new Exception("Could not get Song Pack Size");
+
+            if (SlotData.TryGetValue("death_link", out var DLO) && DLO is long DLI)
             {
                 config.DeathLinkMode = (CommonData.DeathLinkType)DLI;
                 config.YamlDeathLink = (CommonData.DeathLinkType)DLI;
             }
-            if (SlotData.TryGetValue("energy_link", out var ELO) && ELO is Int64 ELI)
+            if (SlotData.TryGetValue("energy_link", out var ELO) && ELO is long ELI)
             {
                 config.EnergyLinkMode = (CommonData.EnergyLinkType)ELI;
                 config.YamlEnergyLink = (CommonData.EnergyLinkType)ELI;

@@ -118,7 +118,7 @@ namespace YargArchipelagoCLI
             Console.Clear();
             Console.WriteLine($"Song: {ShowDetails.GetSongDisplayName(config)}\nProfile: {ShowDetails.Requirements?.Name}\nInstrument: {ShowDetails.Requirements?.Instrument}");
             Console.WriteLine(ShowDetails.Requirements?.CompletionRequirement?.ToFormattedJson());
-            if (ShowDetails.SongItemReceived(connection, out var data))
+            if (ShowDetails.SongItemReceived(connection, config, out var data))
             {
                 var Player = connection.GetSession().Players.GetPlayerInfo(data.SendingPlayerSlot);
                 var Location = connection.GetSession().Locations.GetLocationNameFromId(data.SendingPlayerLocation, Player.Game);

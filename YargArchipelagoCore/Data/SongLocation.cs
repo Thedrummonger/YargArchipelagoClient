@@ -64,13 +64,27 @@ namespace YargArchipelagoCore.Data
             StandardCheckAvailable(connection, out _) || ExtraCheckAvailable(connection, out _) || FameCheckAvailable(connection, out _);
         public bool SongAvailableToPlay(ConnectionData connection, ConfigData config)
         {
-            bool Available = IsGoalSong() ? connection.HasFamePointGoal(config) : SongItemReceived(connection);
+            bool Available = IsGoalSong() ? connection.HasFamePointGoal(config) : SongItemReceived(connection, config);
             return Available && HasUncheckedLocations(connection);
         }
-        public bool SongItemReceived(ConnectionData connection) => SongItemReceived(connection, out _);
+        public bool SongItemReceived(ConnectionData connection, ConfigData config) => SongItemReceived(connection, config, out _);
 
-        public bool SongItemReceived(ConnectionData connection, out APWorldData.BaseYargAPItem Data) => 
-            connection.ReceivedSongs.TryGetValue(SongNumber, out Data);
+        public bool SongItemReceived(ConnectionData connection, ConfigData config, out APWorldData.BaseYargAPItem? Data)
+        {
+            if (connection.ReceivedSongs.TryGetValue(SongNumber, out var SongItemData))
+            {
+                Data = SongItemData;
+                return true;
+            }
+            decimal SongPackNeeded = Math.Ceiling((decimal)SongNumber / (decimal)config.SongPackAmount);
+            if (connection.ReceivedSongPacks.TryGetValue((int)SongPackNeeded, out var SongPackData))
+            {
+                Data = SongPackData;
+                return true;
+            }
+            Data = null;
+            return false;   
+        }
 
         public bool IsGoalSong() => SongNumber == 0;
     }
