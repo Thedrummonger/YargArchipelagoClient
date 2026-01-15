@@ -1,7 +1,14 @@
 ﻿extern alias TDMAP;
+
+using System.Diagnostics;
+using System.Reflection;
 using TDMAP::Archipelago.MultiClient.Net;
+using TDMAP.Archipelago.MultiClient.Net.MessageLog.Messages;
+using TDMAP.Archipelago.MultiClient.Net.MessageLog.Parts;
+using TDMAP.Archipelago.MultiClient.Net.Models;
 using YargArchipelagoCommon;
 using YargArchipelagoCore.Data;
+using static YargArchipelagoCore.Data.ArchipelagoColorHelper;
 
 namespace YargArchipelagoCore.Helpers
 {
@@ -80,6 +87,23 @@ namespace YargArchipelagoCore.Helpers
             }
             return false;
 
+        }
+        private static PropertyInfo? _textProperty;
+        public static void FormatYargItemNames(this LogMessage message, ConfigData config)
+        {
+            if (message is not ItemSendLogMessage itemSend || !itemSend.IsReceiverTheActivePlayer) return;
+            foreach (var part in message.Parts.Where(x => x.Type == MessagePartType.Item))
+            {
+                try
+                {
+                    string OriginalName = part.Text.Trim();
+                    var SongHash = config.ApLocationData.Values.FirstOrDefault(x => OriginalName == $"Song {x.SongNumber}");
+                    if (SongHash is null) continue;
+                    _textProperty ??= typeof(MessagePart).GetProperty("Text");
+                    _textProperty?.SetValue(part, $"{OriginalName}: {SongHash.GetSongDisplayName(config)}");
+                }
+                catch (Exception ex) { Debug.WriteLine($"Failed to update yarg song message\n{ex.Message}\n{message}"); }
+            }
         }
     }
 }

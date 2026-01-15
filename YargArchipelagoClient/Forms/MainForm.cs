@@ -162,6 +162,7 @@ namespace YargArchipelagoClient
         private void MessageLog_OnMessageReceived(LogMessage message)
         {
             var formattedMessage = new ColoredString();
+            message.FormatYargItemNames(Config);
             foreach (var part in message.Parts)
                 formattedMessage.AddText(part.Text, part.Color.ConvertToSystemColor(), false);
 

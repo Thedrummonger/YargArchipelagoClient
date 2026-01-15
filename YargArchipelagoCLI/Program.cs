@@ -62,6 +62,7 @@ namespace YargArchipelagoCLI
             var ChatApplet = new ChatApplet();
             LogAPChat = (L) => 
             {
+                L.FormatYargItemNames(config);
                 ColoredString coloredString = new();
                 foreach (var i in L.Parts)
                     coloredString.AddText(i.Text, i.Color.ConvertToSystemColor(), false);
