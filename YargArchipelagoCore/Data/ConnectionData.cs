@@ -63,8 +63,14 @@ namespace YargArchipelagoCore.Data
         private YargArchipelagoCommon.CommonData.SongData? CurrentlyPlaying = null;
         [JsonIgnore]
         public bool IsConnectedToYarg => PacketServer is not null && PacketServer.IsConnected;
+        [JsonIgnore]
+        public DateTime LastSongStarted = DateTime.Now;
 
-        public void SetCurrentlyPlaying(YargArchipelagoCommon.CommonData.SongData? song = null) => CurrentlyPlaying = song;
+        public void SetCurrentlyPlaying(YargArchipelagoCommon.CommonData.SongData? song = null)
+        {
+            LastSongStarted = DateTime.Now;
+            CurrentlyPlaying = song;
+        }
         public YargArchipelagoCommon.CommonData.SongData? GetCurrentlyPlaying() => CurrentlyPlaying;
         public bool IsCurrentlyPlayingSong(out YargArchipelagoCommon.CommonData.SongData? CurrentSong)
         {

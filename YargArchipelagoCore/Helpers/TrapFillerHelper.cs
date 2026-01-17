@@ -11,7 +11,8 @@ namespace YargArchipelagoCore.Helpers
     {
         public static bool SendPendingTrapOrFiller(ConnectionData Connection, ConfigData Config)
         {
-            if (!Connection.GetPacketServer().IsConnected || !Connection.IsCurrentlyPlayingSong(out _)) return false;
+            bool SongLoadBuffer = (DateTime.Now - Connection.LastSongStarted).TotalSeconds >= 10;
+            if (!Connection.GetPacketServer().IsConnected || !Connection.IsCurrentlyPlayingSong(out _) || !SongLoadBuffer) return false;
             foreach (var Item in Connection.ApItemsRecieved)
             {
                 if (!Item.Type.IsTrapOrFiller() || Config.ApItemsUsed.Contains(Item)) continue;
