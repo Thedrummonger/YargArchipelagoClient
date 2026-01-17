@@ -2,6 +2,7 @@
 
 using System.Diagnostics;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using TDMAP::Archipelago.MultiClient.Net;
 using TDMAP.Archipelago.MultiClient.Net.MessageLog.Messages;
 using TDMAP.Archipelago.MultiClient.Net.MessageLog.Parts;
@@ -12,7 +13,7 @@ using static YargArchipelagoCore.Data.ArchipelagoColorHelper;
 
 namespace YargArchipelagoCore.Helpers
 {
-    public static class ExtraAPFunctionalityHelper
+    public static partial class ExtraAPFunctionalityHelper
     {
         public const long minEnergyLinkScale = 20000;
         public const long maxEnergyLinkScale = 1000000;
@@ -91,19 +92,60 @@ namespace YargArchipelagoCore.Helpers
         private static PropertyInfo? _textProperty;
         public static void FormatYargItemNames(this LogMessage message, ConfigData config)
         {
-            if (message is not ItemSendLogMessage itemSend || !itemSend.IsReceiverTheActivePlayer) return;
-            foreach (var part in message.Parts.Where(x => x.Type == MessagePartType.Item))
+            if (message is ItemSendLogMessage itemSend)
             {
-                try
+                if (itemSend.IsReceiverTheActivePlayer)
                 {
-                    string OriginalName = part.Text.Trim();
-                    var SongHash = config.ApLocationData.Values.FirstOrDefault(x => OriginalName == $"Song {x.SongNumber}");
-                    if (SongHash is null) continue;
-                    _textProperty ??= typeof(MessagePart).GetProperty("Text");
-                    _textProperty?.SetValue(part, $"{OriginalName}: {SongHash.GetSongDisplayName(config)}");
+                    foreach (var part in message.Parts.Where(x => x.Type == MessagePartType.Item))
+                    {
+                        try
+                        {
+                            string OriginalName = part.Text.Trim();
+                            var SongHash = config.ApLocationData.Values.FirstOrDefault(x => OriginalName == $"Song {x.SongNumber}");
+                            if (SongHash is null) continue;
+                            _textProperty ??= typeof(MessagePart).GetProperty("Text");
+                            _textProperty?.SetValue(part, $"{OriginalName}: {SongHash.GetSongDisplayName(config)}");
+                        }
+                        catch (Exception ex) { Debug.WriteLine($"Failed to update yarg song message\n{ex.Message}\n{message}"); }
+                    }
                 }
-                catch (Exception ex) { Debug.WriteLine($"Failed to update yarg song message\n{ex.Message}\n{message}"); }
+                if (itemSend.IsSenderTheActivePlayer)
+                {
+                    foreach(var part in message.Parts.Where(x => x.Type == MessagePartType.Location))
+                    {
+                        try
+                        {
+                            if (!IsSongLocation(part.Text, out var Number, out var Reward))
+                                continue;
+                            var SongHash = config.ApLocationData.Values.FirstOrDefault(x => Number == $"Song {x.SongNumber}");
+                            if (SongHash is null) continue;
+                            _textProperty ??= typeof(MessagePart).GetProperty("Text");
+                            _textProperty?.SetValue(part, $"{Number}: {SongHash.GetSongDisplayName(config)} {Reward}");
+                        }
+                        catch (Exception ex) { Debug.WriteLine($"Failed to update yarg song message\n{ex.Message}\n{message}"); }
+                    }
+                }
             }
+        }
+
+        [GeneratedRegex(@"(Song \d+) (Reward \d+)")]
+        private static partial Regex SongLocationRegex();
+
+        public static bool IsSongLocation(string name, out string Song, out string Reward)
+        {
+            Song = string.Empty;
+            Reward = string.Empty;
+
+            Match match = SongLocationRegex().Match(name);
+
+            if (match.Success)
+            {
+                Song = match.Groups[1].Value;
+                Reward = match.Groups[2].Value;
+                return true;
+            }
+
+            return false;
         }
     }
 }
